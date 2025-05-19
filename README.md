@@ -4,7 +4,7 @@
            margin-left: auto;
            margin-right: auto;
            width: 30%;" 
-    src="./img/wocshack_logo_square.png">
+    src="./img/WOCShAck.png">
 </br>
 WOCS'hAck is an annual online bug bounty challenge organized by the Worldwide Open Cyber Security Association (WOCSA). The event aims to improve cybersecurity by providing students with a realistic scenario to identify and report vulnerabilities on a designated website. Participants are required to submit detailed reports that include their analysis, assessment, and remediation proposals. These reports are evaluated by experts based on their accuracy, detail, and quality.
 
@@ -45,6 +45,9 @@ The option -d stand for detach. If you want to have all the logs, remove this op
 ## Stop the project
 To run the project, go to the folder with the docker-compose.yml file and run: 
 `docker compose down`
+
+# WOCS'hAck#4
+<img src="./img/WOCShAck_4.png">
 
 # WOCS'hAck#3
 <img src="./img/WOCShAck_3.png">
