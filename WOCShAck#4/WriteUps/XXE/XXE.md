@@ -1,21 +1,21 @@
 # Description  
-La vulnérabilité identifiée est une injection d’entité externe XML (XXE) au sein du module de création de forums d’association.
-Après avoir créé une association, l’utilisateur a la possibilité d’accéder à un espace dédié où il peut créer des forums liés à son association. Lors de l’envoi d’un formulaire de création de forum, la requête utilise un format XML pour transmettre les données.
-Cependant, l'analyse XML sur le serveur ne désactive pas correctement la résolution des entités externes, permettant ainsi à un attaquant de forger une requête XML malveillante pour accéder à des fichiers locaux du serveur.
+The identified vulnerability is an XML External Entity (XXE) injection within the association forums creation module.
+After creating an association, the user has the ability to access a dedicated space where they can create forums linked to their association. When submitting a forum creation form, the request uses an XML format to transmit the data.
+However, the XML parsing on the server does not properly disable external entity resolution, thus allowing an attacker to forge a malicious XML request to access local files on the server.
 
 # Exploitation  
-Pour exploiter cette vulnérabilité, l'utilisateur commence par créer une nouvelle association via le lien prévu à cet effet (https://<IP>/index.php?page=association/create_association.php).
-Après avoir créé l’association, il accède à la liste des associations dont il est administrateur (https://<IP>/index.php?page=association/my_associations.php). 
+To exploit this vulnerability, the user starts by creating a new association via the provided link (https://<IP>/index.php?page=association/create_association.php).
+After creating the association, they access the list of associations for which they are an administrator (https://<IP>/index.php?page=association/my_associations.php). 
 ![YWH R563414 image](YWH-R563414-image.png)
-En cliquant sur l’association nouvellement créée, il arrive sur la page publique de son profil d’association (https://<IP>/index.php?page=association/public_profile.php&uuid=f0bff852-e4c8-44bf-aba6-f79491385479), où il peut cliquer sur « View Forum List » pour accéder à la gestion des forums (https://<IP>/index.php?page=volunteer/list_forum.php&uuid=f0bff852-e4c8-44bf-aba6-f79491385479).
+By clicking on the newly created association, they land on the public page of their association profile (https://<IP>/index.php?page=association/public_profile.php&uuid=f0bff852-e4c8-44bf-aba6-f79491385479), where they can click on "View Forum List" to access forum management (https://<IP>/index.php?page=volunteer/list_forum.php&uuid=f0bff852-e4c8-44bf-aba6-f79491385479).
 ![YWH R563417 image](YWH-R563417-image.png)
-Lors de la création d’un nouveau forum, une requête POST contenant un formulaire XML est envoyée. En interceptant cette requête via un proxy (comme Burp Suite), il est possible de modifier manuellement le contenu du XML pour y insérer une entité externe.
-Un payload XXE classique est alors injecté, visant à lire par exemple le fichier sensible /etc/passwd.
-Après l’envoi de la requête modifiée, le serveur traite le XML, interprète l'entité externe, et injecte son contenu dans le champ description du forum. En revenant sur la liste des forums, on peut observer que le champ description affiche le contenu du fichier /etc/passwd, confirmant ainsi la vulnérabilité.
+When creating a new forum, a POST request containing an XML form is sent. By intercepting this request via a proxy (such as Burp Suite), it is possible to manually modify the XML content to insert an external entity.
+A classic XXE payload is then injected, aiming to read a sensitive file such as /etc/passwd.
+After sending the modified request, the server processes the XML, interprets the external entity, and injects its content into the forum description field. Returning to the forum list, one can observe that the description field displays the content of the /etc/passwd file, thereby confirming the vulnerability.
 
 # PoC  
-Après avoir créé une association et un forum normalement, la requête POST de création de forum est interceptée.
-Son contenu XML standard :
+After creating an association and a forum normally, the forum creation POST request is intercepted.
+Its standard XML content:
 
 ```<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE forum [
@@ -28,7 +28,7 @@ Son contenu XML standard :
   <description>Simple test</description>
 </forum>```
 
-est remplacé par le payload suivant :
+is replaced with the following payload:
 
 ```
 <?xml version="1.0" encoding="UTF-8"?>
@@ -43,10 +43,10 @@ est remplacé par le payload suivant :
 </forum>```
 
 ![YWH R563420 image](YWH-R563420-image.png)
-Après l'envoi de cette requête, en consultant la liste des forums, on constate que la description du forum contient le contenu du fichier /etc/passwd, démontrant que le serveur a traité et inclus une entité externe.
+After sending this request, upon checking the forum list, we can see that the forum description contains the core content of the /etc/passwd file, demonstrating that the server has processed and included an external entity.
 ![YWH R563411 image](YWH-R563411-image.png)
 
-Voici la requête curl pouvant être utilisé pour simuler l'attaque : 
+Here is the curl request that can be used to simulate the attack: 
 curl --path-as-is -i -s -k -X $'POST' \
     -H $'Host: <IP>' -H $'Content-Length: 307' -H $'Sec-Ch-Ua: \"Not/A)Brand\";v=\"8\", \"Chromium\";v=\"126\"' -H $'Sec-Ch-Ua-Platform: \"Linux\"' -H $'Accept-Language: fr-FR' -H $'Sec-Ch-Ua-Mobile: ?0' -H $'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.6478.127 Safari/537.36' -H $'Content-Type: application/xml' -H $'Accept: */*' -H $'Origin: https://<IP>' -H $'Sec-Fetch-Site: same-origin' -H $'Sec-Fetch-Mode: cors' -H $'Sec-Fetch-Dest: empty' -H $'Referer: https://<IP>/index.php?page=volunteer%2Fcreate_forum.php&uuid=f0bff852-e4c8-44bf-aba6-f79491385479&csrf_token=ce966eb42ced0ef3b4e63332de782b0eabab39766c1f6c8c427a6155f70fc079' -H $'Accept-Encoding: gzip, deflate, br' -H $'Priority: u=1, i' \
     -b $'PHPSESSID=b40e027b535732ff7e99084096bdc28b' \
@@ -54,21 +54,21 @@ curl --path-as-is -i -s -k -X $'POST' \
     $'https://<IP>/index.php?page=volunteer/create_forum.php'
 
 # Risk
-La vulnérabilité XXE permet à un attaquant d'accéder à des fichiers sensibles du serveur.
-Selon la configuration du serveur, un XXE peut également permettre :
+The XXE vulnerability allows an attacker to access sensitive server files.
+Depending on the server configuration, an XXE may also allow:
 
-- Le vol de fichiers internes (configuration, bases de données, secrets d'application),
-- Le déclenchement de requêtes SSRF (Server-Side Request Forgery),
-- Dans certains cas, une exécution de code à distance si des interactions avancées sont possibles.
+- The theft of internal files (configuration, databases, application secrets),
+- The triggering of SSRF (Server-Side Request Forgery) requests,
+- In some cases, remote code execution if advanced interactions are possible.
 
-Dans ce contexte, la fuite du fichier /etc/passwd constitue une exposition importante des informations système.
+In this context, the leakage of the /etc/passwd file constitutes a significant exposure of system information.
 
 # Remediation  
-Il est recommandé de :
+It is recommended to:
 
-- Désactiver la résolution des entités externes dans tous les parsers XML utilisés sur le serveur.
-- Utiliser des parsers XML sécurisés en désactivant explicitement la prise en charge des DTD (Document Type Definition).
-- Valider et nettoyer toutes les entrées XML utilisateurs avant traitement.
-- Préférer, lorsque c'est possible, des formats de sérialisation plus sûrs comme JSON au lieu de XML pour les échanges de données utilisateur.
+- Disable external entity resolution in all XML parsers used on the server.
+- Use secure XML parsers by explicitly disabling DTD (Document Type Definition) support.
+- Validate and sanitize all user XML inputs before processing.
+- Prefer, when possible, safer serialization formats like JSON instead of XML for user data exchange.
 # Author
 Mindbreakers_ESGI

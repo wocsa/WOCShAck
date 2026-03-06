@@ -1,38 +1,42 @@
 # Description
-
-A Stored Cross-Site Scripting (XSS) vulnerability exists in the user profile page. The biography field accepts HTML code such as `<script>` tags without sanitization. When this content is saved and later displayed to other users, the malicious script executes in their browsers.
+A Stored Cross-Site Scripting (XSS) vulnerability was identified in the Public Profile page's profile picture functionality.
+The application uses the uploaded file name directly in an `<img>` HTML tag without sanitization. Since the attacker controls the file name, they can escape the `src` attribute and inject arbitrary JavaScript that executes in the browser of any user viewing the public profile.
 
 # Exploitation
-
-1. Navigate to the Profile page (`/index.php?page=user/profile.php`).
-2. In the Biography field, inject:
-```html
-<script>alert('XSS')</script>
+1. Navigate to the Profile page (`/index.php?page=user/profile.php`)
+2. In the Profile Picture upload field, select any image but rename it to:
 ```
-3. Save the profile.
-4. The script is stored without any protection and will execute when any user views the profile.
+x' onerror='alert(`XSS`)' name='.jpg
+```
+
+![Step 1: Profile edit page with profile picture upload](1-profile-edit.png)
+
+3. Save the profile. The malicious file name is stored on the server.
+4. When any user visits the public profile page (`/index.php?page=user/public_profile.php`), the image tag is rendered as:
+```html
+<img class="img-thumbnail mt-2" src="uploads/x' onerror='alert(`XSS`)' name='.jpg" width="100" height="100" alt="Profile Picture">
+```
+
+The `src` attribute is broken by the injected single quote, causing the image to fail loading. The `onerror` event handler then fires and executes the JavaScript payload.
+
+![Step 2: Public profile page displaying the profile](2-public-profile.png)
+
+![Step 3: DOM showing the unsanitized img tag](3-dom.png)
 
 # PoC
+After uploading the crafted file name, visiting the public profile triggers the XSS alert:
 
-Payload used:
-
-```html
-<script>alert('XSS')</script>
-```
-
-Result: the code is saved and executed without being blocked or escaped when the profile page is rendered.
+![XSS alert popup triggered on public profile](4-xss.png)
 
 # Risk
-
-This Stored XSS vulnerability (CVSS 7.3) allows an attacker to execute JavaScript in the browser of other users who visit the compromised profile. This can be used to steal session cookies, perform actions on behalf of victims, or redirect users to malicious sites. Since it is stored, it persists and affects every visitor.
+- Stealing sensitive data such as session cookies
+- Automatically downloading malware
+- Displaying a fake login page to steal user credentials
+- Performing unwanted actions with the victim's privileges
 
 # Remediation
-
-Block or escape HTML code (`<`, `>`, `"`, `'`) using `htmlspecialchars()` in PHP before rendering user-supplied content. Validate all fields server-side to prevent script injection.
-
-```php
-<?php echo htmlspecialchars($user['bio'], ENT_QUOTES, 'UTF-8'); ?>
-```
+1. Sanitize the uploaded file name by escaping special characters or randomizing it entirely with only safe characters
+2. Properly escape the file name in the DOM using `htmlspecialchars()` before rendering
 
 # Author
-Amnesia
+EPITA_SRS

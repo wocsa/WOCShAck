@@ -1,34 +1,34 @@
 # Description  
 
-Une vulnérabilité de type Information Disclosure via HTTP Headers a été identifiée.
-Quel que soit l'endpoint consulté sur le domaine <IP>, l'application renvoie dans les en-têtes de réponse HTTP des informations sensibles concernant son environnement serveur, notamment :
+An Information Disclosure vulnerability via HTTP Headers has been identified.
+Regardless of the endpoint accessed on the domain <IP>, the application returns sensitive information regarding its server environment within the HTTP response headers, including:
 
-Le serveur web utilisé (Server: nginx)
+The web server in use (Server: nginx)
 
-La version de PHP (X-Powered-By: PHP/8.2.28)
+The PHP version (X-Powered-By: PHP/8.2.28)
 
-Cette fuite d'information est systématique et peut permettre à un attaquant d'identifier les technologies et versions utilisées, facilitant ainsi la recherche et l'exploitation de vulnérabilités connues.
+This information leak is systematic and allows an attacker to identify the technologies and versions being used, thereby facilitating the discovery and exploitation of known vulnerabilities.
 
 # Exploitation  
 
-1. Envoyer une requête HTTP classique vers n'importe quelle page du domaine.
+1. Send a standard HTTP request to any page on the domain.
 
-1. Examiner les en-têtes HTTP de la réponse avec un proxy
+1. Examine the HTTP response headers using a proxy.
 
-1. Observer que les headers Server et X-Powered-By exposent respectivement le serveur web et la version de PHP utilisée.
+1. Observe that the Server and X-Powered-By headers expose the web server and PHP version in use, respectively.
 
-1. Aucune authentification ni action particulière n'est nécessaire pour accéder à ces informations.
+1. No authentication or special action is required to access this information.
 
 # PoC  
 
-Requête (exemple) :
+Request (example):
 ```http
 GET /index.php?page=analytics/analytics.php HTTP/2
 Host: <IP>
 ```
-Mais cela fonctionne également sur d'autres pages.
+But this also works on other pages.
 
-Réponse (en-têtes HTTP) :
+Response (HTTP headers):
 ```http
 HTTP/2 200 OK
 Server: nginx
@@ -36,23 +36,23 @@ X-Powered-By: PHP/8.2.28
 ```
 # Risk
 
-Permet à un attaquant de cibler précisément des vulnérabilités affectant nginx et PHP (8.2.28).
+Allows an attacker to precisely target vulnerabilities affecting nginx and PHP (8.2.28).
 
-Réduit significativement la phase de reconnaissance d'une attaque ciblée.
+Significantly reduces the reconnaissance phase of a targeted attack.
 
-Peut être utilisée pour affiner des attaques basées sur des exploits publics, 0day ou brute-force ciblé. 
+Can be used to refine attacks based on public exploits, 0days, or targeted brute-force. 
 
 
 # Remediation  
 
-Supprimer ou masquer les en-têtes HTTP sensibles :
+Remove or mask sensitive HTTP headers:
 
-Dans nginx :
+In nginx:
 `server_tokens off;`
 
-Dans PHP :
+In PHP:
     `expose_php = Off`
 
-Adopter une politique de minimisation des informations exposées dans toutes les réponses HTTP.
+Adopt a policy of minimizing exposed information in all HTTP responses.
 # Author
 CESI
