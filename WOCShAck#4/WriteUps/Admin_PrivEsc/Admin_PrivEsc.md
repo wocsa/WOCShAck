@@ -12,7 +12,7 @@ When registering an account, it is possible to use mass assignment in order to e
 ![YWH R563843 image](YWH-R563843-image.png)
 
 # Risk
-An unauthenticated user can gain admin privileges, and therefore compromise the whole application.
+An authenticated user can gain admin privileges, and therefore compromise the whole application.
 
 # Remediation  
 - Do not accept additional parameters to the ones expected.
