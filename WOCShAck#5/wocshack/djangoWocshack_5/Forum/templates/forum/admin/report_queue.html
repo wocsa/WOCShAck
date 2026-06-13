@@ -1,0 +1,369 @@
+{% extends "base/base_forum.html" %}
+{% load static %}
+
+
+{% block title %}Report Queue - V.R.C Forum{% endblock %}
+
+{% block extra_css %}
+<style>
+    .page-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 30px;
+        border-radius: 16px;
+        margin-bottom: 30px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .page-header h1 {
+        font-size: 1.8rem;
+        margin-bottom: 5px;
+    }
+    .header-stats {
+        display: flex;
+        gap: 30px;
+    }
+    .header-stat {
+        text-align: center;
+    }
+    .header-stat-value {
+        font-size: 2rem;
+        font-weight: 700;
+    }
+    .header-stat-label {
+        font-size: 0.85rem;
+        opacity: 0.9;
+    }
+
+    .filters-bar {
+        background: white;
+        padding: 15px 20px;
+        border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        margin-bottom: 20px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        align-items: center;
+    }
+    .filter-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .filter-group label {
+        font-weight: 500;
+        color: #666;
+        font-size: 0.9rem;
+    }
+    .filter-group select {
+        padding: 8px 12px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        font-size: 0.9rem;
+    }
+
+    .status-tabs {
+        display: flex;
+        gap: 5px;
+    }
+    .status-tab {
+        padding: 8px 16px;
+        border-radius: 6px;
+        text-decoration: none;
+        font-weight: 500;
+        color: #666;
+        background: #f3f4f6;
+        transition: all 0.2s ease;
+    }
+    .status-tab:hover {
+        background: #e5e7eb;
+    }
+    .status-tab.active {
+        background: #667eea;
+        color: white;
+    }
+    .status-tab .count {
+        background: rgba(0,0,0,0.1);
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-size: 0.8rem;
+        margin-left: 5px;
+    }
+    .status-tab.active .count {
+        background: rgba(255,255,255,0.2);
+    }
+
+    .reports-list {
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    .report-row {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        padding: 20px;
+        border-bottom: 1px solid #eee;
+        text-decoration: none;
+        color: inherit;
+        transition: background 0.2s ease;
+    }
+    .report-row:last-child {
+        border-bottom: none;
+    }
+    .report-row:hover {
+        background: #f8f9fa;
+    }
+
+    .priority-indicator {
+        width: 8px;
+        height: 60px;
+        border-radius: 4px;
+        flex-shrink: 0;
+    }
+    .priority-1 { background: #94a3b8; }
+    .priority-2 { background: #60a5fa; }
+    .priority-3 { background: #fbbf24; }
+    .priority-4 { background: #f97316; }
+    .priority-5 { background: #ef4444; }
+
+    .report-content {
+        flex: 1;
+    }
+    .report-type {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 5px;
+    }
+    .report-type-badge {
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        background: #f3f4f6;
+        color: #374151;
+    }
+    .report-type-badge.harassment { background: #fee2e2; color: #dc2626; }
+    .report-type-badge.hate_speech { background: #fee2e2; color: #dc2626; }
+    .report-type-badge.spam { background: #fef3c7; color: #92400e; }
+    .report-type-badge.inappropriate { background: #fed7aa; color: #c2410c; }
+
+    .report-description {
+        color: #666;
+        font-size: 0.95rem;
+        margin-bottom: 5px;
+    }
+    .report-meta {
+        font-size: 0.85rem;
+        color: #888;
+    }
+    .report-meta a {
+        color: #667eea;
+        text-decoration: none;
+    }
+
+    .report-assignee {
+        text-align: center;
+        min-width: 100px;
+    }
+    .assignee-avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: #e5e7eb;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 5px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        color: #374151;
+    }
+    .assignee-name {
+        font-size: 0.85rem;
+        color: #666;
+    }
+    .unassigned {
+        color: #9ca3af;
+        font-style: italic;
+    }
+
+    .report-date {
+        text-align: right;
+        min-width: 100px;
+        font-size: 0.85rem;
+        color: #888;
+    }
+
+    .empty-state {
+        padding: 60px 20px;
+        text-align: center;
+        color: #888;
+    }
+    .empty-state svg {
+        width: 60px;
+        height: 60px;
+        margin-bottom: 15px;
+        color: #d1d5db;
+    }
+
+    .pagination-container {
+        display: flex;
+        justify-content: center;
+        margin-top: 30px;
+    }
+    .pagination {
+        display: flex;
+        gap: 5px;
+    }
+    .pagination a, .pagination span {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 40px;
+        height: 40px;
+        padding: 0 12px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 500;
+    }
+    .pagination a {
+        background: white;
+        color: #333;
+        border: 1px solid #ddd;
+    }
+    .pagination a:hover {
+        background: #667eea;
+        color: white;
+        border-color: #667eea;
+    }
+    .pagination .current {
+        background: #667eea;
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>Report Queue</h1>
+        <p>Review and manage user reports</p>
+    </div>
+    <div class="header-stats">
+        <div class="header-stat">
+            <div class="header-stat-value">{{ status_counts.pending }}</div>
+            <div class="header-stat-label">Pending</div>
+        </div>
+        <div class="header-stat">
+            <div class="header-stat-value">{{ status_counts.under_review }}</div>
+            <div class="header-stat-label">In Review</div>
+        </div>
+    </div>
+</div>
+
+<div class="filters-bar">
+    <div class="status-tabs">
+        <a href="?status=pending" class="status-tab {% if status_filter == 'pending' %}active{% endif %}">
+            Pending <span class="count">{{ status_counts.pending }}</span>
+        </a>
+        <a href="?status=under_review" class="status-tab {% if status_filter == 'under_review' %}active{% endif %}">
+            In Review <span class="count">{{ status_counts.under_review }}</span>
+        </a>
+        <a href="?status=action_taken" class="status-tab {% if status_filter == 'action_taken' %}active{% endif %}">
+            Actioned <span class="count">{{ status_counts.action_taken }}</span>
+        </a>
+        <a href="?status=dismissed" class="status-tab {% if status_filter == 'dismissed' %}active{% endif %}">
+            Dismissed <span class="count">{{ status_counts.dismissed }}</span>
+        </a>
+        <a href="?status=" class="status-tab {% if not status_filter %}active{% endif %}">
+            All
+        </a>
+    </div>
+
+    <form method="get" style="display: flex; gap: 15px; margin-left: auto;">
+        <input type="hidden" name="status" value="{{ status_filter }}">
+        <div class="filter-group">
+            <label>Type:</label>
+            <select name="type" onchange="this.form.submit()">
+                <option value="">All Types</option>
+                {% for value, label in report_types %}
+                <option value="{{ value }}" {% if type_filter == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="filter-group">
+            <label>Assigned:</label>
+            <select name="assigned" onchange="this.form.submit()">
+                <option value="">All</option>
+                <option value="me" {% if assigned_filter == 'me' %}selected{% endif %}>Assigned to me</option>
+                <option value="unassigned" {% if assigned_filter == 'unassigned' %}selected{% endif %}>Unassigned</option>
+            </select>
+        </div>
+    </form>
+</div>
+
+<div class="reports-list">
+    {% for report in reports %}
+    <a href="{% url 'forum_report_detail' report_id=report.id %}" class="report-row">
+        <div class="priority-indicator priority-{{ report.priority }}"></div>
+
+        <div class="report-content">
+            <div class="report-type">
+                <span class="report-type-badge {{ report.report_type }}">{{ report.get_report_type_display }}</span>
+                <span style="color: #888; font-size: 0.85rem;">Priority {{ report.priority }}</span>
+            </div>
+            <div class="report-description">
+                {{ report.description|truncatewords:25 }}
+            </div>
+            <div class="report-meta">
+                Reported by {% if report.reporter %}{{ report.reporter.username }}{% else %}Anonymous{% endif %}
+                {% if report.reported_user %} | Against: <a>{{ report.reported_user.username }}</a>{% endif %}
+                {% if report.reported_post %} | Post in topic{% endif %}
+                {% if report.reported_topic %} | Topic{% endif %}
+            </div>
+        </div>
+
+        <div class="report-assignee">
+            {% if report.assigned_to %}
+            <div class="assignee-avatar">{{ report.assigned_to.username|slice:":1"|upper }}</div>
+            <div class="assignee-name">{{ report.assigned_to.username }}</div>
+            {% else %}
+            <div class="assignee-avatar" style="background: #f3f4f6;">?</div>
+            <div class="assignee-name unassigned">Unassigned</div>
+            {% endif %}
+        </div>
+
+        <div class="report-date">
+            {{ report.created_at|timesince }}<br>ago
+        </div>
+    </a>
+    {% empty %}
+    <div class="empty-state">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <h3>No reports found</h3>
+        <p>No reports match your current filters</p>
+    </div>
+    {% endfor %}
+</div>
+
+{% if page_obj.has_other_pages %}
+<div class="pagination-container">
+    <nav class="pagination">
+        {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}&status={{ status_filter }}&type={{ type_filter }}&assigned={{ assigned_filter }}">Previous</a>
+        {% endif %}
+        <span class="current">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+        {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}&status={{ status_filter }}&type={{ type_filter }}&assigned={{ assigned_filter }}">Next</a>
+        {% endif %}
+    </nav>
+</div>
+{% endif %}
+{% endblock %}

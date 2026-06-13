@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% load static %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>V.R.C - Admin: Accounts</title>
+    <link rel="stylesheet" href="{% static 'css/account/account.css' %}">
+    <link rel="icon" type="image/svg+xml" href="{% static 'img/favicon.svg' %}">
+    <link rel="stylesheet" href="{% static 'header/css/header.css' %}">
+    <style>
+        body { padding-top: 70px; }
+        .admin-container {
+            max-width: 1100px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+            position: relative;
+            z-index: 1;
+        }
+        .nav-back {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            margin-bottom: 2rem;
+        }
+        .nav-back:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+            color: white;
+            text-decoration: none;
+        }
+        .admin-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            background: rgba(255,255,255,0.9);
+            border: 1px solid rgba(102,126,234,0.1);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(102,126,234,0.1);
+        }
+        .admin-table th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 0.85rem 1rem;
+            text-align: left;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+        .admin-table td {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            font-size: 0.9rem;
+            color: #444;
+        }
+        .admin-table tr:last-child td { border-bottom: none; }
+        .admin-table tr:hover td { background: rgba(102,126,234,0.03); }
+        .badge {
+            display: inline-block;
+            padding: 0.2rem 0.6rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .badge-info { background: rgba(102,126,234,0.12); color: #667eea; }
+        .badge-success { background: rgba(16,185,129,0.12); color: #10b981; }
+        .summary-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        .summary-bar .count {
+            font-size: 0.9rem;
+            color: #666;
+        }
+        .alert-warning {
+            background: rgba(245,158,11,0.1);
+            border: 1px solid rgba(245,158,11,0.3);
+            color: #92400e;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            font-size: 0.875rem;
+        }
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-top: 1.5rem;
+            list-style: none;
+            padding: 0;
+        }
+        .pagination a, .pagination span {
+            display: inline-block;
+            padding: 0.4rem 0.85rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        .pagination a {
+            background: rgba(102,126,234,0.1);
+            color: #667eea;
+            border: 1px solid rgba(102,126,234,0.2);
+        }
+        .pagination a:hover { background: rgba(102,126,234,0.2); }
+        .pagination .current {
+            background: #667eea;
+            color: white;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #aaa;
+        }
+        .empty-state .icon { font-size: 3rem; margin-bottom: 1rem; }
+    </style>
+</head>
+<body>
+    {% if user.is_authenticated %}
+        {% include 'header/html/header_account.html' %}
+    {% else %}
+        {% include 'header/html/header.html' %}
+    {% endif %}
+
+    <div class="admin-container">
+        <a href="{% url 'banking_admin' %}" class="nav-back">← Back to Admin</a>
+
+        <h1 style="color: #333; margin-bottom: 0.5rem;">Accounts Management</h1>
+        <p style="color: #666; margin-bottom: 1.5rem;">All banking accounts and their status.</p>
+
+        {% if backend_error %}
+        <div class="alert-warning">⚠️ {{ backend_error|escape }} Balance data may be unavailable.</div>
+        {% endif %}
+
+        <div class="summary-bar">
+            <span class="count">{{ total_accounts }} account{{ total_accounts|pluralize }} found</span>
+        </div>
+
+        {% if page_obj %}
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Username</th>
+                    <th>Email</th>
+                    <th>Cards</th>
+                    <th>Active</th>
+                    <th>Balance</th>
+                    <th>Joined</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for acc in page_obj %}
+                <tr>
+                    <td>
+                        {% if acc.user %}
+                            <strong>{{ acc.user.username|escape }}</strong>
+                        {% else %}
+                            <em style="color:#aaa;">backend account #{{ acc.backend_user_id }}</em>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if acc.user %}
+                            {{ acc.user.email|escape|default:"—" }}
+                        {% else %}
+                            <span style="color:#aaa;">{{ acc.account_number|default:"—" }}</span>
+                        {% endif %}
+                    </td>
+                    <td><span class="badge badge-info">{{ acc.card_count }}</span></td>
+                    <td><span class="badge badge-success">{{ acc.active_cards }}</span></td>
+                    <td>
+                        {% if acc.balance is not None %}
+                            {{ acc.balance }} NE
+                        {% else %}
+                            <span style="color: #aaa;">N/A</span>
+                        {% endif %}
+                    </td>
+                    <td style="font-size: 0.8rem; color: #888;">
+                        {% if acc.user %}{{ acc.user.date_joined|date:"M d, Y" }}{% else %}—{% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6">
+                        <div class="empty-state">
+                            <div class="icon">👥</div>
+                            <p>No banking accounts found.</p>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        {% if page_obj.paginator.num_pages > 1 %}
+        <div class="pagination">
+            {% if page_obj.has_previous %}
+                <a href="?page={{ page_obj.previous_page_number }}">← Prev</a>
+            {% endif %}
+            {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                    <span class="current">{{ num }}</span>
+                {% elif num > page_obj.number|add:"-3" and num < page_obj.number|add:"3" %}
+                    <a href="?page={{ num }}">{{ num }}</a>
+                {% endif %}
+            {% endfor %}
+            {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}">Next →</a>
+            {% endif %}
+        </div>
+        {% endif %}
+        {% endif %}
+    </div>
+
+    <script src="{% static 'header/js/hamburger_menu.js' %}"></script>
+    <script src="{% static 'header/js/user_hamburger_menu.js' %}"></script>
+</body>
+</html>

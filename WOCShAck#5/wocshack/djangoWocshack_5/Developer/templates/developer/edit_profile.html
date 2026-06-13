@@ -1,0 +1,60 @@
+{% extends 'base/base.html' %}
+{% block title %}Edit Developer Profile - V.R.C{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dev-container { max-width: 700px; margin: 0 auto; padding: var(--vrc-spacing-xl); }
+    .form-card { background: var(--vrc-white); border-radius: var(--vrc-radius-lg); padding: var(--vrc-spacing-xl); box-shadow: var(--vrc-shadow-md); }
+    .form-card h1 { font-size: var(--vrc-font-size-2xl); font-weight: var(--vrc-font-weight-bold); margin-bottom: var(--vrc-spacing-lg); color: var(--vrc-gray-800); }
+    .form-group { margin-bottom: var(--vrc-spacing-lg); }
+    .form-group label { display: block; font-size: var(--vrc-font-size-sm); font-weight: var(--vrc-font-weight-medium); color: var(--vrc-gray-700); margin-bottom: var(--vrc-spacing-xs); }
+    .form-group input, .form-group textarea { width: 100%; padding: 10px 14px; border: 1px solid var(--vrc-gray-300); border-radius: var(--vrc-radius-md); font-size: var(--vrc-font-size-base); font-family: var(--vrc-font-family); transition: border-color var(--vrc-transition-normal); box-sizing: border-box; }
+    .form-group input:focus, .form-group textarea:focus { outline: none; border-color: var(--vrc-primary); box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1); }
+    .form-group .help-text { font-size: var(--vrc-font-size-xs); color: var(--vrc-gray-500); margin-top: 4px; }
+    .btn-row { display: flex; gap: var(--vrc-spacing-sm); margin-top: var(--vrc-spacing-xl); }
+    .btn-primary { padding: 10px 24px; background: var(--vrc-gradient); color: white; border: none; border-radius: var(--vrc-radius-md); cursor: pointer; font-size: var(--vrc-font-size-base); }
+    .btn-secondary { padding: 10px 24px; background: var(--vrc-gray-100); color: var(--vrc-gray-700); border: none; border-radius: var(--vrc-radius-md); cursor: pointer; text-decoration: none; font-size: var(--vrc-font-size-base); }
+    .back-link { display: inline-block; margin-bottom: var(--vrc-spacing-lg); color: var(--vrc-primary); text-decoration: none; font-size: var(--vrc-font-size-sm); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dev-container">
+    <a href="{% url 'developer_profile' %}" class="back-link">&larr; Back to Profile</a>
+    <div class="form-card">
+        <h1>Edit Profile</h1>
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="display_name">Display Name</label>
+                <input type="text" id="display_name" name="display_name" value="{{ profile.display_name }}" maxlength="150" required>
+            </div>
+            <div class="form-group">
+                <label for="tagline">Tagline</label>
+                <input type="text" id="tagline" name="tagline" value="{{ profile.tagline }}" maxlength="255" placeholder="CSS wizard specializing in animations...">
+            </div>
+            <div class="form-group">
+                <label for="website">Website</label>
+                <input type="url" id="website" name="website" value="{{ profile.website }}" placeholder="https://yoursite.com">
+            </div>
+            <div class="form-group">
+                <label for="github_url">GitHub URL</label>
+                <input type="url" id="github_url" name="github_url" value="{{ profile.github_url }}" placeholder="https://github.com/yourusername">
+            </div>
+            <div class="form-group">
+                <label for="twitter_url">Twitter URL</label>
+                <input type="url" id="twitter_url" name="twitter_url" value="{{ profile.twitter_url }}" placeholder="https://twitter.com/yourusername">
+            </div>
+            <div class="form-group">
+                <label for="specialties">Specialties</label>
+                <input type="text" id="specialties" name="specialties" value="{{ profile.specialties|join:', ' }}" placeholder="animations, layouts, themes">
+                <div class="help-text">Comma-separated list of your CSS specialties</div>
+            </div>
+            <div class="btn-row">
+                <button type="submit" class="btn-primary">Save Changes</button>
+                <a href="{% url 'developer_profile' %}" class="btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

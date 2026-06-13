@@ -1,0 +1,258 @@
+{% extends "base/base_forum.html" %}
+{% load static %}
+
+
+{% block title %}Notifications - V.R.C Forum{% endblock %}
+
+{% block extra_css %}
+<style>
+    .notifications-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 30px;
+        border-radius: 16px;
+        margin-bottom: 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .notifications-header-left {
+        display: flex;
+        flex-direction: column;
+    }
+    .breadcrumb {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        margin-bottom: 10px;
+        font-size: 0.9rem;
+    }
+    .breadcrumb a {
+        color: rgba(255,255,255,0.8);
+        text-decoration: none;
+    }
+    .breadcrumb a:hover {
+        color: white;
+    }
+    .breadcrumb span {
+        opacity: 0.6;
+    }
+    .notifications-header h1 {
+        font-size: 1.8rem;
+    }
+    .unread-badge {
+        background: rgba(255,255,255,0.2);
+        padding: 4px 14px;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        margin-left: 10px;
+    }
+    .mark-all-btn {
+        padding: 10px 20px;
+        background: rgba(255,255,255,0.2);
+        color: white;
+        border: 1px solid rgba(255,255,255,0.3);
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.2s ease;
+    }
+    .mark-all-btn:hover {
+        background: rgba(255,255,255,0.3);
+    }
+
+    .notification-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    .notification-item {
+        background: white;
+        border-radius: 12px;
+        padding: 15px 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        transition: all 0.2s ease;
+    }
+    .notification-item.unread {
+        border-left: 4px solid #667eea;
+        background: #f8f9ff;
+    }
+    .notification-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+    .notification-icon.mention { background: #dbeafe; color: #3b82f6; }
+    .notification-icon.reply { background: #d1fae5; color: #10b981; }
+    .notification-icon.quote { background: #fef3c7; color: #f59e0b; }
+    .notification-icon.like { background: #fee2e2; color: #ef4444; }
+    .notification-icon.warning { background: #fee2e2; color: #ef4444; }
+    .notification-icon.moderation { background: #f3e8ff; color: #8b5cf6; }
+    .notification-icon svg {
+        width: 20px;
+        height: 20px;
+    }
+    .notification-content {
+        flex: 1;
+    }
+    .notification-message {
+        color: #333;
+        font-size: 0.95rem;
+    }
+    .notification-time {
+        color: #888;
+        font-size: 0.8rem;
+        margin-top: 3px;
+    }
+    .notification-actions {
+        display: flex;
+        gap: 8px;
+    }
+    .notification-link {
+        padding: 6px 12px;
+        background: #f0f0ff;
+        color: #667eea;
+        border-radius: 6px;
+        text-decoration: none;
+        font-size: 0.85rem;
+        transition: all 0.2s ease;
+    }
+    .notification-link:hover {
+        background: #667eea;
+        color: white;
+    }
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: white;
+        border-radius: 12px;
+    }
+    .empty-state h3 { color: #333; margin-bottom: 10px; }
+    .empty-state p { color: #888; }
+
+    .pagination-container {
+        display: flex;
+        justify-content: center;
+        margin-top: 30px;
+    }
+    .pagination {
+        display: flex;
+        gap: 5px;
+    }
+    .pagination a, .pagination span {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 40px;
+        height: 40px;
+        padding: 0 12px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 500;
+    }
+    .pagination a {
+        background: white;
+        color: #333;
+        border: 1px solid #ddd;
+    }
+    .pagination .current {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="notifications-header">
+    <div class="notifications-header-left">
+        <div class="breadcrumb">
+            <a href="{% url 'forum_index' %}">Forum</a>
+            <span>/</span>
+            <span>Notifications</span>
+        </div>
+        <h1>
+            Notifications
+            {% if unread_count > 0 %}
+            <span class="unread-badge">{{ unread_count }} unread</span>
+            {% endif %}
+        </h1>
+    </div>
+    {% if unread_count > 0 %}
+    <form action="{% url 'forum_mark_all_notifications_read' %}" method="post">
+        {% csrf_token %}
+        <button type="submit" class="mark-all-btn">Mark All Read</button>
+    </form>
+    {% endif %}
+</div>
+
+<div class="notification-list">
+    {% for notification in notifications %}
+    <div class="notification-item {% if not notification.is_read %}unread{% endif %}">
+        <div class="notification-icon {{ notification.notification_type }}">
+            {% if notification.notification_type == 'mention' %}
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
+            </svg>
+            {% elif notification.notification_type == 'reply' %}
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+            </svg>
+            {% elif notification.notification_type == 'like' %}
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+            </svg>
+            {% else %}
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+            </svg>
+            {% endif %}
+        </div>
+        <div class="notification-content">
+            <div class="notification-message">{{ notification.message }}</div>
+            <div class="notification-time">
+                {% if notification.sender %}from {{ notification.sender.username }} | {% endif %}
+                {{ notification.created_at|timesince }} ago
+            </div>
+        </div>
+        <div class="notification-actions">
+            {% if notification.link %}
+            {% if not notification.is_read %}
+            <form action="{% url 'forum_mark_notification_read' notification_id=notification.id %}" method="post" style="display: inline;">
+                {% csrf_token %}
+                <button type="submit" class="notification-link">View</button>
+            </form>
+            {% else %}
+            <a href="{{ notification.link }}" class="notification-link">View</a>
+            {% endif %}
+            {% endif %}
+        </div>
+    </div>
+    {% empty %}
+    <div class="empty-state">
+        <h3>No notifications</h3>
+        <p>You will receive notifications when someone mentions you, replies to your topics, or likes your posts.</p>
+    </div>
+    {% endfor %}
+</div>
+
+{% if page_obj.has_other_pages %}
+<div class="pagination-container">
+    <nav class="pagination">
+        {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}">&lsaquo; Previous</a>
+        {% endif %}
+        <span class="current">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+        {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}">Next &rsaquo;</a>
+        {% endif %}
+    </nav>
+</div>
+{% endif %}
+{% endblock %}

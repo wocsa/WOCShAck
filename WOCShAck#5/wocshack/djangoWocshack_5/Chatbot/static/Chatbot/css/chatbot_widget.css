@@ -1,0 +1,236 @@
+/* V.R.C Chatbot Widget Styles - Embeddable mini chat */
+/* Styling for embedded iframe chat widget */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html, body {
+    height: 100%;
+    width: 100%;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: transparent;
+    overflow: hidden;
+}
+
+.widget-container {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* Hide header when embedded - outer container already has header */
+.widget-header {
+    display: none;
+}
+
+.widget-avatar {
+    font-size: 24px;
+}
+
+.widget-title {
+    font-weight: 600;
+}
+
+.widget-messages {
+    flex: 1;
+    padding: 16px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.message {
+    max-width: 85%;
+    animation: slideIn 0.2s ease;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.bot-message {
+    align-self: flex-start;
+}
+
+.user-message {
+    align-self: flex-end;
+}
+
+.message p {
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-size: 0.9rem;
+    line-height: 1.4;
+    color: #ffffff;
+}
+
+.bot-message p {
+    background: rgba(102, 126, 234, 0.3);
+    border-top-left-radius: 4px;
+}
+
+.user-message p {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-top-right-radius: 4px;
+}
+
+/* Typing indicator animation */
+.typing p {
+    color: rgba(255, 255, 255, 0.6);
+    font-style: italic;
+}
+
+.widget-form {
+    padding: 12px 16px;
+    background: rgba(0, 0, 0, 0.2);
+    display: flex;
+    gap: 10px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.widget-input {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    padding: 10px 14px;
+    color: #ffffff;
+    font-size: 0.9rem;
+    outline: none;
+    transition: border-color 0.2s ease;
+}
+
+.widget-input::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.widget-input:focus {
+    border-color: #667eea;
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.widget-send {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    border-radius: 8px;
+    padding: 10px 18px;
+    color: #ffffff;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.widget-send:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.widget-send:active {
+    transform: translateY(0);
+}
+
+.widget-messages::-webkit-scrollbar {
+    width: 4px;
+}
+
+.widget-messages::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.widget-messages::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 2px;
+}
+
+.widget-messages::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+/* Flag button in widget messages */
+.widget-message-actions {
+    display: flex;
+    justify-content: flex-end;
+    padding: 4px 14px 6px;
+}
+
+.widget-flag-btn {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.3);
+    cursor: pointer;
+    padding: 2px 4px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+}
+
+.widget-flag-btn:hover {
+    color: #f59e0b;
+    background: rgba(245, 158, 11, 0.15);
+}
+
+.widget-flag-btn:disabled {
+    color: rgba(255, 255, 255, 0.15);
+    cursor: not-allowed;
+    background: none;
+}
+
+/* Inline flag reason menu */
+.widget-flag-menu {
+    position: absolute;
+    bottom: 100%;
+    right: 0;
+    margin-bottom: 4px;
+    background: rgba(22, 33, 62, 0.97);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    padding: 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 140px;
+    z-index: 50;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.widget-message-actions {
+    position: relative;
+}
+
+.widget-flag-option {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.8);
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.15s ease;
+}
+
+.widget-flag-option:hover {
+    background: rgba(102, 126, 234, 0.3);
+}
+
+.widget-flag-cancel {
+    color: rgba(255, 255, 255, 0.4);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    margin-top: 2px;
+    padding-top: 8px;
+}

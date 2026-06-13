@@ -1,0 +1,150 @@
+{% extends "base/base.html" %}
+{% load static %}
+
+{% block title %}VRC — Notification Preferences{% endblock %}
+
+{% block module_css %}
+<link rel="stylesheet" href="{% static 'community/css/notifications.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="main-container">
+<nav class="vrc-breadcrumbs">
+  <a href="{% url 'community:index' %}">Community</a>
+  <span class="bc-sep">›</span>
+  <a href="{% url 'community:notifications_list' %}">Notifications</a>
+  <span class="bc-sep">›</span>
+  <span class="bc-current">Preferences</span>
+</nav>
+<div class="notif-wrapper">
+
+  <div class="notif-header">
+    <div>
+      <h1 class="notif-title">Notification Preferences</h1>
+      <p class="notif-subtitle">Choose which notifications you want to receive.</p>
+    </div>
+    <a href="{% url 'community:notifications_list' %}" class="notif-btn notif-btn--ghost">← Back</a>
+  </div>
+
+  <form method="post" class="notif-prefs-form">
+    {% csrf_token %}
+    <div class="notif-prefs-list">
+
+      <label class="notif-pref-row">
+        <div class="notif-pref-info">
+          <span class="notif-pref-icon">👥</span>
+          <div>
+            <strong>Friend Requests</strong>
+            <p>When someone sends or accepts a friend request.</p>
+          </div>
+        </div>
+        <input type="checkbox" name="friend_requests" class="notif-toggle" {% if prefs.friend_requests %}checked{% endif %}>
+      </label>
+
+      <label class="notif-pref-row">
+        <div class="notif-pref-info">
+          <span class="notif-pref-icon">💬</span>
+          <div>
+            <strong>Messages</strong>
+            <p>When you receive a new private message.</p>
+          </div>
+        </div>
+        <input type="checkbox" name="messages" class="notif-toggle" {% if prefs.messages %}checked{% endif %}>
+      </label>
+
+      <label class="notif-pref-row">
+        <div class="notif-pref-info">
+          <span class="notif-pref-icon">⬆</span>
+          <div>
+            <strong>Level Ups</strong>
+            <p>When you reach a new level.</p>
+          </div>
+        </div>
+        <input type="checkbox" name="level_ups" class="notif-toggle" {% if prefs.level_ups %}checked{% endif %}>
+      </label>
+
+      <label class="notif-pref-row">
+        <div class="notif-pref-info">
+          <span class="notif-pref-icon">🏅</span>
+          <div>
+            <strong>Achievements</strong>
+            <p>When you unlock an achievement or daily reward.</p>
+          </div>
+        </div>
+        <input type="checkbox" name="achievements" class="notif-toggle" {% if prefs.achievements %}checked{% endif %}>
+      </label>
+
+      <label class="notif-pref-row">
+        <div class="notif-pref-info">
+          <span class="notif-pref-icon">➕</span>
+          <div>
+            <strong>Followers</strong>
+            <p>When someone starts following you.</p>
+          </div>
+        </div>
+        <input type="checkbox" name="followers" class="notif-toggle" {% if prefs.followers %}checked{% endif %}>
+      </label>
+
+      <label class="notif-pref-row">
+        <div class="notif-pref-info">
+          <span class="notif-pref-icon">🔔</span>
+          <div>
+            <strong>System</strong>
+            <p>Important platform updates and alerts.</p>
+          </div>
+        </div>
+        <input type="checkbox" name="system" class="notif-toggle" {% if prefs.system %}checked{% endif %}>
+      </label>
+
+      <label class="notif-pref-row">
+        <div class="notif-pref-info">
+          <span class="notif-pref-icon">📝</span>
+          <div>
+            <strong>Blog</strong>
+            <p>When someone you follow publishes a new post, or comments on yours.</p>
+          </div>
+        </div>
+        <input type="checkbox" name="blog" class="notif-toggle" {% if prefs.blog %}checked{% endif %}>
+      </label>
+
+      <label class="notif-pref-row">
+        <div class="notif-pref-info">
+          <span class="notif-pref-icon">💬</span>
+          <div>
+            <strong>Forum</strong>
+            <p>When someone replies to your topic or mentions you.</p>
+          </div>
+        </div>
+        <input type="checkbox" name="forum" class="notif-toggle" {% if prefs.forum %}checked{% endif %}>
+      </label>
+
+      <label class="notif-pref-row">
+        <div class="notif-pref-info">
+          <span class="notif-pref-icon">📦</span>
+          <div>
+            <strong>Orders & Reviews</strong>
+            <p>When your order status changes or someone reviews your CSS.</p>
+          </div>
+        </div>
+        <input type="checkbox" name="orders" class="notif-toggle" {% if prefs.orders %}checked{% endif %}>
+      </label>
+
+      <label class="notif-pref-row">
+        <div class="notif-pref-info">
+          <span class="notif-pref-icon">📢</span>
+          <div>
+            <strong>Advertisements</strong>
+            <p>When your advertisement is approved or rejected.</p>
+          </div>
+        </div>
+        <input type="checkbox" name="advertisements" class="notif-toggle" {% if prefs.advertisements %}checked{% endif %}>
+      </label>
+
+    </div>
+
+    <button type="submit" class="notif-btn notif-btn--primary">Save Preferences</button>
+  </form>
+
+</div>
+</div>
+{% endblock %}

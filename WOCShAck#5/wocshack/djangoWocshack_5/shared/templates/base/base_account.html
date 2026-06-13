@@ -1,0 +1,27 @@
+{% extends "base/base.html" %}
+{% load static %}
+
+{# Used for authenticated user pages: account home, settings, profile #}
+
+{% block body_class %}vrc-body account-page{% endblock %}
+
+{% block module_css %}
+<link rel="stylesheet" href="{% static 'account/css/account.css' %}">
+{% endblock %}
+
+{% block content_wrapper_class %}account-container{% endblock %}
+
+{% block content %}
+<div class="account-card animate-fade-in-up">
+    {% block account_header %}
+    <div class="account-header">
+        <h1 class="account-title">{% block account_title %}My Account{% endblock %}</h1>
+        {% block account_subtitle %}{% endblock %}
+    </div>
+    {% endblock %}
+
+    {% block account_content %}
+    <p>Welcome to your V.R.C account dashboard.</p>
+    {% endblock %}
+</div>
+{% endblock %}

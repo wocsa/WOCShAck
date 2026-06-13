@@ -1,0 +1,225 @@
+{% extends "base/base_shop.html" %}
+{% load static %}
+
+{% block title %}{{ seller.username }}'s Shop – V.R.C CSS Marketplace{% endblock %}
+
+{% block module_css %}
+<link rel="stylesheet" href="{% static 'css/shop.css' %}">
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .seller-header {
+        background: var(--vrc-gradient);
+        color: white;
+        border-radius: var(--vrc-radius-xl);
+        padding: 2rem;
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    .seller-avatar {
+        width: 72px;
+        height: 72px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        font-weight: 700;
+        color: white;
+        flex-shrink: 0;
+    }
+    .seller-info h1 {
+        color: white;
+        margin: 0 0 0.25rem;
+        font-size: 1.5rem;
+    }
+    .seller-info p {
+        margin: 0;
+        opacity: 0.85;
+        font-size: 0.9rem;
+    }
+    .seller-stats {
+        display: flex;
+        gap: 2rem;
+        margin-top: 0.75rem;
+        flex-wrap: wrap;
+    }
+    .seller-stats span {
+        font-size: 0.875rem;
+        opacity: 0.9;
+    }
+    .seller-stats strong {
+        font-size: 1.1rem;
+        font-weight: 700;
+        display: block;
+        color: white;
+    }
+    .product-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 1.5rem;
+    }
+    .product-card {
+        background: white;
+        border-radius: var(--vrc-radius-lg);
+        overflow: hidden;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+        transition: box-shadow 0.2s, transform 0.2s;
+        text-decoration: none;
+        color: inherit;
+        display: block;
+    }
+    .product-card:hover {
+        box-shadow: 0 4px 16px rgba(102,126,234,0.2);
+        transform: translateY(-2px);
+    }
+    .product-preview {
+        width: 100%;
+        height: 140px;
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+    }
+    .product-preview img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        -webkit-user-drag: none;
+        pointer-events: none;
+    }
+    .product-preview .no-preview {
+        color: rgba(255,255,255,0.3);
+        font-size: 0.75rem;
+    }
+    .product-info {
+        padding: 0.75rem 1rem 1rem;
+    }
+    .product-info h3 {
+        font-size: 0.95rem;
+        margin: 0 0 0.25rem;
+        color: var(--vrc-gray-900);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .product-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.8rem;
+        color: var(--vrc-gray-500);
+    }
+    .product-price {
+        font-weight: 700;
+        color: var(--vrc-primary);
+        font-size: 0.95rem;
+    }
+    .empty-state {
+        text-align: center;
+        padding: 3rem 1rem;
+        color: var(--vrc-gray-500);
+    }
+    .profile-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        color: rgba(255,255,255,0.85);
+        font-size: 0.85rem;
+        text-decoration: none;
+        margin-top: 0.5rem;
+        transition: color 0.15s;
+    }
+    .profile-link:hover { color: white; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="animate-fade-in-up" style="max-width: 1200px; margin: 0 auto; padding: 0 var(--vrc-spacing-xl);">
+
+    <!-- Seller Header -->
+    <div class="seller-header">
+        <div class="seller-avatar">{{ seller.username|slice:":1"|upper }}</div>
+        <div class="seller-info">
+            <h1>{{ seller.get_full_name|default:seller.username }}</h1>
+            <p>@{{ seller.username }}</p>
+            <div class="seller-stats">
+                <span><strong>{{ total_products }}</strong> Product{{ total_products|pluralize }}</span>
+                {% if overall_rating %}
+                <span><strong>{{ overall_rating|floatformat:1 }} ★</strong> Avg Rating</span>
+                {% endif %}
+            </div>
+            <a href="{% url 'public_profile_by_username' seller.username %}" class="profile-link">
+                View full profile →
+            </a>
+            <a href="{% url 'forum_user_profile' username=seller.username %}" class="profile-link" style="margin-left:0.5rem;">
+                Forum profile →
+            </a>
+        </div>
+    </div>
+
+    <!-- Product Grid -->
+    <h2 style="margin-bottom: 1rem; font-size: 1.1rem; color: var(--vrc-gray-700);">
+        CSS Loaders by {{ seller.username }}
+        {% if page_obj.paginator.count %}
+        <span style="font-weight: 400; color: var(--vrc-gray-500); font-size: 0.9rem;">({{ page_obj.paginator.count }})</span>
+        {% endif %}
+    </h2>
+
+    {% if page_obj.object_list %}
+    <div class="product-grid">
+        {% for product in page_obj %}
+        <a href="{% url 'product_detail' product.id %}" class="product-card">
+            <div class="product-preview">
+                {% if product.preview_gif %}
+                <img src="{{ product.preview_gif.url }}" alt="{{ product.name }}">
+                {% else %}
+                <span class="no-preview">No preview</span>
+                {% endif %}
+            </div>
+            <div class="product-info">
+                <h3 title="{{ product.name }}">{{ product.name }}</h3>
+                <div class="product-meta">
+                    <span>
+                        {% if product.avg_rating %}
+                        {{ product.avg_rating|floatformat:1 }} ★
+                        {% else %}
+                        No reviews
+                        {% endif %}
+                    </span>
+                    <span class="product-price">{{ product.price }} N</span>
+                </div>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if page_obj.has_other_pages %}
+    <div style="display: flex; justify-content: center; gap: 0.5rem; margin-top: 2rem; flex-wrap: wrap;">
+        {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}" class="btn btn-outline" style="padding: 0.4rem 0.9rem;">← Prev</a>
+        {% endif %}
+        <span style="padding: 0.4rem 0.75rem; color: var(--vrc-gray-500); font-size: 0.9rem; line-height: 2;">
+            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+        </span>
+        {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}" class="btn btn-outline" style="padding: 0.4rem 0.9rem;">Next →</a>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    {% else %}
+    <div class="empty-state">
+        <p>This seller has no products listed yet.</p>
+        <a href="{% url 'shop' %}" class="btn btn-primary" style="margin-top: 1rem;">Browse all products</a>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

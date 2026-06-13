@@ -1,0 +1,238 @@
+{% extends "base/base_forum.html" %}
+{% load static %}
+
+
+{% block title %}Deleted Content - V.R.C Forum{% endblock %}
+
+{% block extra_css %}
+<style>
+    .page-header {
+        background: linear-gradient(135deg, #64748b 0%, #475569 100%);
+        color: white;
+        padding: 30px;
+        border-radius: 16px;
+        margin-bottom: 30px;
+    }
+    .page-header h1 {
+        font-size: 1.8rem;
+        margin-bottom: 5px;
+    }
+
+    .filters-bar {
+        background: white;
+        padding: 15px 20px;
+        border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        margin-bottom: 20px;
+    }
+    .filter-tabs {
+        display: flex;
+        gap: 10px;
+    }
+    .filter-tab {
+        padding: 8px 16px;
+        border-radius: 6px;
+        text-decoration: none;
+        font-weight: 500;
+        color: #666;
+        background: #f3f4f6;
+    }
+    .filter-tab:hover {
+        background: #e5e7eb;
+    }
+    .filter-tab.active {
+        background: #64748b;
+        color: white;
+    }
+
+    .content-list {
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    .content-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 20px;
+        padding: 20px;
+        border-bottom: 1px solid #eee;
+        text-decoration: none;
+        color: inherit;
+        transition: background 0.2s ease;
+    }
+    .content-item:last-child {
+        border-bottom: none;
+    }
+    .content-item:hover {
+        background: #f8f9fa;
+    }
+
+    .content-type-badge {
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        flex-shrink: 0;
+    }
+    .badge-post {
+        background: #e0e7ff;
+        color: #4f46e5;
+    }
+    .badge-topic {
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+    .content-info {
+        flex: 1;
+    }
+    .content-title {
+        font-weight: 500;
+        color: #333;
+        margin-bottom: 5px;
+    }
+    .content-preview {
+        color: #666;
+        font-size: 0.9rem;
+        margin-bottom: 5px;
+    }
+    .content-meta {
+        font-size: 0.85rem;
+        color: #888;
+    }
+
+    .content-status {
+        text-align: right;
+        min-width: 100px;
+    }
+    .status-badge {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    .status-recoverable {
+        background: #d1fae5;
+        color: #059669;
+    }
+    .status-recovered {
+        background: #e0e7ff;
+        color: #4f46e5;
+    }
+    .status-permanent {
+        background: #fee2e2;
+        color: #dc2626;
+    }
+
+    .empty-state {
+        padding: 60px 20px;
+        text-align: center;
+        color: #888;
+    }
+
+    .pagination-container {
+        display: flex;
+        justify-content: center;
+        margin-top: 30px;
+    }
+    .pagination {
+        display: flex;
+        gap: 5px;
+    }
+    .pagination a, .pagination span {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 40px;
+        height: 40px;
+        padding: 0 12px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 500;
+    }
+    .pagination a {
+        background: white;
+        color: #333;
+        border: 1px solid #ddd;
+    }
+    .pagination a:hover {
+        background: #64748b;
+        color: white;
+    }
+    .pagination .current {
+        background: #64748b;
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Deleted Content</h1>
+    <p>View and recover soft-deleted content</p>
+</div>
+
+<div class="filters-bar">
+    <div class="filter-tabs">
+        <a href="{% url 'forum_deleted_content' %}" class="filter-tab {% if not content_type_filter %}active{% endif %}">All</a>
+        <a href="?type=post" class="filter-tab {% if content_type_filter == 'post' %}active{% endif %}">Posts</a>
+        <a href="?type=topic" class="filter-tab {% if content_type_filter == 'topic' %}active{% endif %}">Topics</a>
+    </div>
+</div>
+
+<div class="content-list">
+    {% for content in deleted_content %}
+    <a href="{% url 'forum_deleted_content_detail' content_id=content.id %}" class="content-item">
+        <span class="content-type-badge {% if content.content_type == 'post' %}badge-post{% else %}badge-topic{% endif %}">
+            {{ content.content_type|title }}
+        </span>
+
+        <div class="content-info">
+            <div class="content-title">
+                {% if content.title %}{{ content.title }}{% else %}Post #{{ content.original_id|slice:":8" }}{% endif %}
+            </div>
+            <div class="content-preview">
+                {{ content.content|truncatewords:30 }}
+            </div>
+            <div class="content-meta">
+                Author: {{ content.original_author_username }} |
+                Deleted by: {{ content.deleted_by_username }} |
+                Reason: {{ content.get_deletion_reason_display }} |
+                {{ content.created_at|timesince }} ago
+            </div>
+        </div>
+
+        <div class="content-status">
+            {% if content.recovered %}
+            <span class="status-badge status-recovered">Recovered</span>
+            {% elif content.is_recoverable %}
+            <span class="status-badge status-recoverable">Recoverable</span>
+            {% else %}
+            <span class="status-badge status-permanent">Permanent</span>
+            {% endif %}
+        </div>
+    </a>
+    {% empty %}
+    <div class="empty-state">
+        <h3>No deleted content</h3>
+        <p>No content has been deleted yet</p>
+    </div>
+    {% endfor %}
+</div>
+
+{% if page_obj.has_other_pages %}
+<div class="pagination-container">
+    <nav class="pagination">
+        {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}&type={{ content_type_filter }}">Previous</a>
+        {% endif %}
+        <span class="current">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+        {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}&type={{ content_type_filter }}">Next</a>
+        {% endif %}
+    </nav>
+</div>
+{% endif %}
+{% endblock %}

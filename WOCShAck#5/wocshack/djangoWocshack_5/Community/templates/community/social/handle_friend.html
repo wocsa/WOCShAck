@@ -1,0 +1,32 @@
+{% extends "base/base.html" %}
+{% load static %}
+{% block title %}Manage a Friend - Community Engagement{% endblock %}
+{% block module_css %}
+<link rel="stylesheet" href="{% static 'community/css/community.css' %}">
+<link rel="stylesheet" href="{% static 'community/css/handle_friend.css' %}">
+{% endblock %}
+{% block content %}
+<div class="handle-friend-nav">
+    <a class="btn-nav return-button" href="{% url 'community:friends_list' %}">
+      Back
+    </a>
+    <a class="btn-nav" href="{% url 'community:add_friends' %}">
+      🔍 Add Friends
+    </a>
+    <a class="btn-nav" href="{% url 'community:friend_requests' %}">
+      📬 View Friend Requests
+    </a>
+    <a href="{% url 'community:start_conversation' friend.id %}" class="btn-nav button-messaging"> Send a Message </a>
+
+</div>
+
+{% include "community/partials/is_user_blocked.html" %}
+<div class="handle-friend-container">
+  <h2 class="handle-friend-title">Managing Friend: <strong>{{ friend.username | capfirst }}</strong></h2>
+
+
+{% include "community/social/partials/friend_actions.html" %}
+
+
+</div>
+{% endblock %}

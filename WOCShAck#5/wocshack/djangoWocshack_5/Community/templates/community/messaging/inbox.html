@@ -1,0 +1,94 @@
+{% extends "base/base.html" %}
+{% load static %}
+
+{% block title %}VRC — Messages{% endblock %}
+
+{% block module_css %}
+<link rel="stylesheet" href="{% static 'community/css/community.css' %}">
+<link rel="stylesheet" href="{% static 'community/css/inbox.css' %}">
+{% endblock %}
+
+{% block content %}
+<nav class="vrc-breadcrumbs" style="padding: 0.75rem 1.5rem 0;">
+  <a href="{% url 'community:index' %}">Community</a>
+  <span class="bc-sep">›</span>
+  <span class="bc-current">Messages</span>
+</nav>
+
+<div class="inbox-nav">
+  <a class="btn-nav" href="{% url 'community:index' %}">
+    ← Community
+  </a>
+  <a class="btn-nav" href="{% url 'community:friends_list' %}">
+    👥 My Friends
+  </a>
+</div>
+
+<div class="inbox-container">
+
+  <div class="inbox-header">
+    <h2 class="inbox-title">💬 Messages</h2>
+    <a href="{% url 'community:friends_list' %}" class="inbox-new-btn">
+      ✉️ New Conversation
+    </a>
+  </div>
+
+  <ul class="inbox-list">
+    {% for item in page_obj %}
+      <a href="{% url 'community:conversation_detail' item.conversation.id %}"
+         class="inbox-item{% if item.unread_count > 0 %} inbox-item--unread{% endif %}">
+
+        <div class="inbox-avatar">
+          {{ item.other_user.username|first }}
+        </div>
+
+        <div class="inbox-body">
+          <div class="inbox-body-top">
+            <span class="inbox-username">{{ item.other_user.username|capfirst }}</span>
+            {% if item.last_message %}
+              <span class="inbox-time">{{ item.last_message.timestamp|timesince }} ago</span>
+            {% endif %}
+          </div>
+          <p class="inbox-preview">
+            {% if item.last_message %}
+              {% if item.last_message.is_deleted %}
+                <em>Message deleted</em>
+              {% else %}
+                {{ item.last_message.content|truncatechars:80 }}
+              {% endif %}
+            {% else %}
+              <em>No messages yet — say hello!</em>
+            {% endif %}
+          </p>
+        </div>
+
+        {% if item.unread_count > 0 %}
+          <span class="inbox-badge">{{ item.unread_count }}</span>
+        {% endif %}
+
+      </a>
+    {% empty %}
+      <div class="inbox-empty">
+        <div class="inbox-empty-icon">💬</div>
+        <p class="inbox-empty-text">No conversations yet.</p>
+        <a href="{% url 'community:friends_list' %}" class="inbox-new-btn">
+          Find friends and start chatting
+        </a>
+      </div>
+    {% endfor %}
+  </ul>
+
+  {% if page_obj.has_other_pages %}
+  <div class="inbox-pagination">
+    {% if page_obj.has_previous %}
+      <a href="?page={{ page_obj.previous_page_number }}">← Newer</a>
+    {% endif %}
+    {% if page_obj.has_next %}
+      <a href="?page={{ page_obj.next_page_number }}">Older →</a>
+    {% endif %}
+  </div>
+  {% endif %}
+
+</div>
+
+{% endblock %}

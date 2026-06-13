@@ -1,0 +1,99 @@
+{% extends "base/base.html" %}
+{% load static %}
+
+
+{% block title %}Action Log - Chatbot Moderation{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'base/css/admin.css' %}">
+<style>
+  /* page-specific: action type badge colour variants */
+  .action-badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
+  .action-flag { background: #fef3c7; color: #92400e; }
+  .action-edit { background: #e0e7ff; color: #4f46e5; }
+  .action-resolve { background: #d1fae5; color: #059669; }
+  .action-kb { background: #fce7f3; color: #be185d; }
+  .action-other { background: #e5e7eb; color: #6b7280; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Moderation Action Log</h1>
+    <a href="{% url 'chatbot:admin_dashboard' %}" class="back-link">&larr; Back to Dashboard</a>
+</div>
+
+<form method="get" class="filters-bar">
+    <div class="filter-group">
+        <label for="action">Action Type:</label>
+        <select name="action" id="action">
+            <option value="">All</option>
+            {% for value, label in action_types %}
+            <option value="{{ value }}" {% if action_filter == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="filter-group">
+        <label for="actor">Actor:</label>
+        <select name="actor" id="actor">
+            <option value="">All</option>
+            {% for actor_name in actors %}
+            <option value="{{ actor_name }}" {% if actor_filter == actor_name %}selected{% endif %}>{{ actor_name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <button type="submit" class="filter-btn">Filter</button>
+</form>
+
+{% if actions %}
+<table class="log-table">
+    <thead>
+        <tr>
+            <th>Time</th>
+            <th>Action</th>
+            <th>Actor</th>
+            <th>Description</th>
+            <th>IP Address</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for action in actions %}
+        <tr>
+            <td>{{ action.created_at|timesince }} ago</td>
+            <td>
+                <span class="action-badge {% if 'flag' in action.action_type %}action-flag{% elif 'edit' in action.action_type %}action-edit{% elif 'kb' in action.action_type %}action-kb{% elif 'resolved' in action.action_type or 'approved' in action.action_type %}action-resolve{% else %}action-other{% endif %}">
+                    {{ action.get_action_type_display }}
+                </span>
+            </td>
+            <td>{{ action.actor_username }}</td>
+            <td class="description-cell" title="{{ action.description }}">{{ action.description|truncatewords:12 }}</td>
+            <td>{{ action.ip_address|default:"-" }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% if page_obj.has_other_pages %}
+<div class="pagination-container">
+    {% if page_obj.has_previous %}
+    <a href="?page={{ page_obj.previous_page_number }}&action={{ action_filter }}&actor={{ actor_filter }}">&laquo; Prev</a>
+    {% endif %}
+    {% for num in page_obj.paginator.page_range %}
+        {% if page_obj.number == num %}
+        <span class="current">{{ num }}</span>
+        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+        <a href="?page={{ num }}&action={{ action_filter }}&actor={{ actor_filter }}">{{ num }}</a>
+        {% endif %}
+    {% endfor %}
+    {% if page_obj.has_next %}
+    <a href="?page={{ page_obj.next_page_number }}&action={{ action_filter }}&actor={{ actor_filter }}">Next &raquo;</a>
+    {% endif %}
+</div>
+{% endif %}
+
+{% else %}
+<div class="empty-state">
+    <p>No moderation actions logged yet.</p>
+</div>
+{% endif %}
+{% endblock %}

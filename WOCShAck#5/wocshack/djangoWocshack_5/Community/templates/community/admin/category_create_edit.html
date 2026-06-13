@@ -1,0 +1,67 @@
+{% extends "base/base.html" %}
+{% load static %}
+
+{% block title %}Mod — {{ action }} Category{% endblock %}
+
+{% block module_css %}
+<link rel="stylesheet" href="{% static 'base/css/admin.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="mod-page">
+
+  <div class="mod-section-header">
+    <div>
+      <h1 class="mod-section-title">{{ action }} Category</h1>
+    </div>
+    <a href="{% url 'community:category_list' %}" class="mod-btn mod-btn--ghost mod-btn--sm">← Categories</a>
+  </div>
+
+  {% if messages %}
+  <ul class="mod-messages">
+    {% for message in messages %}
+    <li class="mod-message mod-message--{{ message.tags }}">{{ message|escape }}</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+
+  <div class="mod-table-card" style="max-width:600px;">
+    <form method="post">
+      {% csrf_token %}
+
+      <div class="mod-form-group">
+        <label class="mod-form-label" for="id_name">Name <span style="color:var(--danger);">*</span></label>
+        <input type="text" id="id_name" name="name"
+               value="{{ category.name|escape|default:'' }}"
+               class="mod-filter-input" style="width:100%;" required>
+      </div>
+
+      <div class="mod-form-group" style="margin-top:1rem;">
+        <label class="mod-form-label" for="id_slug">
+          Slug
+          <span style="font-weight:400;color:var(--text-muted);font-size:0.8rem;">
+            (auto-generated from name if left blank)
+          </span>
+        </label>
+        <input type="text" id="id_slug" name="slug"
+               value="{{ category.slug|escape|default:'' }}"
+               class="mod-filter-input" style="width:100%;"
+               placeholder="e.g. my-category">
+      </div>
+
+      <div class="mod-form-group" style="margin-top:1rem;">
+        <label class="mod-form-label" for="id_description">Description</label>
+        <textarea id="id_description" name="description"
+                  class="mod-filter-input" style="width:100%;min-height:100px;resize:vertical;"
+                  placeholder="Optional description…">{{ category.description|escape|default:'' }}</textarea>
+      </div>
+
+      <div style="margin-top:1.5rem;display:flex;gap:0.75rem;">
+        <button type="submit" class="mod-btn mod-btn--primary">{{ action }}</button>
+        <a href="{% url 'community:category_list' %}" class="mod-btn mod-btn--ghost">Cancel</a>
+      </div>
+    </form>
+  </div>
+
+</div>
+{% endblock %}

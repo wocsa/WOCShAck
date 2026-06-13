@@ -1,0 +1,313 @@
+{% extends "base/base_forum.html" %}
+{% load static %}
+
+
+{% block title %}Forum Statistics - V.R.C Forum{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stats-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 30px;
+        border-radius: 16px;
+        margin-bottom: 20px;
+    }
+    .breadcrumb {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        margin-bottom: 10px;
+        font-size: 0.9rem;
+    }
+    .breadcrumb a {
+        color: rgba(255,255,255,0.8);
+        text-decoration: none;
+    }
+    .breadcrumb a:hover {
+        color: white;
+    }
+    .breadcrumb span {
+        opacity: 0.6;
+    }
+    .stats-header h1 {
+        font-size: 1.8rem;
+    }
+    .period-selector {
+        display: flex;
+        gap: 10px;
+        margin-top: 15px;
+    }
+    .period-btn {
+        padding: 6px 16px;
+        border-radius: 20px;
+        text-decoration: none;
+        font-size: 0.9rem;
+        transition: all 0.2s ease;
+    }
+    .period-btn.active {
+        background: rgba(255,255,255,0.3);
+        color: white;
+    }
+    .period-btn:not(.active) {
+        background: rgba(255,255,255,0.1);
+        color: rgba(255,255,255,0.8);
+    }
+    .period-btn:hover {
+        background: rgba(255,255,255,0.3);
+        color: white;
+    }
+
+    .stats-overview {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 15px;
+        margin-bottom: 25px;
+    }
+    .stat-card {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        text-align: center;
+    }
+    .stat-card-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #667eea;
+    }
+    .stat-card-label {
+        font-size: 0.9rem;
+        color: #888;
+        margin-top: 5px;
+    }
+    .stat-card-period {
+        font-size: 0.8rem;
+        color: #10b981;
+        margin-top: 3px;
+    }
+
+    .stats-section {
+        margin-bottom: 30px;
+    }
+    .stats-section h2 {
+        font-size: 1.3rem;
+        color: #333;
+        margin-bottom: 15px;
+    }
+    .stats-table {
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    .stats-table-row {
+        display: flex;
+        align-items: center;
+        padding: 12px 20px;
+        border-bottom: 1px solid #eee;
+        gap: 15px;
+    }
+    .stats-table-row:last-child {
+        border-bottom: none;
+    }
+    .stats-table-rank {
+        width: 30px;
+        text-align: center;
+        font-weight: 700;
+        color: #667eea;
+    }
+    .stats-table-name {
+        flex: 1;
+        font-weight: 500;
+        color: #333;
+    }
+    .stats-table-name a {
+        color: #333;
+        text-decoration: none;
+    }
+    .stats-table-name a:hover {
+        color: #667eea;
+    }
+    .stats-table-value {
+        font-weight: 600;
+        color: #667eea;
+    }
+    .stats-table-sub {
+        font-size: 0.85rem;
+        color: #888;
+    }
+
+    .tag-cloud {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    .tag-cloud-item {
+        background: #f0f0ff;
+        color: #667eea;
+        padding: 6px 14px;
+        border-radius: 20px;
+        text-decoration: none;
+        transition: all 0.2s ease;
+    }
+    .tag-cloud-item:hover {
+        background: #667eea;
+        color: white;
+    }
+    .tag-cloud-item.large { font-size: 1.1rem; }
+    .tag-cloud-item.medium { font-size: 0.95rem; }
+    .tag-cloud-item.small { font-size: 0.85rem; }
+
+    .two-columns {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 25px;
+    }
+    @media (max-width: 768px) {
+        .two-columns {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="stats-header">
+    <div class="breadcrumb">
+        <a href="{% url 'forum_index' %}">Forum</a>
+        <span>/</span>
+        <span>Statistics</span>
+    </div>
+    <h1>Forum Statistics</h1>
+    <div class="period-selector">
+        <a href="?days=7" class="period-btn {% if days == 7 %}active{% endif %}">7 Days</a>
+        <a href="?days=30" class="period-btn {% if days == 30 %}active{% endif %}">30 Days</a>
+        <a href="?days=90" class="period-btn {% if days == 90 %}active{% endif %}">90 Days</a>
+        <a href="?days=365" class="period-btn {% if days == 365 %}active{% endif %}">1 Year</a>
+    </div>
+</div>
+
+<div class="stats-overview">
+    <div class="stat-card">
+        <div class="stat-card-value">{{ overall.total_topics }}</div>
+        <div class="stat-card-label">Total Topics</div>
+        <div class="stat-card-period">+{{ period.new_topics }} in {{ days }}d</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card-value">{{ overall.total_posts }}</div>
+        <div class="stat-card-label">Total Posts</div>
+        <div class="stat-card-period">+{{ period.new_posts }} in {{ days }}d</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card-value">{{ overall.total_users }}</div>
+        <div class="stat-card-label">Active Members</div>
+        <div class="stat-card-period">+{{ period.new_users }} in {{ days }}d</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card-value">{{ overall.total_likes }}</div>
+        <div class="stat-card-label">Total Likes</div>
+        <div class="stat-card-period">+{{ period.new_likes }} in {{ days }}d</div>
+    </div>
+</div>
+
+<div class="two-columns">
+    <div class="stats-section">
+        <h2>Top Contributors</h2>
+        <div class="stats-table">
+            {% for rep in top_contributors %}
+            <div class="stats-table-row">
+                <div class="stats-table-rank">{{ forloop.counter }}</div>
+                <div class="stats-table-name">
+                    <a href="{% url 'forum_user_profile' username=rep.user.username %}">{{ rep.user.username }}</a>
+                    <div class="stats-table-sub">{{ rep.get_rank }}</div>
+                </div>
+                <div class="stats-table-value">{{ rep.reputation_points }} pts</div>
+            </div>
+            {% empty %}
+            <div class="stats-table-row">
+                <div class="stats-table-name">No data available</div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="stats-section">
+        <h2>Most Active Posters (Last {{ days }} Days)</h2>
+        <div class="stats-table">
+            {% for poster in active_posters %}
+            <div class="stats-table-row">
+                <div class="stats-table-rank">{{ forloop.counter }}</div>
+                <div class="stats-table-name">
+                    <a href="{% url 'forum_user_profile' username=poster.author__username %}">{{ poster.author__username }}</a>
+                </div>
+                <div class="stats-table-value">{{ poster.post_count }} posts</div>
+            </div>
+            {% empty %}
+            <div class="stats-table-row">
+                <div class="stats-table-name">No data available</div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<div class="two-columns">
+    <div class="stats-section">
+        <h2>Most Active Categories</h2>
+        <div class="stats-table">
+            {% for cat in active_categories %}
+            <div class="stats-table-row">
+                <div class="stats-table-rank">{{ forloop.counter }}</div>
+                <div class="stats-table-name">
+                    <a href="{% url 'forum_category' slug=cat.slug %}">{{ cat.name }}</a>
+                    <div class="stats-table-sub">{{ cat.recent_topics }} topics | {{ cat.recent_posts }} posts</div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="stats-table-row">
+                <div class="stats-table-name">No data available</div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="stats-section">
+        <h2>Popular Topics</h2>
+        <div class="stats-table">
+            {% for topic in popular_topics %}
+            <div class="stats-table-row">
+                <div class="stats-table-rank">{{ forloop.counter }}</div>
+                <div class="stats-table-name">
+                    <a href="{% url 'forum_topic' topic_id=topic.id %}">{{ topic.title|truncatewords:8 }}</a>
+                    <div class="stats-table-sub">by {{ topic.author.username }}</div>
+                </div>
+                <div class="stats-table-value">{{ topic.view_count }} views</div>
+            </div>
+            {% empty %}
+            <div class="stats-table-row">
+                <div class="stats-table-name">No data available</div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+{% if popular_tags %}
+<div class="stats-section">
+    <h2>Popular Tags</h2>
+    <div class="tag-cloud">
+        {% for tag in popular_tags %}
+        <a href="{% url 'forum_topics_by_tag' tag_slug=tag.slug %}"
+           class="tag-cloud-item {% if tag.usage_count > 10 %}large{% elif tag.usage_count > 3 %}medium{% else %}small{% endif %}">
+            {{ tag.name }} ({{ tag.usage_count }})
+        </a>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+{% endblock %}

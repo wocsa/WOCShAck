@@ -1,0 +1,256 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Report Details{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'base/css/admin.css' %}">
+<style>
+  .layout { display: grid; grid-template-columns: 1fr 340px; gap: var(--vrc-spacing-5); margin-bottom: var(--vrc-spacing-5); }
+  @media (max-width: 800px) { .layout { grid-template-columns: 1fr; } }
+  .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--vrc-spacing-3); margin-bottom: var(--vrc-spacing-4); }
+  .info-item strong { display: block; font-size: var(--vrc-font-size-xs); color: var(--vrc-gray-500); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 3px; }
+  .info-item span, .info-item a { font-size: var(--vrc-font-size-sm); color: var(--vrc-gray-800); }
+  .info-item a { color: #667eea; text-decoration: none; }
+  .info-item a:hover { text-decoration: underline; }
+  .text-box { background: var(--vrc-gray-50); border: 1px solid var(--vrc-gray-100); border-radius: var(--vrc-radius-md); padding: var(--vrc-spacing-3); margin-top: 6px; font-size: var(--vrc-font-size-sm); color: var(--vrc-gray-700); }
+  .section-title { font-size: var(--vrc-font-size-sm); font-weight: 600; color: var(--vrc-gray-700); margin-bottom: var(--vrc-spacing-2); }
+  .resolution-section { border-top: 1px solid var(--vrc-gray-100); margin-top: var(--vrc-spacing-4); padding-top: var(--vrc-spacing-4); }
+  .notes-list { display: flex; flex-direction: column; gap: var(--vrc-spacing-3); }
+  .note-item { padding-bottom: var(--vrc-spacing-3); border-bottom: 1px solid var(--vrc-gray-50); }
+  .note-item:last-child { border-bottom: none; padding-bottom: 0; }
+  .note-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+  .note-author { font-weight: 600; font-size: var(--vrc-font-size-sm); color: var(--vrc-gray-800); }
+  .note-date { font-size: var(--vrc-font-size-xs); color: var(--vrc-gray-400); }
+  .note-body { font-size: var(--vrc-font-size-sm); color: var(--vrc-gray-700); }
+  .status-check { font-size: var(--vrc-font-size-sm); }
+  .check-yes { color: #16a34a; }
+  .check-no { color: #dc2626; }
+  .check-pending { color: #d97706; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="mod-page">
+  <nav class="vrc-breadcrumbs" style="margin-bottom:var(--vrc-spacing-3);">
+    <a href="{% url 'admin_panel:dashboard' %}">Admin</a>
+    <span class="bc-sep">›</span>
+    <a href="{% url 'admin_panel:report_list' %}">Reports</a>
+    <span class="bc-sep">›</span>
+    <span class="bc-current">Report Details</span>
+  </nav>
+
+  <div class="mod-page-header">
+    <h1 class="mod-page-title">
+      Report Details
+      {% if report.priority == 'critical' %}
+        <span class="badge badge-danger">{{ report.get_priority_display }}</span>
+      {% elif report.priority == 'high' %}
+        <span class="badge badge-warning">{{ report.get_priority_display }}</span>
+      {% elif report.priority == 'medium' %}
+        <span class="badge badge-info">{{ report.get_priority_display }}</span>
+      {% else %}
+        <span class="badge badge-secondary">{{ report.get_priority_display }}</span>
+      {% endif %}
+    </h1>
+    <div style="display:flex;gap:var(--vrc-spacing-2);">
+      <a href="{% url 'admin_panel:report_list' %}" class="mod-btn mod-btn-outline">Back to Reports</a>
+      <a href="{% url 'admin_panel:user_overview' report.reporter.username %}" class="mod-btn mod-btn-outline">View Reporter</a>
+    </div>
+  </div>
+
+  <div class="layout">
+    <!-- Report Details -->
+    <div>
+      <div class="mod-card">
+        <div class="mod-card-header">
+          <h5>
+            Report Information
+            {% if report.status == 'pending' %}
+              <span class="badge badge-warning">{{ report.get_status_display }}</span>
+            {% elif report.status == 'resolved' %}
+              <span class="badge badge-success">{{ report.get_status_display }}</span>
+            {% else %}
+              <span class="badge badge-secondary">{{ report.get_status_display }}</span>
+            {% endif %}
+          </h5>
+        </div>
+        <div class="mod-card-body">
+          <div class="info-grid">
+            <div class="info-item"><strong>Type</strong><span>{{ report.get_report_type_display }}</span></div>
+            <div class="info-item"><strong>Reporter</strong><a href="{% url 'admin_panel:user_overview' report.reporter.username %}">{{ report.reporter.username }}</a></div>
+            <div class="info-item"><strong>Created</strong><span>{{ report.created_at|date:"M j, Y H:i" }}</span></div>
+            <div class="info-item"><strong>Assigned To</strong><span>{% if report.assigned_to %}{{ report.assigned_to.username }}{% else %}Unassigned{% endif %}</span></div>
+          </div>
+
+          <div class="section-title">Description</div>
+          <div class="text-box">{{ report.description|linebreaks|escape }}</div>
+
+          {% if report.evidence %}
+            <div class="section-title" style="margin-top:var(--vrc-spacing-3);">Evidence</div>
+            <div class="text-box">{{ report.evidence|linebreaks|escape }}</div>
+          {% endif %}
+
+          {% if report.status == 'resolved' %}
+            <div class="resolution-section">
+              <div class="section-title">Resolution</div>
+              <div class="info-grid">
+                <div class="info-item"><strong>Type</strong><span>{{ report.get_resolution_type_display }}</span></div>
+                <div class="info-item">
+                  <strong>Valid Report</strong>
+                  <span>{% if report.is_valid %}<span class="check-yes">Yes</span>{% else %}<span class="check-no">No</span>{% endif %}</span>
+                </div>
+                <div class="info-item"><strong>Resolved</strong><span>{{ report.resolved_at|date:"M j, Y H:i" }}</span></div>
+                <div class="info-item">
+                  <strong>Feedback Sent</strong>
+                  <span>{% if report.feedback_sent %}<span class="check-yes">Yes</span>{% else %}<span class="check-pending">Pending</span>{% endif %}</span>
+                </div>
+              </div>
+              {% if report.resolution_notes %}
+                <div class="section-title">Resolution Notes</div>
+                <div class="text-box">{{ report.resolution_notes|linebreaks|escape }}</div>
+              {% endif %}
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Actions Panel -->
+    <div>
+      <div class="mod-card">
+        <div class="mod-card-header"><h6>Assignment</h6></div>
+        <div class="mod-card-body">
+          <form method="post" action="{% url 'admin_panel:report_assign' report.id %}">
+            {% csrf_token %}
+            <div class="form-group">
+              <label for="assignee_id" class="form-label">Assign to:</label>
+              <select name="assignee_id" id="assignee_id" class="form-control">
+                <option value="unassign">Unassign</option>
+                <option value="self" {% if report.assigned_to == user %}selected{% endif %}>Assign to me</option>
+              </select>
+            </div>
+            <button type="submit" class="mod-btn mod-btn-primary mod-btn-sm">Update Assignment</button>
+          </form>
+        </div>
+      </div>
+
+      {% if report.status == 'pending' %}
+        <div class="mod-card">
+          <div class="mod-card-header"><h6>Resolve Report</h6></div>
+          <div class="mod-card-body">
+            <form method="post" action="{% url 'admin_panel:report_resolve' report.id %}">
+              {% csrf_token %}
+              <div class="form-group">
+                <label for="resolution_type" class="form-label">Resolution Type:</label>
+                <select name="resolution_type" id="resolution_type" class="form-control" required>
+                  <option value="">Select resolution...</option>
+                  <option value="upheld">Upheld - Action Taken</option>
+                  <option value="dismissed">Dismissed - No Action</option>
+                  <option value="duplicate">Duplicate Report</option>
+                  <option value="invalid">Invalid Report</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <div class="form-check">
+                  <input type="checkbox" name="is_valid" id="is_valid">
+                  <label for="is_valid">Report is valid</label>
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="resolution_notes" class="form-label">Resolution Notes:</label>
+                <textarea name="resolution_notes" id="resolution_notes" class="form-control" rows="3" placeholder="Optional notes..."></textarea>
+              </div>
+              <button type="submit" class="mod-btn mod-btn-success">Resolve Report</button>
+            </form>
+          </div>
+        </div>
+      {% endif %}
+
+      <div class="mod-card">
+        <div class="mod-card-header"><h6>Add Internal Note</h6></div>
+        <div class="mod-card-body">
+          <form method="post" action="{% url 'admin_panel:add_report_note' report.id %}">
+            {% csrf_token %}
+            <div class="form-group">
+              <label for="visibility" class="form-label">Visibility:</label>
+              <select name="visibility" id="visibility" class="form-control">
+                <option value="staff">Staff Only</option>
+                <option value="reporter">Visible to Reporter</option>
+                <option value="public">Public</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="content" class="form-label">Note:</label>
+              <textarea name="content" id="content" class="form-control" rows="3" placeholder="Add internal note..." required></textarea>
+            </div>
+            <button type="submit" class="mod-btn mod-btn-outline">Add Note</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {% if notes %}
+    <div class="mod-card">
+      <div class="mod-card-header">
+        <h5>Internal Notes <span class="badge badge-secondary">{{ notes.count }}</span></h5>
+      </div>
+      <div class="mod-card-body">
+        <div class="notes-list">
+          {% for note in notes %}
+            <div class="note-item">
+              <div class="note-header">
+                <div>
+                  <span class="note-author">{{ note.author.username }}</span>
+                  <span class="badge {% if note.visibility == 'staff' %}badge-secondary{% elif note.visibility == 'reporter' %}badge-info{% else %}badge-success{% endif %}" style="margin-left:6px;">{{ note.get_visibility_display }}</span>
+                </div>
+                <span class="note-date">{{ note.created_at|date:"M j, Y H:i" }}</span>
+              </div>
+              <div class="note-body">{{ note.content|linebreaks|escape }}</div>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  {% endif %}
+
+  {% if content_actions %}
+    <div class="mod-card" style="margin-top:var(--vrc-spacing-4);">
+      <div class="mod-card-header">
+        <h5>Content Action History <span class="badge badge-secondary">{{ content_actions.count }}</span></h5>
+      </div>
+      <div class="mod-card-body">
+        <table class="mod-table">
+          <thead>
+            <tr>
+              <th>Action</th>
+              <th>Staff</th>
+              <th>Reason</th>
+              <th>Date</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for action in content_actions %}
+              <tr>
+                <td><span class="badge badge-secondary">{{ action.get_action_type_display }}</span></td>
+                <td>{{ action.actor.username }}</td>
+                <td>{{ action.reason|truncatechars:50|escape }}</td>
+                <td>{{ action.created_at|date:"M j H:i" }}</td>
+                <td>
+                  {% if action.is_reversed %}
+                    <span class="badge badge-warning">Reversed</span>
+                  {% else %}
+                    <span class="badge badge-success">Active</span>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,68 @@
+{% extends "base/base.html" %}
+{% load static %}
+
+{% block title %}Mod — Blog Categories{% endblock %}
+
+{% block module_css %}
+<link rel="stylesheet" href="{% static 'base/css/admin.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="mod-page">
+
+  <div class="mod-section-header">
+    <div>
+      <h1 class="mod-section-title">Blog Categories</h1>
+    </div>
+    <div style="display:flex;gap:0.5rem;">
+      <a href="{% url 'community:category_create' %}" class="mod-btn mod-btn--primary mod-btn--sm">+ Create Category</a>
+      <a href="{% url 'community:admin_blog_list' %}" class="mod-btn mod-btn--ghost mod-btn--sm">← Blog Posts</a>
+    </div>
+  </div>
+
+  {% if messages %}
+  <ul class="mod-messages">
+    {% for message in messages %}
+    <li class="mod-message mod-message--{{ message.tags }}">{{ message|escape }}</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+
+  <div class="mod-table-card">
+    <div class="mod-table-scroll">
+      <table class="mod-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Slug</th>
+            <th class="text-center">Post Count</th>
+            <th class="text-center">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for category in categories %}
+          <tr>
+            <td>{{ category.name|escape }}</td>
+            <td><code>{{ category.slug|escape }}</code></td>
+            <td class="text-center">{{ category.post_count }}</td>
+            <td class="text-center">
+              <div class="mod-actions">
+                <a href="{% url 'community:category_edit' category.slug %}"
+                   class="mod-btn mod-btn--ghost mod-btn--sm">Edit</a>
+                <a href="{% url 'community:category_delete' category.slug %}"
+                   class="mod-btn mod-btn--danger mod-btn--sm">Delete</a>
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="4" class="mod-table-empty">No categories yet.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

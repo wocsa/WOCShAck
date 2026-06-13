@@ -1,0 +1,200 @@
+{% extends "base/base.html" %}
+{% load static %}
+
+{% block title %}V.R.C — Edit Advertisement{% endblock %}
+
+{% block extra_css %}
+<style>
+.preview-box { border:1px solid var(--vrc-gray-200); border-radius:8px; padding:0.75rem; min-height:80px; background:#fff; font-size:0.9rem; color:var(--vrc-gray-700); line-height:1.6; }
+.preview-box p { margin:0 0 0.5rem; }
+.preview-box strong, .preview-box b { font-weight:700; }
+.preview-box em, .preview-box i { font-style:italic; }
+.preview-box ul, .preview-box ol { padding-left:1.25rem; margin:0 0 0.5rem; }
+.img-thumb { position:relative; display:inline-block; margin:0.25rem; }
+.img-thumb img { width:80px; height:60px; object-fit:cover; border-radius:6px; border:2px solid transparent; }
+.img-thumb.marked-delete img { border-color:#ef4444; opacity:0.5; }
+.img-thumb label { position:absolute; top:2px; right:2px; background:rgba(239,68,68,0.85); border-radius:50%; width:18px; height:18px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:white; font-size:0.7rem; font-weight:700; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card animate-fade-in-up" style="max-width:760px; margin:2rem auto;">
+    <h1 style="font-size:1.75rem; color:var(--vrc-gray-900); margin-bottom:1.5rem;">Edit Advertisement</h1>
+
+    {% if ad.status == 'rejected' and ad.rejection_reason %}
+    <div style="background:#fee2e2; border:1px solid #fca5a5; border-radius:8px; padding:1rem; margin-bottom:1.5rem;">
+        <p style="color:#991b1b; font-weight:600; margin:0 0 0.25rem;">Rejection reason:</p>
+        <p style="color:#7f1d1d; margin:0;">{{ ad.rejection_reason }}</p>
+    </div>
+    {% endif %}
+
+    <form method="post" action="{% url 'edit_advertisement' ad.id %}" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <div style="margin-bottom:1.25rem;">
+            <label style="display:block; font-weight:600; color:var(--vrc-gray-700); margin-bottom:0.4rem;">Title <span style="color:#ef4444;">*</span></label>
+            <input type="text" name="title" maxlength="200" required value="{{ ad.title }}"
+                   style="width:100%; padding:0.6rem 0.75rem; border:1px solid var(--vrc-gray-300); border-radius:8px; font-size:1rem; box-sizing:border-box;">
+        </div>
+
+        <div style="margin-bottom:1.25rem;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.4rem;">
+                <label style="font-weight:600; color:var(--vrc-gray-700);">Body Text <span style="color:#ef4444;">*</span></label>
+                <div>
+                    <button type="button" onclick="switchAdTab('write')" id="btn-write"
+                            style="padding:0.2rem 0.75rem; border-radius:6px 0 0 6px; border:1px solid #667eea; background:#667eea; color:white; font-size:0.8rem; cursor:pointer;">Write</button>
+                    <button type="button" onclick="switchAdTab('preview')" id="btn-preview"
+                            style="padding:0.2rem 0.75rem; border-radius:0 6px 6px 0; border:1px solid #667eea; background:white; color:#667eea; font-size:0.8rem; cursor:pointer;">Preview</button>
+                </div>
+            </div>
+            <div id="tab-write">
+                <textarea id="ad-body" name="body" maxlength="2000" required rows="5"
+                          oninput="renderAdPreview()"
+                          style="width:100%; padding:0.6rem 0.75rem; border:1px solid var(--vrc-gray-300); border-radius:8px; font-size:1rem; resize:vertical; box-sizing:border-box; font-family:monospace;">{{ ad.body }}</textarea>
+            </div>
+            <div id="tab-preview" style="display:none;">
+                <div id="ad-preview" class="preview-box"></div>
+            </div>
+            <p style="color:var(--vrc-gray-500); font-size:0.8rem; margin:0.25rem 0 0;">
+                Markdown: **bold**, *italic*, [link](url), - list item.
+            </p>
+        </div>
+
+        {# ---- Existing images with delete option ---- #}
+        {% if ad_images %}
+        <div style="margin-bottom:1.25rem;">
+            <label style="display:block; font-weight:600; color:var(--vrc-gray-700); margin-bottom:0.5rem;">Current Images</label>
+            <div id="existing-images" style="display:flex; flex-wrap:wrap; gap:0.5rem; align-items:flex-start;">
+                {% for img in ad_images %}
+                <div class="img-thumb" id="thumb-{{ img.id }}">
+                    <img src="{{ img.image.url }}" alt="{{ img.alt_text|default:ad.title }}">
+                    <label for="del-{{ img.id }}" title="Mark for deletion" onclick="toggleDelete('{{ img.id }}')">x</label>
+                    <input type="checkbox" id="del-{{ img.id }}" name="delete_images" value="{{ img.id }}" style="display:none;">
+                </div>
+                {% endfor %}
+            </div>
+            <p style="color:var(--vrc-gray-400); font-size:0.78rem; margin:0.35rem 0 0;">Click the red "x" on an image to mark it for removal on save.</p>
+        </div>
+        {% endif %}
+
+        <div style="margin-bottom:1.25rem;">
+            <label style="display:block; font-weight:600; color:var(--vrc-gray-700); margin-bottom:0.4rem;">Replace Image</label>
+            <input type="file" name="images" accept="image/jpeg,image/png,image/gif,image/webp"
+                   style="width:100%; padding:0.4rem 0; font-size:0.9rem;">
+            <p style="color:var(--vrc-gray-500); font-size:0.8rem; margin:0.25rem 0 0;">JPG, PNG, GIF, WebP — max 5 MB.</p>
+        </div>
+
+        <div style="margin-bottom:1.25rem;">
+            <label style="display:block; font-weight:600; color:var(--vrc-gray-700); margin-bottom:0.4rem;">Primary Image URL <span style="color:var(--vrc-gray-400); font-weight:400;">(optional fallback)</span></label>
+            <input type="url" name="image_url" maxlength="500" value="{{ ad.image_url }}"
+                   style="width:100%; padding:0.6rem 0.75rem; border:1px solid var(--vrc-gray-300); border-radius:8px; font-size:1rem; box-sizing:border-box;">
+        </div>
+
+        <div style="margin-bottom:1.25rem;">
+            <label style="display:block; font-weight:600; color:var(--vrc-gray-700); margin-bottom:0.4rem;">Target URL <span style="color:#ef4444;">*</span></label>
+            <input type="url" name="target_url" maxlength="500" required value="{{ ad.target_url }}"
+                   style="width:100%; padding:0.6rem 0.75rem; border:1px solid var(--vrc-gray-300); border-radius:8px; font-size:1rem; box-sizing:border-box;">
+        </div>
+
+        <div style="margin-bottom:1.25rem;">
+            <label style="display:block; font-weight:600; color:var(--vrc-gray-700); margin-bottom:0.4rem;">Placement Zone <span style="color:#ef4444;">*</span></label>
+            <select id="zone-select" name="placement_zone" required onchange="updateCostPreview()"
+                    style="width:100%; padding:0.6rem 0.75rem; border:1px solid var(--vrc-gray-300); border-radius:8px; font-size:1rem; box-sizing:border-box;">
+                {% for value, label in placement_choices %}
+                <option value="{{ value }}" {% if ad.placement_zone == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div style="margin-bottom:1.25rem;">
+            <label style="display:block; font-weight:600; color:var(--vrc-gray-700); margin-bottom:0.4rem;">End Date <span style="color:var(--vrc-gray-400); font-weight:400;">(required for billing)</span></label>
+            <input type="date" id="end-date" name="end_date"
+                   value="{% if ad.end_date %}{{ ad.end_date|date:'Y-m-d' }}{% endif %}"
+                   onchange="updateCostPreview()"
+                   style="width:100%; padding:0.6rem 0.75rem; border:1px solid var(--vrc-gray-300); border-radius:8px; font-size:1rem; box-sizing:border-box;">
+        </div>
+
+        {# Live cost estimate #}
+        <div id="cost-preview" style="display:none; background:#fef3c7; border:1px solid #fcd34d; border-radius:8px; padding:0.75rem 1rem; margin-bottom:1.25rem; font-size:0.9rem; color:#78350f;">
+            Estimated cost: <strong id="cost-amount">0</strong> Neuros
+            (<span id="cost-days">0</span> day(s) × <span id="cost-rate">0</span> N/day)
+        </div>
+
+        {% if rate_table %}
+        <div style="background:#f5f3ff; border:1px solid #c4b5fd; border-radius:8px; padding:0.75rem 1rem; margin-bottom:1.25rem; font-size:0.82rem; color:#5b21b6;">
+            Rates: Shop Sidebar 10 N/day &middot; Forum Banner 15 N/day &middot; Homepage Banner 20 N/day &middot; All Zones 40 N/day
+        </div>
+        {% endif %}
+
+        <div style="display:flex; gap:1rem; justify-content:flex-end; margin-top:1.5rem;">
+            <a href="{% url 'advertisement_detail' ad.id %}" class="btn btn-secondary">Cancel</a>
+            <button type="submit" class="btn btn-primary">Save &amp; Resubmit</button>
+        </div>
+    </form>
+</div>
+
+<script>
+var RATES = {shop_sidebar:10, forum_banner:15, homepage_banner:20, all:40};
+
+function switchAdTab(tab) {
+    var writeDiv = document.getElementById('tab-write');
+    var previewDiv = document.getElementById('tab-preview');
+    var btnW = document.getElementById('btn-write');
+    var btnP = document.getElementById('btn-preview');
+    if (tab === 'write') {
+        writeDiv.style.display='block'; previewDiv.style.display='none';
+        btnW.style.background='#667eea'; btnW.style.color='white';
+        btnP.style.background='white'; btnP.style.color='#667eea';
+    } else {
+        writeDiv.style.display='none'; previewDiv.style.display='block';
+        btnW.style.background='white'; btnW.style.color='#667eea';
+        btnP.style.background='#667eea'; btnP.style.color='white';
+        renderAdPreview();
+    }
+}
+
+function renderAdPreview() {
+    var raw = document.getElementById('ad-body').value;
+    var html = raw
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+        .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+        .replace(/\*(.+?)\*/g,'<em>$1</em>')
+        .replace(/\[(.+?)\]\(https?:\/\/[^\)]+\)/g,'<a>$1</a>')
+        .replace(/^- (.+)$/gm,'<li>$1</li>')
+        .replace(/(<li>.*<\/li>)/gs,'<ul>$1</ul>')
+        .replace(/\n/g,'<br>');
+    document.getElementById('ad-preview').innerHTML = html;
+}
+
+function toggleDelete(imgId) {
+    var thumb = document.getElementById('thumb-' + imgId);
+    var chk = document.getElementById('del-' + imgId);
+    if (chk.checked) {
+        chk.checked = false;
+        thumb.classList.remove('marked-delete');
+    } else {
+        chk.checked = true;
+        thumb.classList.add('marked-delete');
+    }
+}
+
+function updateCostPreview() {
+    var zone = document.getElementById('zone-select').value;
+    var endVal = document.getElementById('end-date').value;
+    var box = document.getElementById('cost-preview');
+    if (!zone || !endVal || !RATES[zone]) { box.style.display='none'; return; }
+    var rate = RATES[zone];
+    var end = new Date(endVal);
+    var start = new Date();
+    var days = Math.max(1, Math.round((end - start) / 86400000));
+    if (days <= 0 || isNaN(days)) { box.style.display='none'; return; }
+    document.getElementById('cost-amount').textContent = rate * days;
+    document.getElementById('cost-days').textContent = days;
+    document.getElementById('cost-rate').textContent = rate;
+    box.style.display = 'block';
+}
+
+// Trigger on load if values already set
+window.addEventListener('load', updateCostPreview);
+</script>
+{% endblock %}

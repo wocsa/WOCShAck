@@ -1,0 +1,64 @@
+{% extends 'base/base.html' %}
+{% block title %}New Promotion - V.R.C{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dev-container { max-width: 700px; margin: 0 auto; padding: var(--vrc-spacing-xl); }
+    .form-card { background: var(--vrc-white); border-radius: var(--vrc-radius-lg); padding: var(--vrc-spacing-xl); box-shadow: var(--vrc-shadow-md); }
+    .form-card h1 { font-size: var(--vrc-font-size-2xl); font-weight: var(--vrc-font-weight-bold); margin-bottom: var(--vrc-spacing-lg); }
+    .form-group { margin-bottom: var(--vrc-spacing-lg); }
+    .form-group label { display: block; font-size: var(--vrc-font-size-sm); font-weight: var(--vrc-font-weight-medium); color: var(--vrc-gray-700); margin-bottom: var(--vrc-spacing-xs); }
+    .form-group input, .form-group select { width: 100%; padding: 10px 14px; border: 1px solid var(--vrc-gray-300); border-radius: var(--vrc-radius-md); font-size: var(--vrc-font-size-base); box-sizing: border-box; }
+    .form-group input:focus, .form-group select:focus { outline: none; border-color: var(--vrc-primary); }
+    .form-group .help-text { font-size: var(--vrc-font-size-xs); color: var(--vrc-gray-500); margin-top: 4px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--vrc-spacing-md); }
+    .btn-primary { padding: 10px 24px; background: var(--vrc-gradient); color: white; border: none; border-radius: var(--vrc-radius-md); cursor: pointer; }
+    .back-link { display: inline-block; margin-bottom: var(--vrc-spacing-lg); color: var(--vrc-primary); text-decoration: none; font-size: var(--vrc-font-size-sm); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dev-container">
+    <a href="{% url 'developer_promotions' %}" class="back-link">&larr; Back to Promotions</a>
+    <div class="form-card">
+        <h1>New Promotion</h1>
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="code">Promotion Code</label>
+                <input type="text" id="code" name="code" maxlength="50" required placeholder="SAVE20" style="text-transform: uppercase;">
+            </div>
+            <div class="form-group">
+                <label for="listing_id">Listing (optional — leave empty for global)</label>
+                <select id="listing_id" name="listing_id">
+                    <option value="">All Listings (Global)</option>
+                    {% for listing in listings %}
+                    <option value="{{ listing.id }}">{{ listing.title }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="discount_percent">Discount Percent</label>
+                <input type="number" id="discount_percent" name="discount_percent" step="0.01" min="0.01" max="100" placeholder="20" required>
+                <div class="help-text">Enter a percentage between 0.01 and 100</div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="start_date">Start Date</label>
+                    <input type="datetime-local" id="start_date" name="start_date">
+                </div>
+                <div class="form-group">
+                    <label for="end_date">End Date</label>
+                    <input type="datetime-local" id="end_date" name="end_date">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="usage_limit">Usage Limit</label>
+                <input type="number" id="usage_limit" name="usage_limit" value="0" min="0">
+                <div class="help-text">0 = unlimited</div>
+            </div>
+            <button type="submit" class="btn-primary">Create Promotion</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

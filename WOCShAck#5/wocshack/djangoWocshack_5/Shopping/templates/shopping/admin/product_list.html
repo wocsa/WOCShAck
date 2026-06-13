@@ -1,0 +1,93 @@
+{% extends "base/base.html" %}
+{% load static %}
+
+{% block title %}V.R.C – Moderate Products{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'base/css/admin.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="mod-page">
+
+  <div class="mod-section-header">
+    <div>
+      <p class="mod-section-subtitle"><a href="{% url 'shop_admin_dashboard' %}">Moderation</a> › Products</p>
+      <h1 class="mod-section-title">🎨 CSS Products</h1>
+    </div>
+    <span class="mod-badge mod-badge--gray">{{ page_obj.paginator.count }} total</span>
+  </div>
+
+  <!-- Filter -->
+  <form method="get">
+    <div class="mod-filter-bar">
+      <input type="text" name="search" class="mod-filter-input"
+             placeholder="Search name or creator…" value="{{ search|escape }}">
+      <button type="submit" class="mod-btn mod-btn--primary mod-btn--sm">Search</button>
+      {% if search %}
+      <a href="{% url 'shop_product_list' %}" class="mod-btn mod-btn--ghost mod-btn--sm">Clear</a>
+      {% endif %}
+    </div>
+  </form>
+
+  <!-- Table -->
+  {% if page_obj.object_list %}
+  <div class="mod-table-card">
+    <div class="mod-table-scroll">
+      <table class="mod-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Creator</th>
+            <th>Price</th>
+            <th>Status</th>
+            <th>Created</th>
+            <th class="text-center">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for product in page_obj %}
+          <tr>
+            <td>
+              <a href="{% url 'product_detail' product.id %}" class="mod-table-link">{{ product.name|escape }}</a>
+            </td>
+            <td>{{ product.creator.username|escape }}</td>
+            <td>{{ product.price }} N</td>
+            <td>
+              {% if product.is_active %}
+              <span class="mod-badge mod-badge--success">Active</span>
+              {% else %}
+              <span class="mod-badge mod-badge--gray">Suspended</span>
+              {% endif %}
+            </td>
+            <td style="color:var(--vrc-gray-400);font-size:var(--vrc-font-size-xs);">{{ product.created_at|date:"d M Y" }}</td>
+            <td>
+              <div class="mod-actions">
+                <form method="post" action="{% url 'shop_product_toggle' product.id %}"
+                      onsubmit="return confirm('{% if product.is_active %}Suspend{% else %}Restore{% endif %} this product?');">
+                  {% csrf_token %}
+                  <input type="hidden" name="search" value="{{ search|escape }}">
+                  {% if product.is_active %}
+                  <button type="submit" class="mod-btn mod-btn--warning mod-btn--sm">Suspend</button>
+                  {% else %}
+                  <button type="submit" class="mod-btn mod-btn--success mod-btn--sm">Restore</button>
+                  {% endif %}
+                </form>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% include "shopping/admin/_pagination.html" %}
+
+  {% else %}
+  <div class="mod-table-card">
+    <p class="mod-table-empty">No products found matching your search.</p>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

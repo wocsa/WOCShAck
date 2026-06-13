@@ -1,0 +1,91 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}{% if rule %}Edit{% else %}Create{% endif %} Auto-Mod Rule{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'base/css/admin.css' %}">
+<style>
+  .two-col { display: grid; grid-template-columns: 1fr 320px; gap: var(--vrc-spacing-5); }
+  @media (max-width: 700px) { .two-col { grid-template-columns: 1fr; } }
+  .form-check input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; }
+  .form-check-label { font-size: var(--vrc-font-size-sm); color: var(--vrc-gray-700); cursor: pointer; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="mod-page">
+  <h1 class="mod-page-title">{% if rule %}Edit{% else %}Create{% endif %} Auto-Moderation Rule</h1>
+
+  <div class="mod-card">
+    <div class="mod-card-body">
+      <form method="post">
+        {% csrf_token %}
+        <div class="two-col">
+          <div>
+            <div class="form-group">
+              <label for="name" class="form-label">Rule Name</label>
+              <input type="text" name="name" id="name" class="form-control" value="{{ rule.name|default:'' }}" required>
+            </div>
+            <div class="form-group">
+              <label for="description" class="form-label">Description</label>
+              <textarea name="description" id="description" class="form-control" rows="3">{{ rule.description|default:'' }}</textarea>
+            </div>
+            <div class="form-group">
+              <label for="trigger_value" class="form-label">Trigger Value</label>
+              <textarea name="trigger_value" id="trigger_value" class="form-control" rows="4" required>{{ rule.trigger_value|default:'' }}</textarea>
+              <div class="form-hint">Pattern, keywords, or conditions to trigger this rule</div>
+            </div>
+            <div class="form-group">
+              <label for="action_params" class="form-label">Action Parameters</label>
+              <textarea name="action_params" id="action_params" class="form-control" rows="3">{{ rule.action_params|default:'' }}</textarea>
+              <div class="form-hint">JSON parameters for the action (optional)</div>
+            </div>
+          </div>
+          <div>
+            <div class="form-group">
+              <label for="trigger_type" class="form-label">Trigger Type</label>
+              <select name="trigger_type" id="trigger_type" class="form-control" required>
+                {% for value, label in trigger_type_choices %}
+                  <option value="{{ value }}" {% if rule.trigger_type == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="action" class="form-label">Action</label>
+              <select name="action" id="action" class="form-control" required>
+                {% for value, label in action_choices %}
+                  <option value="{{ value }}" {% if rule.action == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="scope" class="form-label">Scope</label>
+              <select name="scope" id="scope" class="form-control">
+                <option value="all" {% if rule.scope == 'all' %}selected{% endif %}>All Modules</option>
+                <option value="forum" {% if rule.scope == 'forum' %}selected{% endif %}>Forum</option>
+                <option value="shopping" {% if rule.scope == 'shopping' %}selected{% endif %}>Shopping</option>
+                <option value="chatbot" {% if rule.scope == 'chatbot' %}selected{% endif %}>Chatbot</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="priority" class="form-label">Priority</label>
+              <input type="number" name="priority" id="priority" class="form-control" value="{{ rule.priority|default:'1' }}" min="1" max="10">
+            </div>
+            <div class="form-group">
+              <div class="form-check">
+                <input type="checkbox" name="is_active" id="is_active" {% if rule.is_active or not rule %}checked{% endif %}>
+                <label for="is_active" class="form-check-label">Active</label>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="mod-btn mod-btn-primary">{% if rule %}Update{% else %}Create{% endif %} Rule</button>
+          <a href="{% url 'admin_panel:automod_rules' %}" class="mod-btn mod-btn-outline">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

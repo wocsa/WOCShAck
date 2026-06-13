@@ -1,0 +1,236 @@
+{% extends "base/base_forum.html" %}
+{% load static %}
+
+
+{% block title %}Add Staff Note - {{ target_user.username }} - V.R.C Forum{% endblock %}
+
+{% block extra_css %}
+<style>
+    .page-header {
+        background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+        color: white;
+        padding: 30px;
+        border-radius: 16px;
+        margin-bottom: 30px;
+    }
+    .page-header h1 {
+        font-size: 1.8rem;
+        margin-bottom: 5px;
+    }
+
+    .form-card {
+        background: white;
+        border-radius: 12px;
+        padding: 30px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        margin-bottom: 30px;
+    }
+    .form-group {
+        margin-bottom: 20px;
+    }
+    .form-group label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 8px;
+        color: #333;
+    }
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        width: 100%;
+        padding: 12px 15px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        font-size: 1rem;
+    }
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+        outline: none;
+        border-color: #667eea;
+    }
+    .form-group textarea {
+        min-height: 150px;
+        resize: vertical;
+    }
+
+    .checkbox-group {
+        display: flex;
+        gap: 20px;
+    }
+    .checkbox-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .checkbox-item input {
+        width: 18px;
+        height: 18px;
+    }
+
+    .btn-submit {
+        padding: 12px 30px;
+        background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: transform 0.2s ease;
+    }
+    .btn-submit:hover {
+        transform: translateY(-2px);
+    }
+    .btn-cancel {
+        padding: 12px 30px;
+        background: #f3f4f6;
+        color: #374151;
+        border: none;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+        margin-left: 10px;
+    }
+
+    .notes-list {
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    .notes-header {
+        padding: 15px 20px;
+        background: #f8f9fa;
+        border-bottom: 1px solid #eee;
+        font-weight: 600;
+    }
+    .note-item {
+        padding: 15px 20px;
+        border-bottom: 1px solid #eee;
+    }
+    .note-item:last-child {
+        border-bottom: none;
+    }
+    .note-meta {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 8px;
+        align-items: center;
+    }
+    .note-type {
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        background: #e0e7ff;
+        color: #4f46e5;
+    }
+    .note-flags {
+        font-size: 0.85rem;
+    }
+    .note-flags .pinned { color: #667eea; }
+    .note-flags .important { color: #ef4444; }
+    .note-content {
+        color: #333;
+        margin-bottom: 5px;
+    }
+    .note-author {
+        font-size: 0.85rem;
+        color: #888;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Add Staff Note for {{ target_user.username }}</h1>
+    <p>Private notes visible only to staff members</p>
+</div>
+
+<div class="form-card">
+    <form method="post">
+        {% csrf_token %}
+
+        <div class="form-group">
+            <label for="note_type">Note Type</label>
+            <select name="note_type" id="note_type" required>
+                {% for value, label in note_types %}
+                <option value="{{ value }}">{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="content">Note Content</label>
+            <textarea name="content" id="content" required placeholder="Enter your staff note here..."></textarea>
+        </div>
+
+        <div class="form-group">
+            <label>Note Importance</label>
+            <div class="checkbox-group">
+                <label class="checkbox-item">
+                    <input type="checkbox" name="is_pinned">
+                    Pin to top
+                </label>
+                <label class="checkbox-item">
+                    <input type="checkbox" name="is_important">
+                    Mark as important
+                </label>
+            </div>
+        </div>
+
+        {% if recent_warnings %}
+        <div class="form-group">
+            <label for="related_warning_id">Link to Warning (Optional)</label>
+            <select name="related_warning_id" id="related_warning_id">
+                <option value="">-- Select a warning --</option>
+                {% for warning in recent_warnings %}
+                <option value="{{ warning.id }}">{{ warning.get_severity_display }} - {{ warning.reason|truncatewords:10 }} ({{ warning.created_at|date:"M d" }})</option>
+                {% endfor %}
+            </select>
+        </div>
+        {% endif %}
+
+        {% if recent_reports %}
+        <div class="form-group">
+            <label for="related_report_id">Link to Report (Optional)</label>
+            <select name="related_report_id" id="related_report_id">
+                <option value="">-- Select a report --</option>
+                {% for report in recent_reports %}
+                <option value="{{ report.id }}">{{ report.get_report_type_display }} - {{ report.created_at|date:"M d" }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        {% endif %}
+
+        <div style="margin-top: 20px;">
+            <button type="submit" class="btn-submit">Add Note</button>
+            <a href="{% url 'forum_user_admin' username=target_user.username %}" class="btn-cancel">Cancel</a>
+        </div>
+    </form>
+</div>
+
+{% if existing_notes %}
+<div class="notes-list">
+    <div class="notes-header">Existing Notes ({{ existing_notes.count }})</div>
+    {% for note in existing_notes %}
+    <div class="note-item">
+        <div class="note-meta">
+            <span class="note-type">{{ note.get_note_type_display }}</span>
+            <span class="note-flags">
+                {% if note.is_pinned %}<span class="pinned">Pinned</span>{% endif %}
+                {% if note.is_important %}<span class="important">Important</span>{% endif %}
+            </span>
+        </div>
+        <div class="note-content">{{ note.content|truncatewords:50 }}</div>
+        <div class="note-author">
+            by {{ note.created_by.username }} | {{ note.created_at|timesince }} ago
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+{% endblock %}

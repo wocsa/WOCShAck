@@ -1,0 +1,93 @@
+{% extends "base/base.html" %}
+{% load static %}
+
+{% block title %}V.R.C – Verification Queue{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'base/css/admin.css' %}">
+<style>
+  /* page-specific: card header */
+  .detail-card-header { padding: 14px 20px; border-bottom: 1px solid var(--vrc-gray-100); }
+  .detail-card-header span { font-size: var(--vrc-font-size-sm); color: var(--vrc-gray-500); }
+  /* page-specific: table cell helpers */
+  .td-center { text-align: center; }
+  .td-right { text-align: right; }
+  .td-muted { color: var(--vrc-gray-400); }
+  /* page-specific: pagination info text */
+  .pagination-info { font-size: var(--vrc-font-size-sm); color: var(--vrc-gray-500); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="mod-page">
+
+  <div class="mod-section-header">
+    <div>
+      <h1 class="mod-section-title">Verification Queue</h1>
+      <p class="mod-section-subtitle"><a href="{% url 'account_admin_dashboard' %}" style="color:#667eea;text-decoration:none;">Admin</a> &rsaquo; Unverified Emails</p>
+    </div>
+    <a href="{% url 'account_admin_dashboard' %}" class="mod-btn mod-btn--secondary">&larr; Dashboard</a>
+  </div>
+
+  <div class="mod-table-card">
+    <div class="detail-card-header">
+      <span>{{ page_obj.paginator.count }} unverified account{{ page_obj.paginator.count|pluralize }}</span>
+    </div>
+
+    <div class="mod-table-scroll">
+      <table class="mod-table">
+        <thead>
+          <tr>
+            <th>Username</th>
+            <th>Email</th>
+            <th class="text-center">Status</th>
+            <th>Registered</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for profile in page_obj %}
+          <tr>
+            <td>{{ profile.user.username|escape }}</td>
+            <td class="td-muted">{{ profile.user.email|escape|default:"—" }}</td>
+            <td class="td-center"><span class="mod-badge mod-badge--warning">Unverified</span></td>
+            <td class="td-muted">{{ profile.user.date_joined|date:"M d, Y" }}</td>
+            <td class="td-right">
+              <a href="{% url 'account_admin_user_detail' profile.user.id %}" class="mod-btn mod-btn--secondary mod-btn--sm">View</a>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="5" class="mod-table-empty">
+              <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom:8px;display:block;margin-left:auto;margin-right:auto;color:#059669;">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+              </svg>
+              All accounts are verified!
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% if page_obj.has_other_pages %}
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 20px;border-top:1px solid var(--vrc-gray-100);background:var(--vrc-gray-50);">
+      <span class="pagination-info">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+      <nav class="mod-pagination">
+        {% if page_obj.has_previous %}
+        <a class="mod-page-btn" href="?page={{ page_obj.previous_page_number }}">&laquo; Prev</a>
+        {% else %}
+        <span class="mod-page-btn mod-page-btn--disabled">&laquo; Prev</span>
+        {% endif %}
+        {% if page_obj.has_next %}
+        <a class="mod-page-btn" href="?page={{ page_obj.next_page_number }}">Next &raquo;</a>
+        {% else %}
+        <span class="mod-page-btn mod-page-btn--disabled">Next &raquo;</span>
+        {% endif %}
+      </nav>
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}

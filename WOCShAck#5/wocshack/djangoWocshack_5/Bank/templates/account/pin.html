@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>V.R.C - Banking Verification</title>
+    {% load static %}
+    <link rel="icon" type="image/svg+xml" href="{% static 'img/favicon.svg' %}">
+    <link rel="stylesheet" href="{% static 'css/account/pin.css' %}">
+    <link rel="stylesheet" href="{% static 'header/css/header.css' %}">
+    <style>body { padding-top: 70px; }</style>
+</head>
+<body>
+    {% csrf_token %}
+    {% if user.is_authenticated %}
+        {% include 'header/html/header_account.html' %}
+    {% else %}
+        {% include 'header/html/header.html' %}
+    {% endif %}
+    <div class="pin-container">
+        <div class="pin-card">
+            <div class="pin-header">
+                <h1>Enter PIN</h1>
+                <p class="pin-subtitle">Please enter your 6-digit PIN to continue</p>
+            </div>
+
+            <div class="pin-display" id="pinDisplay">
+                <div class="pin-dot"></div>
+                <div class="pin-dot"></div>
+                <div class="pin-dot"></div>
+                <div class="pin-dot"></div>
+                <div class="pin-dot"></div>
+                <div class="pin-dot"></div>
+            </div>
+
+            <div class="pin-keypad">
+                <button class="pin-key" onclick="addDigit('1')">1</button>
+                <button class="pin-key" onclick="addDigit('2')">2</button>
+                <button class="pin-key" onclick="addDigit('3')">3</button>
+                <button class="pin-key" onclick="addDigit('4')">4</button>
+                <button class="pin-key" onclick="addDigit('5')">5</button>
+                <button class="pin-key" onclick="addDigit('6')">6</button>
+                <button class="pin-key" onclick="addDigit('7')">7</button>
+                <button class="pin-key" onclick="addDigit('8')">8</button>
+                <button class="pin-key" onclick="addDigit('9')">9</button>
+                <button class="pin-key special" onclick="clearPin()">✕</button>
+                <button class="pin-key" onclick="addDigit('0')">0</button>
+                <button class="pin-key special" onclick="backspace()">⌫</button>
+            </div>
+
+            <div class="pin-actions">
+                <button class="pin-btn secondary" onclick="clearPin()">Clear</button>
+                <button class="pin-btn primary" id="submitBtn" onclick="submitPin()" disabled>Submit</button>
+            </div>
+
+            <div class="security-notice">
+                <span>🔒</span>
+                <span>Your PIN is encrypted and secure</span>
+            </div>
+
+            <div class="pin-locked-notice" id="pinLockedNotice" style="display:{% if is_locked %}block{% else %}none{% endif %}">
+                <p>Your PIN is locked due to too many failed attempts. <a href="{% url 'bank_reset_pin' %}">Reset your PIN</a></p>
+            </div>
+        </div>
+    </div>
+    <script src="{% static 'js/pin_entry.js' %}"></script>
+    <script src="{% static 'header/js/hamburger_menu.js' %}"></script>
+    {% if user.is_authenticated %}
+    <script src="{% static 'header/js/user_hamburger_menu.js' %}"></script>
+    {% endif %}
+</body>
+</html>

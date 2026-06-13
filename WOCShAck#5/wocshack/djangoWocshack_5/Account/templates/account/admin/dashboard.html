@@ -1,0 +1,169 @@
+{% extends "base/base.html" %}
+{% load static %}
+
+{% block title %}V.R.C – Account Admin{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'base/css/admin.css' %}">
+<style>
+  /* page-specific: two-column layout */
+  .admin-two-col { display: grid; grid-template-columns: 1fr 1fr; gap: var(--vrc-spacing-5); }
+  @media (max-width: 700px) { .admin-two-col { grid-template-columns: 1fr; } }
+  /* page-specific: card header with title + link */
+  .detail-card-header { display: flex; justify-content: space-between; align-items: center; padding: 14px 20px; border-bottom: 1px solid var(--vrc-gray-100); }
+  .detail-card-header h5 { font-size: var(--vrc-font-size-base); font-weight: 600; margin: 0; color: var(--vrc-gray-900); }
+  .detail-card-header a { font-size: var(--vrc-font-size-sm); color: #667eea; text-decoration: none; }
+  .detail-card-header a:hover { text-decoration: underline; }
+  /* page-specific: table cell helpers */
+  .td-muted { color: var(--vrc-gray-400); }
+  .td-right { text-align: right; }
+  /* page-specific: vertical quick-links list inside a card */
+  .quick-links-list { display: flex; flex-direction: column; }
+  .quick-link-item { display: flex; align-items: center; gap: 14px; padding: 14px 20px; text-decoration: none; color: var(--vrc-gray-800); border-bottom: 1px solid var(--vrc-gray-50); transition: background var(--vrc-transition-fast); }
+  .quick-link-item:last-child { border-bottom: none; }
+  .quick-link-item:hover { background: var(--vrc-gray-50); }
+  .quick-link-item svg { width: 20px; height: 20px; color: #667eea; flex-shrink: 0; }
+  .quick-link-label { font-size: var(--vrc-font-size-sm); font-weight: 500; }
+  .quick-link-desc { font-size: var(--vrc-font-size-xs); color: var(--vrc-gray-500); margin-top: 2px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="mod-page">
+
+  <nav class="vrc-breadcrumbs" style="margin-bottom:var(--vrc-spacing-4);">
+    <a href="{% url 'admin_panel:dashboard' %}">Admin Hub</a>
+    <span class="bc-sep">›</span>
+    <span class="bc-current">Account Admin</span>
+  </nav>
+
+  <div class="mod-section-header">
+    <div>
+      <h1 class="mod-section-title">Account Admin</h1>
+      <p class="mod-section-subtitle">Manage users, verification, and staff roles</p>
+    </div>
+    <div style="display:flex;gap:var(--vrc-spacing-sm);flex-wrap:wrap;">
+      <a href="{% url 'account_admin_user_list' %}" class="mod-btn mod-btn--primary">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        User List
+      </a>
+      <a href="{% url 'account_admin_verification' %}" class="mod-btn mod-btn--secondary">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+        Verification Queue
+      </a>
+    </div>
+  </div>
+
+  <div class="mod-stats">
+    <div class="mod-stat-card">
+      <div class="mod-stat-accent"></div>
+      <div class="mod-stat-body">
+        <div class="mod-stat-icon mod-stat-icon--primary">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        </div>
+        <div class="mod-stat-info">
+          <div class="mod-stat-label">Total Users</div>
+          <div class="mod-stat-value">{{ total_users }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="mod-stat-card">
+      <div class="mod-stat-accent mod-stat-accent--info"></div>
+      <div class="mod-stat-body">
+        <div class="mod-stat-icon mod-stat-icon--info">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
+        <div class="mod-stat-info">
+          <div class="mod-stat-label">Staff Users</div>
+          <div class="mod-stat-value">{{ staff_users }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="mod-stat-card">
+      <div class="mod-stat-accent mod-stat-accent--success"></div>
+      <div class="mod-stat-body">
+        <div class="mod-stat-icon mod-stat-icon--success">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        </div>
+        <div class="mod-stat-info">
+          <div class="mod-stat-label">Active Users</div>
+          <div class="mod-stat-value">{{ active_users }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="mod-stat-card">
+      <div class="mod-stat-accent mod-stat-accent--warning"></div>
+      <div class="mod-stat-body">
+        <div class="mod-stat-icon mod-stat-icon--warning">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+        </div>
+        <div class="mod-stat-info">
+          <div class="mod-stat-label">Unverified Emails</div>
+          <div class="mod-stat-value">{{ unverified_users }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="admin-two-col">
+    <div class="mod-table-card">
+      <div class="detail-card-header">
+        <h5>Recent Sign-ups</h5>
+        <a href="{% url 'account_admin_user_list' %}">View all</a>
+      </div>
+      {% if recent_signups %}
+      <div class="mod-table-scroll">
+        <table class="mod-table">
+          <thead>
+            <tr>
+              <th>Username</th>
+              <th>Joined</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for u in recent_signups %}
+            <tr>
+              <td>
+                <div>{{ u.username|escape }}</div>
+                <div class="td-muted" style="font-size:var(--vrc-font-size-xs);">{{ u.email|escape|default:"—" }}</div>
+              </td>
+              <td class="td-muted">{{ u.date_joined|date:"M d, Y" }}</td>
+              <td class="td-right">
+                <a href="{% url 'account_admin_user_detail' u.id %}" class="mod-btn mod-btn--secondary mod-btn--sm">View</a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="mod-table-empty">No users yet.</div>
+      {% endif %}
+    </div>
+
+    <div class="mod-table-card">
+      <div class="detail-card-header">
+        <h5>Quick Links</h5>
+      </div>
+      <div class="quick-links-list">
+        <a href="{% url 'account_admin_user_list' %}" class="quick-link-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          <div>
+            <div class="quick-link-label">User Management</div>
+            <div class="quick-link-desc">Browse, filter, and manage all users</div>
+          </div>
+        </a>
+        <a href="{% url 'account_admin_verification' %}" class="quick-link-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          <div>
+            <div class="quick-link-label">Verification Queue</div>
+            <div class="quick-link-desc">{{ unverified_users }} unverified account{{ unverified_users|pluralize }}</div>
+          </div>
+        </a>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,69 @@
+{% extends 'base/base.html' %}
+{% block title %}Developer Documentation - V.R.C{% endblock %}
+
+{% block extra_css %}
+<style>
+    .docs-layout { display: grid; grid-template-columns: 240px 1fr; max-width: 1200px; margin: 0 auto; padding: var(--vrc-spacing-xl); gap: var(--vrc-spacing-xl); }
+    .docs-sidebar { position: sticky; top: 100px; align-self: start; }
+    .docs-sidebar h3 { font-size: var(--vrc-font-size-sm); text-transform: uppercase; letter-spacing: 0.1em; color: var(--vrc-gray-500); margin-bottom: var(--vrc-spacing-sm); }
+    .docs-nav { list-style: none; padding: 0; }
+    .docs-nav li { margin-bottom: 4px; }
+    .docs-nav a { display: block; padding: 8px 12px; border-radius: var(--vrc-radius-md); color: var(--vrc-gray-600); text-decoration: none; font-size: var(--vrc-font-size-sm); transition: all var(--vrc-transition-fast); }
+    .docs-nav a:hover, .docs-nav a.active { background: rgba(102, 126, 234, 0.1); color: var(--vrc-primary); }
+    .docs-content { background: var(--vrc-white); border-radius: var(--vrc-radius-lg); padding: var(--vrc-spacing-xl) var(--vrc-spacing-2xl); box-shadow: var(--vrc-shadow-md); }
+    .docs-content h1 { font-size: var(--vrc-font-size-3xl); font-weight: var(--vrc-font-weight-bold); margin-bottom: var(--vrc-spacing-lg); background: var(--vrc-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .docs-content h2 { font-size: var(--vrc-font-size-xl); font-weight: var(--vrc-font-weight-semibold); margin-top: var(--vrc-spacing-xl); margin-bottom: var(--vrc-spacing-md); color: var(--vrc-gray-800); }
+    .docs-content p { line-height: var(--vrc-line-height-relaxed); color: var(--vrc-gray-600); margin-bottom: var(--vrc-spacing-md); }
+    .docs-content code { background: var(--vrc-gray-100); padding: 2px 6px; border-radius: var(--vrc-radius-sm); font-size: var(--vrc-font-size-sm); }
+    .docs-content pre { background: var(--vrc-gray-800); color: var(--vrc-gray-100); padding: var(--vrc-spacing-lg); border-radius: var(--vrc-radius-md); overflow-x: auto; margin-bottom: var(--vrc-spacing-lg); }
+    .docs-content pre code { background: none; padding: 0; color: inherit; }
+    .step-list { counter-reset: step; list-style: none; padding: 0; }
+    .step-list li { counter-increment: step; padding: var(--vrc-spacing-md) 0; border-bottom: 1px solid var(--vrc-gray-100); font-size: var(--vrc-font-size-base); }
+    .step-list li::before { content: counter(step); display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: var(--vrc-gradient); color: white; border-radius: var(--vrc-radius-full); margin-right: 12px; font-size: var(--vrc-font-size-sm); font-weight: var(--vrc-font-weight-bold); }
+    .back-link { display: inline-block; margin-bottom: var(--vrc-spacing-lg); color: var(--vrc-primary); text-decoration: none; font-size: var(--vrc-font-size-sm); }
+    @media (max-width: 768px) { .docs-layout { grid-template-columns: 1fr; } .docs-sidebar { position: static; } }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="docs-layout">
+    <div class="docs-sidebar">
+        <a href="{% url 'developer_dashboard' %}" class="back-link">&larr; Dashboard</a>
+        <h3>Documentation</h3>
+        <ul class="docs-nav">
+            <li><a href="{% url 'developer_docs' %}" class="active">Getting Started</a></li>
+            <li><a href="{% url 'developer_docs_api' %}">API Reference</a></li>
+            <li><a href="{% url 'developer_docs_webhooks' %}">Webhooks</a></li>
+            <li><a href="{% url 'developer_docs_examples' %}">Examples</a></li>
+        </ul>
+    </div>
+
+    <div class="docs-content">
+        <h1>Getting Started</h1>
+        <p>Welcome to the VRC Developer Portal! This guide will help you get up and running with creating, publishing, and monetizing your CSS creations.</p>
+
+        <h2>Quick Start</h2>
+        <ol class="step-list">
+            <li>Purchase the <strong>Developer Role</strong> from the Account Store (99 Neuros)</li>
+            <li>Set up your <strong>Developer Profile</strong> with your display name and links</li>
+            <li>Choose a <strong>Subscription Plan</strong> that fits your needs</li>
+            <li>Create your first <strong>CSS Project</strong> using the built-in editor</li>
+            <li><strong>Publish</strong> your project to the marketplace</li>
+            <li>Track your <strong>Analytics</strong> and manage <strong>Payouts</strong></li>
+        </ol>
+
+        <h2>Editor</h2>
+        <p>The CSS Editor features a full CodeMirror editor with syntax highlighting, live preview, and built-in tools for minifying, beautifying, validating, and prefixing your CSS.</p>
+        <p>Save your work with <code>Ctrl+S</code> (or <code>Cmd+S</code> on Mac). Create version snapshots to track changes over time.</p>
+
+        <h2>Publishing</h2>
+        <p>When your CSS project is ready, publish it as a marketplace listing. You can set pricing tiers, license types, and create promotional codes. Your listing goes through a review process before becoming publicly available.</p>
+
+        <h2>Monetization</h2>
+        <p>Earn Neuros from sales of your CSS creations. The default commission rate is <strong>70%</strong> — you keep 70% of each sale. Set up a payout method to withdraw your earnings.</p>
+
+        <h2>API Access</h2>
+        <p>Generate API keys to integrate programmatically with the VRC Developer Platform. Set up webhooks to receive real-time notifications about sales, reviews, and other events.</p>
+    </div>
+</div>
+{% endblock %}

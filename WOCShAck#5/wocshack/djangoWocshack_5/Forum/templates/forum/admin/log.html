@@ -1,0 +1,228 @@
+{% extends "base/base_forum.html" %}
+{% load static %}
+
+
+{% block title %}Moderation Log - V.R.C Forum{% endblock %}
+
+{% block extra_css %}
+<style>
+    .page-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 30px;
+        border-radius: 16px;
+        margin-bottom: 30px;
+    }
+    .page-header h1 {
+        font-size: 1.8rem;
+        margin-bottom: 5px;
+    }
+
+    .filters-bar {
+        background: white;
+        padding: 15px 20px;
+        border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        margin-bottom: 20px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+    .filter-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .filter-group label {
+        font-weight: 500;
+        color: #666;
+        font-size: 0.9rem;
+    }
+    .filter-group select {
+        padding: 8px 12px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        font-size: 0.9rem;
+    }
+
+    .log-list {
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    .log-item {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        padding: 15px 20px;
+        border-bottom: 1px solid #eee;
+    }
+    .log-item:last-child {
+        border-bottom: none;
+    }
+
+    .log-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+    .log-icon svg {
+        width: 20px;
+        height: 20px;
+    }
+    .icon-warning { background: #fef3c7; color: #92400e; }
+    .icon-mute { background: #fecaca; color: #dc2626; }
+    .icon-hide { background: #e0e7ff; color: #4f46e5; }
+    .icon-delete { background: #fee2e2; color: #ef4444; }
+    .icon-report { background: #d1fae5; color: #059669; }
+    .icon-topic { background: #dbeafe; color: #2563eb; }
+    .icon-default { background: #f3f4f6; color: #6b7280; }
+
+    .log-content {
+        flex: 1;
+    }
+    .log-action {
+        font-weight: 500;
+        color: #333;
+        margin-bottom: 3px;
+    }
+    .log-description {
+        font-size: 0.9rem;
+        color: #666;
+        margin-bottom: 3px;
+    }
+    .log-meta {
+        font-size: 0.85rem;
+        color: #888;
+    }
+    .log-meta a {
+        color: #667eea;
+        text-decoration: none;
+    }
+
+    .log-time {
+        text-align: right;
+        min-width: 100px;
+        font-size: 0.85rem;
+        color: #888;
+    }
+
+    .empty-state {
+        padding: 60px 20px;
+        text-align: center;
+        color: #888;
+    }
+
+    .pagination-container {
+        display: flex;
+        justify-content: center;
+        margin-top: 30px;
+    }
+    .pagination {
+        display: flex;
+        gap: 5px;
+    }
+    .pagination a, .pagination span {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 40px;
+        height: 40px;
+        padding: 0 12px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 500;
+    }
+    .pagination a {
+        background: white;
+        color: #333;
+        border: 1px solid #ddd;
+    }
+    .pagination a:hover {
+        background: #667eea;
+        color: white;
+    }
+    .pagination .current {
+        background: #667eea;
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Moderation Log</h1>
+    <p>Complete audit trail of all moderation actions</p>
+</div>
+
+<form method="get" class="filters-bar">
+    <div class="filter-group">
+        <label>Action:</label>
+        <select name="action" onchange="this.form.submit()">
+            <option value="">All Actions</option>
+            {% for value, label in action_types %}
+            <option value="{{ value }}" {% if action_filter == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="filter-group">
+        <label>Moderator:</label>
+        <select name="moderator" onchange="this.form.submit()">
+            <option value="">All Moderators</option>
+            {% for mod in moderators %}
+            <option value="{{ mod }}" {% if moderator_filter == mod %}selected{% endif %}>{{ mod }}</option>
+            {% endfor %}
+        </select>
+    </div>
+</form>
+
+<div class="log-list">
+    {% for log in logs %}
+    <div class="log-item">
+        <div class="log-icon {% if 'warning' in log.action_type %}icon-warning{% elif 'mute' in log.action_type %}icon-mute{% elif 'hidden' in log.action_type %}icon-hide{% elif 'deleted' in log.action_type %}icon-delete{% elif 'report' in log.action_type %}icon-report{% elif 'topic' in log.action_type %}icon-topic{% else %}icon-default{% endif %}">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+        </div>
+        <div class="log-content">
+            <div class="log-action">{{ log.get_action_type_display }}</div>
+            {% if log.description %}
+            <div class="log-description">{{ log.description|truncatewords:20 }}</div>
+            {% endif %}
+            <div class="log-meta">
+                by <a href="#">{{ log.moderator_username }}</a>
+                {% if log.target_user_username %} | Target: <a href="{% url 'forum_user_admin' username=log.target_user_username %}">{{ log.target_user_username }}</a>{% endif %}
+            </div>
+        </div>
+        <div class="log-time">
+            {{ log.created_at|date:"M d" }}<br>
+            {{ log.created_at|time:"H:i" }}
+        </div>
+    </div>
+    {% empty %}
+    <div class="empty-state">
+        <h3>No log entries</h3>
+        <p>No moderation actions have been logged yet</p>
+    </div>
+    {% endfor %}
+</div>
+
+{% if page_obj.has_other_pages %}
+<div class="pagination-container">
+    <nav class="pagination">
+        {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}&action={{ action_filter }}&moderator={{ moderator_filter }}">Previous</a>
+        {% endif %}
+        <span class="current">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+        {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}&action={{ action_filter }}&moderator={{ moderator_filter }}">Next</a>
+        {% endif %}
+    </nav>
+</div>
+{% endif %}
+{% endblock %}

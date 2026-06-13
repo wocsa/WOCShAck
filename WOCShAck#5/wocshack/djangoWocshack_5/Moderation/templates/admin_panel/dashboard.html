@@ -1,0 +1,224 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'base/css/admin.css' %}">
+<style>
+  /* page-specific: stat cards have footer sections not in mod-stat-card */
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--vrc-spacing-4); margin-bottom: var(--vrc-spacing-6); }
+  .stat-card { background: #fff; border-radius: var(--vrc-radius-xl); box-shadow: var(--vrc-shadow-sm); overflow: hidden; }
+  .stat-card-body { padding: var(--vrc-spacing-4); }
+  .stat-card-title { font-size: var(--vrc-font-size-sm); font-weight: 600; color: var(--vrc-gray-600); margin-bottom: var(--vrc-spacing-2); }
+  .stat-card-value { font-size: 2rem; font-weight: 700; color: var(--vrc-gray-900); line-height: 1; }
+  .stat-card-meta { font-size: var(--vrc-font-size-xs); color: var(--vrc-gray-500); margin-top: 6px; }
+  .stat-sanctions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 6px; }
+  .stat-sanction-item { text-align: center; }
+  .stat-sanction-val { font-size: 1.4rem; font-weight: 700; color: var(--vrc-gray-800); }
+  .stat-sanction-label { font-size: var(--vrc-font-size-xs); color: var(--vrc-gray-500); }
+  .stat-card-footer { padding: 10px var(--vrc-spacing-4); border-top: 1px solid var(--vrc-gray-100); background: var(--vrc-gray-50); }
+  /* page-specific: two-column layout */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: var(--vrc-spacing-5); margin-bottom: var(--vrc-spacing-5); }
+  @media (max-width: 700px) { .two-col { grid-template-columns: 1fr; } }
+  /* page-specific: card header/body (mod-table-card has no built-in header) */
+  .mod-card-header { display: flex; justify-content: space-between; align-items: center; padding: 14px 20px; border-bottom: 1px solid var(--vrc-gray-100); }
+  .mod-card-header h5 { font-size: var(--vrc-font-size-base); font-weight: 600; margin: 0; color: var(--vrc-gray-900); display: flex; align-items: center; gap: 8px; }
+  .mod-card-body { padding: var(--vrc-spacing-4); }
+  /* page-specific: report list items */
+  .report-list { display: flex; flex-direction: column; }
+  .report-item { display: flex; align-items: flex-start; gap: 12px; padding: 12px 20px; border-bottom: 1px solid var(--vrc-gray-50); text-decoration: none; color: inherit; transition: background var(--vrc-transition-fast); }
+  .report-item:last-child { border-bottom: none; }
+  .report-item:hover { background: var(--vrc-gray-50); }
+  .report-info { flex: 1; }
+  .report-type { font-size: var(--vrc-font-size-sm); font-weight: 500; color: var(--vrc-gray-800); }
+  .report-meta { font-size: var(--vrc-font-size-xs); color: var(--vrc-gray-500); margin-top: 2px; }
+  .report-empty { padding: 24px 20px; text-align: center; color: var(--vrc-gray-400); font-size: var(--vrc-font-size-sm); }
+  .report-footer { padding: 12px 20px; border-top: 1px solid var(--vrc-gray-100); background: var(--vrc-gray-50); }
+  /* page-specific: module link grid */
+  .module-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: var(--vrc-spacing-3); }
+  .module-link { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 16px 10px; background: var(--vrc-gray-50); border-radius: var(--vrc-radius-lg); text-decoration: none; color: var(--vrc-gray-700); font-size: var(--vrc-font-size-sm); font-weight: 500; border: 1px solid var(--vrc-gray-100); transition: all var(--vrc-transition-fast); text-align: center; }
+  .module-link:hover { background: #ede9fe; color: #6d28d9; border-color: #c4b5fd; }
+  .module-link svg { width: 24px; height: 24px; color: #667eea; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="mod-page">
+
+  <nav class="vrc-breadcrumbs" style="margin-bottom:var(--vrc-spacing-4);">
+    <a href="/">Home</a>
+    <span class="bc-sep">›</span>
+    <span class="bc-current">Admin Dashboard</span>
+  </nav>
+
+  <div class="mod-section-header">
+    <h1 class="mod-section-title">Admin Dashboard</h1>
+    <div style="display:flex;gap:var(--vrc-spacing-2);">
+      <a href="{% url 'admin_panel:report_list' %}" class="mod-btn mod-btn--primary">Reports</a>
+      <a href="{% url 'admin_panel:content_queue' %}" class="mod-btn mod-btn--secondary">Queue</a>
+    </div>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-card-body">
+        <div class="stat-card-title">Pending Reports</div>
+        <div class="stat-card-value">{{ report_counts.total|default:"0" }}</div>
+        <div class="stat-card-meta">
+          {% if report_counts.critical %}<span class="mod-badge mod-badge--danger">{{ report_counts.critical }} Critical</span> {% endif %}
+          {% if report_counts.high %}<span class="mod-badge mod-badge--warning">{{ report_counts.high }} High</span> {% endif %}
+          {{ report_counts.medium }} Medium, {{ report_counts.low }} Low
+        </div>
+      </div>
+      <div class="stat-card-footer">
+        <a href="{% url 'admin_panel:report_list' %}?status=pending" class="mod-btn mod-btn--secondary mod-btn--sm">View Reports</a>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-card-body">
+        <div class="stat-card-title">Content Queue</div>
+        <div class="stat-card-value">{{ queue_counts.total|default:"0" }}</div>
+        <div class="stat-card-meta">
+          {% if queue_counts.critical %}<span class="mod-badge mod-badge--danger">{{ queue_counts.critical }} Critical</span> {% endif %}
+          {% if queue_counts.high %}<span class="mod-badge mod-badge--warning">{{ queue_counts.high }} High</span>{% endif %}
+        </div>
+      </div>
+      <div class="stat-card-footer">
+        <a href="{% url 'admin_panel:content_queue' %}?status=pending" class="mod-btn mod-btn--secondary mod-btn--sm">Review Content</a>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-card-body">
+        <div class="stat-card-title">Active Sanctions</div>
+        <div class="stat-sanctions">
+          <div class="stat-sanction-item">
+            <div class="stat-sanction-val">{{ active_warnings }}</div>
+            <div class="stat-sanction-label">Warnings</div>
+          </div>
+          <div class="stat-sanction-item">
+            <div class="stat-sanction-val">{{ active_mutes }}</div>
+            <div class="stat-sanction-label">Mutes</div>
+          </div>
+          <div class="stat-sanction-item">
+            <div class="stat-sanction-val">{{ active_bans }}</div>
+            <div class="stat-sanction-label">Bans</div>
+          </div>
+        </div>
+      </div>
+      <div class="stat-card-footer">
+        <a href="{% url 'admin_panel:appeal_list' %}" class="mod-btn mod-btn--secondary mod-btn--sm">View Appeals</a>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-card-body">
+        <div class="stat-card-title">Quick Actions</div>
+      </div>
+      <div style="padding:0 var(--vrc-spacing-4) var(--vrc-spacing-4);display:flex;flex-direction:column;gap:6px;">
+        <a href="{% url 'admin_panel:audit_log' %}" class="mod-btn mod-btn--secondary mod-btn--sm">Audit Log</a>
+        <a href="{% url 'admin_panel:staff_list' %}" class="mod-btn mod-btn--secondary mod-btn--sm">Staff</a>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div class="mod-table-card">
+      <div class="mod-card-header">
+        <h5>My Assigned Reports <span class="mod-badge mod-badge--primary">{{ my_reports.count }}</span></h5>
+      </div>
+      <div class="report-list">
+        {% for report in my_reports %}
+        <a href="{% url 'admin_panel:report_detail' report.id %}" class="report-item">
+          <span class="mod-badge {% if report.priority == 'critical' %}mod-badge--danger{% elif report.priority == 'high' %}mod-badge--warning{% else %}mod-badge--gray{% endif %}">{{ report.get_priority_display }}</span>
+          <div class="report-info">
+            <div class="report-type">{{ report.get_report_type_display }}</div>
+            <div class="report-meta">by {{ report.reporter.username }} &bull; {{ report.created_at|timesince }} ago</div>
+          </div>
+        </a>
+        {% empty %}
+        <div class="report-empty">No reports currently assigned to you.</div>
+        {% endfor %}
+      </div>
+      {% if my_reports %}
+      <div class="report-footer">
+        <a href="{% url 'admin_panel:report_list' %}?assignment=mine" class="mod-btn mod-btn--primary mod-btn--sm">View All My Reports</a>
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="mod-table-card">
+      <div class="mod-card-header">
+        <h5>Recent Actions (24h) <span class="mod-badge mod-badge--info">{{ recent_actions.count }}</span></h5>
+      </div>
+      <div class="report-list">
+        {% for action in recent_actions %}
+        <div class="report-item" style="cursor:default;">
+          <div class="report-info">
+            <div class="report-type">
+              {{ action.actor.username }}
+              <span class="mod-badge mod-badge--gray" style="margin-left:4px;">{{ action.get_action_type_display }}</span>
+            </div>
+            {% if action.reason %}
+            <div class="report-meta">{{ action.reason|truncatechars:80|escape }}</div>
+            {% endif %}
+            <div class="report-meta">{{ action.created_at|timesince }} ago</div>
+          </div>
+        </div>
+        {% empty %}
+        <div class="report-empty">No recent moderation actions.</div>
+        {% endfor %}
+      </div>
+      {% if recent_actions %}
+      <div class="report-footer">
+        <a href="{% url 'admin_panel:content_action_history' %}" class="mod-btn mod-btn--secondary mod-btn--sm">View Full History</a>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="mod-table-card">
+    <div class="mod-card-header"><h5>Module Panels</h5></div>
+    <div class="mod-card-body">
+      <div class="module-grid">
+        <a href="{% url 'forum_admin_dashboard' %}" class="module-link">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          Forum
+        </a>
+        <a href="{% url 'chatbot:admin_dashboard' %}" class="module-link">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+          Chatbot
+        </a>
+        <a href="{% url 'shop_admin_dashboard' %}" class="module-link">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+          Shopping
+        </a>
+        <a href="{% url 'community:admin_dashboard' %}" class="module-link">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Community
+        </a>
+        <a href="{% url 'advertisement_admin_dashboard' %}" class="module-link">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+          Ads
+        </a>
+        <a href="{% url 'developer_admin_dashboard' %}" class="module-link">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+          Developer
+        </a>
+        <a href="{% url 'account_admin_dashboard' %}" class="module-link">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          Accounts
+        </a>
+        <a href="{% url 'banking_admin' %}" class="module-link">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          Banking
+        </a>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

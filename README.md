@@ -46,6 +46,9 @@ The option -d stand for detach. If you want to have all the logs, remove this op
 To run the project, go to the folder with the docker-compose.yml file and run: 
 `docker compose down`
 
+# WOCS'hAck#5
+<img src="./img/WOCShAck_5.png">
+
 # WOCS'hAck#4
 <img src="./img/WOCShAck_4.png">
 

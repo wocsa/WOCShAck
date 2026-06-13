@@ -1,0 +1,191 @@
+{% extends "base/base_forum.html" %}
+{% load static %}
+
+
+{% block title %}{{ profile_user.username }}'s Forum Profile - V.R.C{% endblock %}
+
+{% block extra_css %}
+<style>
+    .profile-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 40px;
+        border-radius: 16px;
+        margin-bottom: 30px;
+        display: flex;
+        align-items: center;
+        gap: 30px;
+    }
+    .profile-avatar {
+        width: 100px;
+        height: 100px;
+        background: rgba(255,255,255,0.2);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 3rem;
+        font-weight: 600;
+        flex-shrink: 0;
+    }
+    .profile-avatar-img {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid rgba(255,255,255,0.3);
+    }
+    .profile-info h1 {
+        font-size: 2rem;
+        margin-bottom: 5px;
+    }
+    .profile-rank {
+        opacity: 0.9;
+        font-size: 1.1rem;
+    }
+    .profile-stats {
+        display: flex;
+        gap: 30px;
+        margin-top: 15px;
+    }
+    .stat {
+        text-align: center;
+    }
+    .stat-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+    }
+    .stat-label {
+        font-size: 0.9rem;
+        opacity: 0.8;
+    }
+
+    .content-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+        gap: 25px;
+    }
+
+    .section-card {
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    .section-header {
+        padding: 15px 20px;
+        background: #f8f9fa;
+        border-bottom: 1px solid #eee;
+        font-weight: 600;
+        color: #333;
+    }
+    .section-content {
+        padding: 0;
+    }
+
+    .activity-item {
+        display: block;
+        padding: 15px 20px;
+        border-bottom: 1px solid #eee;
+        text-decoration: none;
+        color: inherit;
+        transition: background 0.2s ease;
+    }
+    .activity-item:last-child {
+        border-bottom: none;
+    }
+    .activity-item:hover {
+        background: #f8f9fa;
+    }
+    .activity-title {
+        font-weight: 500;
+        color: #333;
+        margin-bottom: 3px;
+    }
+    .activity-meta {
+        font-size: 0.85rem;
+        color: #888;
+    }
+
+    .empty-state {
+        padding: 40px 20px;
+        text-align: center;
+        color: #888;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="profile-header">
+    {% if profile_user.profile.picture_path and profile_user.profile.picture_path != 'default.png' %}
+    <img src="{% static 'uploads/' %}{{ profile_user.profile.picture_path }}"
+         alt="{{ profile_user.username }}'s avatar"
+         class="profile-avatar profile-avatar-img">
+    {% else %}
+    <div class="profile-avatar">
+        {{ profile_user.username|slice:":1"|upper }}
+    </div>
+    {% endif %}
+    <div class="profile-info">
+        <h1>{{ profile_user.username }}</h1>
+        <div class="profile-rank">{{ reputation.get_rank }}</div>
+        <div style="margin-top: 10px;">
+            <a href="{% url 'community:user_profile' user_id=profile_user.id %}" style="color: rgba(255,255,255,0.9); text-decoration: none; font-size: 0.9rem; background: rgba(255,255,255,0.15); padding: 6px 14px; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px;">
+                👤 Community Profile
+            </a>
+        </div>
+        <div class="profile-stats">
+            <div class="stat">
+                <div class="stat-value">{{ reputation.reputation_points }}</div>
+                <div class="stat-label">Reputation</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value">{{ reputation.topics_count }}</div>
+                <div class="stat-label">Topics</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value">{{ reputation.posts_count }}</div>
+                <div class="stat-label">Posts</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value">{{ reputation.likes_received }}</div>
+                <div class="stat-label">Likes</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="content-grid">
+    <div class="section-card">
+        <div class="section-header">Recent Topics</div>
+        <div class="section-content">
+            {% for topic in recent_topics %}
+            <a href="{% url 'forum_topic' topic_id=topic.id %}" class="activity-item">
+                <div class="activity-title">{{ topic.title }}</div>
+                <div class="activity-meta">
+                    in {{ topic.category.name }} | {{ topic.created_at|timesince }} ago
+                </div>
+            </a>
+            {% empty %}
+            <div class="empty-state">No topics yet</div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="section-card">
+        <div class="section-header">Recent Posts</div>
+        <div class="section-content">
+            {% for post in recent_posts %}
+            <a href="{% url 'forum_topic' topic_id=post.topic.id %}#post-{{ post.id }}" class="activity-item">
+                <div class="activity-title">{{ post.topic.title }}</div>
+                <div class="activity-meta">
+                    {{ post.created_at|timesince }} ago
+                </div>
+            </a>
+            {% empty %}
+            <div class="empty-state">No posts yet</div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

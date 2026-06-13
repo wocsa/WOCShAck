@@ -1,0 +1,83 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Issue Warning - {{ target_user.username }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'base/css/admin.css' %}">
+<style>
+  .mod-btn-warning { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+  .mod-btn-warning:hover { background: #fde68a; }
+  .mod-card-header h4 { font-size: var(--vrc-font-size-lg); font-weight: 700; color: var(--vrc-gray-900); margin: 0; }
+  .required { color: #dc2626; }
+  .info-box { background: #e0f2fe; border: 1px solid #bae6fd; border-radius: var(--vrc-radius-md); padding: var(--vrc-spacing-3) var(--vrc-spacing-4); margin-bottom: var(--vrc-spacing-4); font-size: var(--vrc-font-size-sm); color: #0c4a6e; }
+  .info-box strong { display: block; margin-bottom: 6px; }
+  .info-box ul { margin: 0; padding-left: 18px; }
+  .info-box li { margin-bottom: 2px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="mod-page">
+  <div class="mod-card">
+    <div class="mod-card-header">
+      <h4>Issue Warning to {{ target_user.username }}</h4>
+    </div>
+    <div class="mod-card-body">
+      <form method="post">
+        {% csrf_token %}
+        <div class="form-group">
+          <label for="warning_type" class="form-label">Warning Type <span class="required">*</span></label>
+          <select name="warning_type" id="warning_type" class="form-control" required>
+            <option value="">Select warning type...</option>
+            {% for value, label in warning_types %}
+              <option value="{{ value }}">{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="severity" class="form-label">Severity <span class="required">*</span></label>
+          <select name="severity" id="severity" class="form-control" required>
+            <option value="">Select severity...</option>
+            {% for value, label in severity_choices %}
+              <option value="{{ value }}">{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="reason" class="form-label">Reason <span class="required">*</span></label>
+          <textarea name="reason" id="reason" class="form-control" rows="4" placeholder="Provide a clear explanation of the violation..." required></textarea>
+          <div class="form-hint">Be specific about what rule was violated and provide details.</div>
+        </div>
+        <div class="form-group">
+          <label for="evidence" class="form-label">Evidence</label>
+          <textarea name="evidence" id="evidence" class="form-control" rows="3" placeholder="Links, screenshots, or other evidence (optional)"></textarea>
+        </div>
+        <div class="form-group">
+          <label for="expires_days" class="form-label">Expires After (Days)</label>
+          <select name="expires_days" id="expires_days" class="form-control">
+            <option value="7">7 days</option>
+            <option value="14">14 days</option>
+            <option value="30" selected>30 days</option>
+            <option value="60">60 days</option>
+            <option value="90">90 days</option>
+          </select>
+        </div>
+        <div class="info-box">
+          <strong>Warning Points System:</strong>
+          <ul>
+            <li>Low: 1 point</li>
+            <li>Medium: 3 points</li>
+            <li>High: 5 points</li>
+            <li>Critical: 10 points</li>
+          </ul>
+        </div>
+        <div class="form-actions">
+          <a href="{% url 'admin_panel:user_overview' target_user.username %}" class="mod-btn mod-btn-outline">Cancel</a>
+          <button type="submit" class="mod-btn mod-btn-warning">Issue Warning</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

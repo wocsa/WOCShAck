@@ -1,0 +1,158 @@
+{% extends 'base/base.html' %}
+{% block title %}API Reference - V.R.C{% endblock %}
+
+{% block extra_css %}
+<style>
+    .docs-layout { display: grid; grid-template-columns: 240px 1fr; max-width: 1200px; margin: 0 auto; padding: var(--vrc-spacing-xl); gap: var(--vrc-spacing-xl); }
+    .docs-sidebar { position: sticky; top: 100px; align-self: start; }
+    .docs-sidebar h3 { font-size: var(--vrc-font-size-sm); text-transform: uppercase; letter-spacing: 0.1em; color: var(--vrc-gray-500); margin-bottom: var(--vrc-spacing-sm); }
+    .docs-nav { list-style: none; padding: 0; }
+    .docs-nav li { margin-bottom: 4px; }
+    .docs-nav a { display: block; padding: 8px 12px; border-radius: var(--vrc-radius-md); color: var(--vrc-gray-600); text-decoration: none; font-size: var(--vrc-font-size-sm); }
+    .docs-nav a:hover, .docs-nav a.active { background: rgba(102, 126, 234, 0.1); color: var(--vrc-primary); }
+    .docs-content { background: var(--vrc-white); border-radius: var(--vrc-radius-lg); padding: var(--vrc-spacing-xl) var(--vrc-spacing-2xl); box-shadow: var(--vrc-shadow-md); }
+    .docs-content h1 { font-size: var(--vrc-font-size-3xl); font-weight: var(--vrc-font-weight-bold); margin-bottom: var(--vrc-spacing-lg); }
+    .docs-content h2 { font-size: var(--vrc-font-size-xl); font-weight: var(--vrc-font-weight-semibold); margin-top: var(--vrc-spacing-xl); margin-bottom: var(--vrc-spacing-md); color: var(--vrc-gray-800); }
+    .docs-content h3 { font-size: var(--vrc-font-size-lg); margin-top: var(--vrc-spacing-lg); margin-bottom: var(--vrc-spacing-sm); }
+    .docs-content p { line-height: var(--vrc-line-height-relaxed); color: var(--vrc-gray-600); margin-bottom: var(--vrc-spacing-md); }
+    .docs-content code { background: var(--vrc-gray-100); padding: 2px 6px; border-radius: var(--vrc-radius-sm); font-size: var(--vrc-font-size-sm); }
+    .docs-content pre { background: var(--vrc-gray-800); color: var(--vrc-gray-100); padding: var(--vrc-spacing-lg); border-radius: var(--vrc-radius-md); overflow-x: auto; margin-bottom: var(--vrc-spacing-lg); }
+    .docs-content pre code { background: none; padding: 0; color: inherit; }
+    .endpoint { background: var(--vrc-gray-50); border: 1px solid var(--vrc-gray-200); border-radius: var(--vrc-radius-md); padding: var(--vrc-spacing-md); margin-bottom: var(--vrc-spacing-md); }
+    .endpoint .method { display: inline-block; padding: 2px 8px; border-radius: var(--vrc-radius-sm); font-size: var(--vrc-font-size-xs); font-weight: var(--vrc-font-weight-bold); color: white; }
+    .method-get { background: var(--vrc-success); }
+    .method-post { background: var(--vrc-info); }
+    .method-delete { background: var(--vrc-error); }
+    .endpoint .path { font-family: monospace; margin-left: 8px; }
+    .back-link { display: inline-block; margin-bottom: var(--vrc-spacing-lg); color: var(--vrc-primary); text-decoration: none; font-size: var(--vrc-font-size-sm); }
+    .swagger-banner { background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 226, 0.1)); border: 1px solid rgba(102, 126, 234, 0.3); border-radius: var(--vrc-radius-md); padding: var(--vrc-spacing-lg); margin-bottom: var(--vrc-spacing-xl); }
+    .swagger-banner h3 { margin-top: 0; margin-bottom: var(--vrc-spacing-sm); color: var(--vrc-gray-800); }
+    .swagger-banner p { margin-bottom: var(--vrc-spacing-md); }
+    .swagger-banner .btn-swagger { display: inline-block; padding: 10px 20px; background: var(--vrc-primary); color: white; border-radius: var(--vrc-radius-md); text-decoration: none; font-weight: var(--vrc-font-weight-semibold); font-size: var(--vrc-font-size-sm); margin-right: var(--vrc-spacing-sm); }
+    .swagger-banner .btn-swagger:hover { opacity: 0.9; }
+    .swagger-banner .btn-spec { display: inline-block; padding: 10px 20px; background: var(--vrc-white); color: var(--vrc-primary); border: 1px solid var(--vrc-primary); border-radius: var(--vrc-radius-md); text-decoration: none; font-weight: var(--vrc-font-weight-semibold); font-size: var(--vrc-font-size-sm); }
+    .swagger-banner .btn-spec:hover { background: rgba(102, 126, 234, 0.05); }
+    @media (max-width: 768px) { .docs-layout { grid-template-columns: 1fr; } }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="docs-layout">
+    <div class="docs-sidebar">
+        <a href="{% url 'developer_dashboard' %}" class="back-link">&larr; Dashboard</a>
+        <h3>Documentation</h3>
+        <ul class="docs-nav">
+            <li><a href="{% url 'developer_docs' %}">Getting Started</a></li>
+            <li><a href="{% url 'developer_docs_api' %}" class="active">API Reference</a></li>
+            <li><a href="{% url 'developer_docs_webhooks' %}">Webhooks</a></li>
+            <li><a href="{% url 'developer_docs_examples' %}">Examples</a></li>
+        </ul>
+    </div>
+
+    <div class="docs-content">
+        <h1>API Reference</h1>
+        <p>The VRC Developer API allows you to manage your CSS projects, listings, and analytics programmatically.</p>
+
+        <div class="swagger-banner">
+            <h3>🔗 Interactive API Documentation</h3>
+            <p>Try out API endpoints directly in your browser with our Swagger UI, or download the OpenAPI spec to import into tools like Postman.</p>
+            <a href="/api/docs/" class="btn-swagger">Open Swagger UI</a>
+            <a href="/api/openapi.json" class="btn-spec">Download OpenAPI Spec</a>
+        </div>
+
+        <h2>Authentication</h2>
+        <p>All authenticated API requests require an API key passed in the <code>X-API-Key</code> header:</p>
+        <pre><code>X-API-Key: vrc_your_api_key_here</code></pre>
+        <p>You can create and manage API keys from the <a href="/api/keys/">API Keys page</a>.</p>
+
+        <h2>Rate Limits</h2>
+        <p>Default rate limits are 60 requests/minute and 5,000 requests/day. These can be configured per API key.</p>
+
+        <h2>Endpoints</h2>
+
+        <h3>Public (No Auth Required)</h3>
+        <div class="endpoint">
+            <span class="method method-get">GET</span>
+            <span class="path">/api/css/</span>
+            <p style="margin-top: 8px; font-size: var(--vrc-font-size-sm); color: var(--vrc-gray-600);">List all CSS files with pagination, sorting, and filtering</p>
+        </div>
+        <div class="endpoint">
+            <span class="method method-get">GET</span>
+            <span class="path">/api/css/search/?q=keyword</span>
+            <p style="margin-top: 8px; font-size: var(--vrc-font-size-sm); color: var(--vrc-gray-600);">Search CSS files by name, description, or category</p>
+        </div>
+        <div class="endpoint">
+            <span class="method method-get">GET</span>
+            <span class="path">/api/categories/</span>
+            <p style="margin-top: 8px; font-size: var(--vrc-font-size-sm); color: var(--vrc-gray-600);">List all available categories</p>
+        </div>
+        <div class="endpoint">
+            <span class="method method-get">GET</span>
+            <span class="path">/api/css/&lt;uuid&gt;/</span>
+            <p style="margin-top: 8px; font-size: var(--vrc-font-size-sm); color: var(--vrc-gray-600);">Get details of a specific CSS file</p>
+        </div>
+
+        <h3>Your CSS Projects (Auth Required)</h3>
+        <div class="endpoint">
+            <span class="method method-get">GET</span>
+            <span class="path">/api/css/my/</span>
+            <p style="margin-top: 8px; font-size: var(--vrc-font-size-sm); color: var(--vrc-gray-600);">List all your CSS projects</p>
+        </div>
+        <div class="endpoint">
+            <span class="method method-post">POST</span>
+            <span class="path">/api/css/create/</span>
+            <p style="margin-top: 8px; font-size: var(--vrc-font-size-sm); color: var(--vrc-gray-600);">Create a new CSS project</p>
+        </div>
+        <div class="endpoint">
+            <span class="method method-post">POST</span>
+            <span class="path">/api/css/&lt;uuid&gt;/update/</span>
+            <p style="margin-top: 8px; font-size: var(--vrc-font-size-sm); color: var(--vrc-gray-600);">Update an existing CSS project (owner only)</p>
+        </div>
+        <div class="endpoint">
+            <span class="method method-delete">DELETE</span>
+            <span class="path">/api/css/&lt;uuid&gt;/delete/</span>
+            <p style="margin-top: 8px; font-size: var(--vrc-font-size-sm); color: var(--vrc-gray-600);">Delete a CSS project (owner only)</p>
+        </div>
+
+        <h3>Commerce (Auth Required)</h3>
+        <div class="endpoint">
+            <span class="method method-get">GET</span>
+            <span class="path">/api/css/purchased/</span>
+            <p style="margin-top: 8px; font-size: var(--vrc-font-size-sm); color: var(--vrc-gray-600);">List all your purchased CSS files</p>
+        </div>
+        <div class="endpoint">
+            <span class="method method-post">POST</span>
+            <span class="path">/api/css/&lt;uuid&gt;/purchase/</span>
+            <p style="margin-top: 8px; font-size: var(--vrc-font-size-sm); color: var(--vrc-gray-600);">Purchase a CSS file</p>
+        </div>
+        <div class="endpoint">
+            <span class="method method-get">GET</span>
+            <span class="path">/api/css/&lt;uuid&gt;/download/</span>
+            <p style="margin-top: 8px; font-size: var(--vrc-font-size-sm); color: var(--vrc-gray-600);">Download a CSS file you own or purchased</p>
+        </div>
+
+        <h3>Analytics (Auth Required)</h3>
+        <div class="endpoint">
+            <span class="method method-get">GET</span>
+            <span class="path">/api/analytics/?days=30</span>
+            <p style="margin-top: 8px; font-size: var(--vrc-font-size-sm); color: var(--vrc-gray-600);">Get sales analytics for the specified period</p>
+        </div>
+
+        <h2>Response Format</h2>
+        <pre><code>{
+    "status": "success",
+    "data": { ... },
+    "meta": {
+        "page": 1,
+        "total": 25
+    }
+}</code></pre>
+
+        <h2>Error Codes</h2>
+        <p><code>401</code> — Invalid or missing API key</p>
+        <p><code>403</code> — Insufficient scopes</p>
+        <p><code>429</code> — Rate limit exceeded</p>
+        <p><code>500</code> — Internal server error</p>
+    </div>
+</div>
+{% endblock %}

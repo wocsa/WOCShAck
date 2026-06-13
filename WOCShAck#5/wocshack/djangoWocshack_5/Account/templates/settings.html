@@ -1,0 +1,457 @@
+{% extends "base/base_account.html" %}
+{% load static %}
+
+
+{% block title %}V.R.C - Settings{% endblock %}
+
+{% block breadcrumbs %}
+<nav class="vrc-breadcrumbs">
+    <a href="{% url 'account' %}">Account</a>
+    <span class="bc-sep">›</span>
+    <span class="bc-current">Settings</span>
+</nav>
+{% endblock %}
+
+{% block account_title %}Account Settings{% endblock %}
+
+{% block account_subtitle %}
+<p class="account-subtitle">Manage your profile and account preferences</p>
+{% endblock %}
+
+{% block account_content %}
+<div class="settings-container">
+    <div class="settings-section">
+        <h2>Username</h2>
+        <p>{{ user.username }}</p>
+    </div>
+
+    <div class="settings-section">
+        <h2>Email</h2>
+        <p>{{ user.email|default:"No email set" }}</p>
+    </div>
+
+    <div class="settings-section">
+        <h2>Biography</h2>
+        <p>{{ user.profile.biography|default:"You have not set a biography yet." }}</p>
+    </div>
+
+    <div class="settings-actions">
+        <a href="{% url 'public_profile' %}?username={{ user.username }}" class="settings-button" target="_blank">View Public Profile</a>
+        <button class="settings-button" onclick="OpenDialog('change_password_dialog')">Change Password</button>
+        <button class="settings-button" onclick="OpenDialog('change_username_dialog')">Change Username</button>
+        <button class="settings-button" onclick="OpenDialog('change_email_dialog')">Change Email</button>
+        <button class="settings-button" onclick="OpenDialog('change_biography_dialog')">Change Biography</button>
+        <button class="settings-button" onclick="OpenDialog('change_picture_dialog')">Change Profile Picture</button>
+        <button class="settings-button danger" onclick="OpenDialog('delete_account_dialog')">Delete Account</button>
+    </div>
+
+    <!-- Premium Store Section -->
+    <div class="security-section">
+        <h2 class="section-divider-title">Premium Features</h2>
+        <div class="security-links">
+            <a href="{% url 'store' %}" class="security-link">
+                <div class="security-link-icon" style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(249, 115, 22, 0.1) 100%); color: #f59e0b;">
+                    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                    </svg>
+                </div>
+                <div class="security-link-content">
+                    <h3>Premium Store</h3>
+                    <p>Purchase verified badges, developer role, and custom profile themes</p>
+                </div>
+                <svg class="security-link-arrow" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="9 18 15 12 9 6"/>
+                </svg>
+            </a>
+        </div>
+    </div>
+
+    <!-- Two-Factor Authentication Section -->
+    <div class="security-section">
+        <h2 class="section-divider-title">Two-Factor Authentication</h2>
+        <div class="twofa-status-card">
+            <div class="twofa-methods">
+                <!-- Authenticator App Status -->
+                <div class="twofa-method">
+                    <div class="method-icon {% if user.profile.totp_key %}enabled{% endif %}">
+                        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
+                            <line x1="12" y1="18" x2="12.01" y2="18"/>
+                        </svg>
+                    </div>
+                    <div class="method-info">
+                        <h4>Authenticator App</h4>
+                        {% if user.profile.totp_key %}
+                        <span class="method-status enabled">Enabled</span>
+                        {% else %}
+                        <span class="method-status">Not enabled</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <!-- Email 2FA Status -->
+                <div class="twofa-method">
+                    <div class="method-icon {% if user.profile.email_2fa_enabled %}enabled{% endif %}">
+                        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                            <polyline points="22,6 12,13 2,6"/>
+                        </svg>
+                    </div>
+                    <div class="method-info">
+                        <h4>Email Verification</h4>
+                        {% if user.profile.email_2fa_enabled %}
+                        <span class="method-status enabled">Enabled</span>
+                        {% else %}
+                        <span class="method-status">Not enabled</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <a href="{% url 'manage_2fa' %}" class="manage-2fa-btn">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                </svg>
+                Manage 2FA Settings
+            </a>
+        </div>
+    </div>
+
+    <!-- Security Section -->
+    <div class="security-section">
+        <h2 class="section-divider-title">Security</h2>
+        <div class="security-links">
+            <a href="{% url 'login_history' %}" class="security-link">
+                <div class="security-link-icon">
+                    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <polyline points="12 6 12 12 16 14"/>
+                    </svg>
+                </div>
+                <div class="security-link-content">
+                    <h3>Login History</h3>
+                    <p>View your recent login activity and security events</p>
+                </div>
+                <svg class="security-link-arrow" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="9 18 15 12 9 6"/>
+                </svg>
+            </a>
+            <a href="{% url 'sessions' %}" class="security-link">
+                <div class="security-link-icon">
+                    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+                        <line x1="8" y1="21" x2="16" y2="21"/>
+                        <line x1="12" y1="17" x2="12" y2="21"/>
+                    </svg>
+                </div>
+                <div class="security-link-content">
+                    <h3>Active Sessions</h3>
+                    <p>Manage devices signed into your account</p>
+                </div>
+                <svg class="security-link-arrow" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="9 18 15 12 9 6"/>
+                </svg>
+            </a>
+            {% if user.profile.totp_key %}
+            <a href="{% url 'backup_codes' %}" class="security-link">
+                <div class="security-link-icon">
+                    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                    </svg>
+                </div>
+                <div class="security-link-content">
+                    <h3>Backup Codes</h3>
+                    <p>Manage recovery codes for 2FA</p>
+                </div>
+                <svg class="security-link-arrow" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="9 18 15 12 9 6"/>
+                </svg>
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<dialog id="change_password_dialog">
+    <div class="dialog-wrapper">
+        <form method="POST" action="{% url 'settings' %}">
+            {% csrf_token %}
+            <h2>Change Password</h2>
+            <label for="old_password">Current Password</label>
+            <input type="password" id="old_password" name="old_password" required>
+            <label for="new_password">New Password</label>
+            <input type="password" id="new_password" name="new_password" required>
+            <label for="confirm_password">Confirm New Password</label>
+            <input type="password" id="confirm_password" name="confirm_password" required>
+            <div class="dialog-buttons">
+                <button type="submit" class="save-button">Save Changes</button>
+                <button type="button" class="cancel-button" onclick="document.getElementById('change_password_dialog').close()">Cancel</button>
+            </div>
+        </form>
+    </div>
+</dialog>
+
+<dialog id="change_username_dialog">
+    <div class="dialog-wrapper">
+        <form method="POST" action="{% url 'settings' %}">
+            {% csrf_token %}
+            <h2>Change Username</h2>
+            <label for="new_username">New Username</label>
+            <input type="text" id="new_username" name="new_username" required>
+            <div class="dialog-buttons">
+                <button type="submit" class="save-button">Save Username</button>
+                <button type="button" class="cancel-button" onclick="document.getElementById('change_username_dialog').close()">Cancel</button>
+            </div>
+        </form>
+    </div>
+</dialog>
+
+<dialog id="change_email_dialog">
+    <div class="dialog-wrapper">
+        <form method="POST" action="{% url 'settings' %}">
+            {% csrf_token %}
+            <h2>Change Email</h2>
+            <label for="new_email">New Email</label>
+            <input type="email" id="new_email" name="new_email" required>
+            <label for="confirm_email">Confirm New Email</label>
+            <input type="email" id="confirm_email" name="confirm_email" required>
+            <label for="password_for_email">Current Password</label>
+            <input type="password" id="password_for_email" name="password_for_email" required>
+            <div class="dialog-buttons">
+                <button type="submit" class="save-button">Save Email</button>
+                <button type="button" class="cancel-button" onclick="document.getElementById('change_email_dialog').close()">Cancel</button>
+            </div>
+        </form>
+    </div>
+</dialog>
+
+<dialog id="change_biography_dialog">
+    <div class="dialog-wrapper">
+        <form method="POST" action="{% url 'settings' %}">
+            {% csrf_token %}
+            <h2>Change Biography</h2>
+            <label for="biography">Biography</label>
+            <textarea id="biography" name="biography" rows="4">{{ user.profile.biography }}</textarea>
+            <div class="dialog-buttons">
+                <button type="submit" class="save-button">Save Biography</button>
+                <button type="button" class="cancel-button" onclick="document.getElementById('change_biography_dialog').close()">Cancel</button>
+            </div>
+        </form>
+    </div>
+</dialog>
+
+<dialog id="change_picture_dialog">
+    <div class="dialog-wrapper">
+        <form method="POST" action="{% url 'settings' %}" enctype="multipart/form-data">
+            {% csrf_token %}
+            <h2>Change Profile Picture</h2>
+            <label for="picture">New Picture</label>
+            <input type="file" id="picture" name="picture" accept="image/*" required>
+            <div class="dialog-buttons">
+                <button type="submit" class="save-button">Save Picture</button>
+                <button type="button" class="cancel-button" onclick="document.getElementById('change_picture_dialog').close()">Cancel</button>
+            </div>
+        </form>
+    </div>
+</dialog>
+
+<dialog id="delete_account_dialog">
+    <div class="dialog-wrapper">
+        <form method="POST" action="{% url 'settings' %}">
+            {% csrf_token %}
+            <h2>Delete Account</h2>
+            <p style="color: #ef4444; margin-bottom: 1rem;">This action is permanent and cannot be undone.</p>
+            <label for="password_for_delete">Enter your password to confirm:</label>
+            <input type="password" id="password_for_delete" name="password_for_delete" required>
+            <input type="hidden" name="action" value="delete_account">
+            <div class="dialog-buttons">
+                <button type="submit" class="save-button" style="background: #ef4444;">Delete My Account</button>
+                <button type="button" class="cancel-button" onclick="document.getElementById('delete_account_dialog').close()">Cancel</button>
+            </div>
+        </form>
+    </div>
+</dialog>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .security-section {
+        margin-top: 2rem;
+        padding-top: 2rem;
+        border-top: 1px solid var(--vrc-gray-200);
+    }
+
+    /* Two-Factor Authentication Section */
+    .twofa-status-card {
+        background: var(--vrc-white);
+        border: 1px solid var(--vrc-gray-200);
+        border-radius: var(--vrc-radius-xl);
+        padding: 1.25rem;
+    }
+
+    .twofa-methods {
+        display: flex;
+        gap: 1.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .twofa-method {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        flex: 1;
+    }
+
+    .twofa-method .method-icon {
+        width: 44px;
+        height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--vrc-gray-100);
+        border-radius: var(--vrc-radius-lg);
+        color: var(--vrc-gray-500);
+    }
+
+    .twofa-method .method-icon.enabled {
+        background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.1) 100%);
+        color: #059669;
+    }
+
+    .twofa-method .method-info h4 {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: var(--vrc-gray-900);
+        margin: 0 0 0.125rem;
+    }
+
+    .twofa-method .method-status {
+        font-size: 0.75rem;
+        color: var(--vrc-gray-500);
+    }
+
+    .twofa-method .method-status.enabled {
+        color: #059669;
+        font-weight: 600;
+    }
+
+    .manage-2fa-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        width: 100%;
+        padding: 0.75rem 1rem;
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: white;
+        background: var(--vrc-gradient);
+        border: none;
+        border-radius: var(--vrc-radius-lg);
+        text-decoration: none;
+        transition: all 0.2s ease;
+        box-shadow: var(--vrc-shadow-primary);
+    }
+
+    .manage-2fa-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: var(--vrc-shadow-primary-lg);
+    }
+
+    @media (max-width: 640px) {
+        .twofa-methods {
+            flex-direction: column;
+            gap: 1rem;
+        }
+    }
+
+    .section-divider-title {
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--vrc-gray-500);
+        margin-bottom: 1rem;
+    }
+
+    .security-links {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .security-link {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem 1.25rem;
+        background: var(--vrc-gray-50);
+        border: 1px solid var(--vrc-gray-200);
+        border-radius: var(--vrc-radius-lg);
+        text-decoration: none;
+        transition: all 0.2s ease;
+    }
+
+    .security-link:hover {
+        background: var(--vrc-white);
+        border-color: var(--vrc-primary);
+        box-shadow: var(--vrc-shadow-sm);
+    }
+
+    .security-link-icon {
+        flex-shrink: 0;
+        width: 48px;
+        height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--vrc-white);
+        border-radius: var(--vrc-radius-lg);
+        color: var(--vrc-primary);
+    }
+
+    .security-link:hover .security-link-icon {
+        background: var(--vrc-gradient);
+        color: var(--vrc-white);
+    }
+
+    .security-link-content {
+        flex-grow: 1;
+    }
+
+    .security-link-content h3 {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--vrc-gray-900);
+        margin: 0 0 0.25rem;
+    }
+
+    .security-link-content p {
+        font-size: 0.85rem;
+        color: var(--vrc-gray-500);
+        margin: 0;
+    }
+
+    .security-link-arrow {
+        flex-shrink: 0;
+        color: var(--vrc-gray-400);
+        transition: transform 0.2s ease;
+    }
+
+    .security-link:hover .security-link-arrow {
+        color: var(--vrc-primary);
+        transform: translateX(4px);
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function OpenDialog(DialogId) {
+    const dialog = document.getElementById(DialogId);
+    const wrapper = dialog.querySelector(".dialog-wrapper");
+    dialog.onclick = (e) => {
+        if (!wrapper.contains(e.target)) dialog.close();
+    };
+    dialog.showModal();
+}
+</script>
+{% endblock %}

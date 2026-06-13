@@ -1,0 +1,346 @@
+{% extends "base/base_shop.html" %}
+{% load static %}
+
+
+{% block title %}V.R.C - Order History{% endblock %}
+
+{% block module_css %}
+<link rel="stylesheet" href="{% static 'css/cart.css' %}">
+{% endblock %}
+
+{% block content_wrapper_class %}{% endblock %}
+
+{% block content %}
+<div class="cart-page-wrapper">
+    <div class="cart-container" style="max-width: 1000px;">
+        <h1 class="cart-title">Order History</h1>
+
+        <!-- Status Filter -->
+        <div class="filter-bar">
+            <form method="get" class="status-filter-form">
+                <label for="status-filter">Filter by status:</label>
+                <select name="status" id="status-filter" onchange="this.form.submit()">
+                    <option value="">All Orders</option>
+                    {% for value, label in status_choices %}
+                    <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </form>
+        </div>
+
+        {% if orders %}
+        <div class="orders-list">
+            {% for order in orders %}
+            <div class="order-card">
+                <div class="order-header">
+                    <div class="order-id">
+                        <span class="label">Order #</span>
+                        <span class="value">{{ order.id|truncatechars:13 }}</span>
+                    </div>
+                    <div class="order-date">
+                        <span class="label">Date</span>
+                        <span class="value">{{ order.created_at|date:"M d, Y" }}</span>
+                    </div>
+                    <div class="order-status">
+                        <span class="status-badge status-{{ order.status }}">{{ order.get_status_display }}</span>
+                    </div>
+                </div>
+                <div class="order-items-preview">
+                    {% for item in order.items.all|slice:":3" %}
+                    <span class="item-name">{{ item.css_name }}</span>{% if not forloop.last %}, {% endif %}
+                    {% endfor %}
+                    {% if order.items.count > 3 %}
+                    <span class="more-items">+{{ order.items.count|add:"-3" }} more</span>
+                    {% endif %}
+                </div>
+                <div class="order-footer">
+                    <div class="order-total">
+                        <span class="label">Total:</span>
+                        <span class="value">{{ order.get_final_total }} Neuros</span>
+                    </div>
+                    <div class="order-footer-actions">
+                        {% if order.status == 'completed' %}
+                        <a href="{% url 'download_invoice' order.id %}" class="download-invoice-btn" title="Download PDF Invoice">
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                                <polyline points="7 10 12 15 17 10"/>
+                                <line x1="12" y1="15" x2="12" y2="3"/>
+                            </svg>
+                            Invoice
+                        </a>
+                        {% endif %}
+                        <a href="{% url 'order_detail' order.id %}" class="view-order-btn">View Details</a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Pagination -->
+        {% if page_obj.has_other_pages %}
+        <div class="pagination-container">
+            <nav class="pagination">
+                {% if page_obj.has_previous %}
+                <a href="?page=1{% if status_filter %}&status={{ status_filter }}{% endif %}">&laquo;</a>
+                <a href="?page={{ page_obj.previous_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}">&lsaquo;</a>
+                {% endif %}
+
+                {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                    <span class="current">{{ num }}</span>
+                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    <a href="?page={{ num }}{% if status_filter %}&status={{ status_filter }}{% endif %}">{{ num }}</a>
+                    {% endif %}
+                {% endfor %}
+
+                {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}">&rsaquo;</a>
+                <a href="?page={{ page_obj.paginator.num_pages }}{% if status_filter %}&status={{ status_filter }}{% endif %}">&raquo;</a>
+                {% endif %}
+            </nav>
+        </div>
+        {% endif %}
+
+        {% else %}
+        <div class="no-orders">
+            <svg class="no-orders-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+            </svg>
+            <p>You haven't placed any orders yet.</p>
+            <a href="{% url 'shop' %}" class="cart-btn cart-btn-primary">Start Shopping</a>
+        </div>
+        {% endif %}
+
+        <div class="back-link">
+            <a href="{% url 'shop' %}">&larr; Back to Shop</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .filter-bar {
+        background: rgba(255, 255, 255, 0.8);
+        border-radius: 12px;
+        padding: 1rem 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    .status-filter-form {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+    .status-filter-form label {
+        font-weight: 600;
+        color: #555;
+        font-size: 0.9rem;
+    }
+    .status-filter-form select {
+        padding: 0.5rem 1rem;
+        border: 1px solid rgba(102, 126, 234, 0.2);
+        border-radius: 8px;
+        font-size: 0.9rem;
+        background: white;
+        cursor: pointer;
+    }
+
+    .orders-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .order-card {
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 12px;
+        padding: 1.25rem;
+        border: 1px solid rgba(102, 126, 234, 0.1);
+        transition: all 0.2s ease;
+    }
+    .order-card:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    .order-header {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1.5rem;
+        align-items: center;
+        margin-bottom: 1rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid rgba(102, 126, 234, 0.1);
+    }
+    .order-header .label {
+        display: block;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        color: #888;
+        margin-bottom: 0.25rem;
+    }
+    .order-header .value {
+        font-weight: 600;
+        color: #333;
+    }
+    .order-id .value {
+        font-family: monospace;
+        color: #667eea;
+    }
+
+    .status-badge {
+        padding: 0.35rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-transform: capitalize;
+    }
+    .status-pending { background: #fff3cd; color: #856404; }
+    .status-processing { background: #cce5ff; color: #004085; }
+    .status-completed { background: #d4edda; color: #155724; }
+    .status-cancelled { background: #f8d7da; color: #721c24; }
+    .status-refunded { background: #e2e3e5; color: #383d41; }
+
+    .order-items-preview {
+        color: #666;
+        font-size: 0.9rem;
+        margin-bottom: 1rem;
+    }
+    .item-name {
+        color: #333;
+    }
+    .more-items {
+        color: #667eea;
+        font-style: italic;
+    }
+
+    .order-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+    .order-total .label {
+        color: #666;
+    }
+    .order-total .value {
+        font-weight: 700;
+        color: #333;
+        font-size: 1.1rem;
+    }
+
+    .order-footer-actions {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .view-order-btn {
+        padding: 0.5rem 1rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        text-decoration: none;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.85rem;
+        transition: all 0.2s ease;
+    }
+    .view-order-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+
+    .download-invoice-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.5rem 0.875rem;
+        background: rgba(34, 197, 94, 0.1);
+        color: #16a34a;
+        border: 1px solid rgba(34, 197, 94, 0.3);
+        text-decoration: none;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.85rem;
+        transition: all 0.2s ease;
+    }
+    .download-invoice-btn:hover {
+        background: rgba(34, 197, 94, 0.18);
+        transform: translateY(-1px);
+    }
+
+    .no-orders {
+        text-align: center;
+        padding: 3rem 2rem;
+    }
+    .no-orders-icon {
+        width: 80px;
+        height: 80px;
+        color: #ccc;
+        margin-bottom: 1rem;
+    }
+    .no-orders p {
+        font-size: 1.1rem;
+        color: #666;
+        margin: 0 0 1.5rem 0;
+    }
+
+    .pagination-container {
+        display: flex;
+        justify-content: center;
+        margin-top: 2rem;
+    }
+    .pagination {
+        display: flex;
+        gap: 0.5rem;
+    }
+    .pagination a, .pagination .current {
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 600;
+    }
+    .pagination a {
+        background: white;
+        color: #667eea;
+        border: 1px solid rgba(102, 126, 234, 0.2);
+    }
+    .pagination a:hover {
+        background: #667eea;
+        color: white;
+    }
+    .pagination .current {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .back-link {
+        margin-top: 2rem;
+        text-align: center;
+    }
+    .back-link a {
+        color: #667eea;
+        text-decoration: none;
+        font-weight: 500;
+    }
+    .back-link a:hover {
+        text-decoration: underline;
+    }
+
+    @media (max-width: 600px) {
+        .order-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.75rem;
+        }
+        .order-footer {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        .view-order-btn {
+            text-align: center;
+        }
+    }
+</style>
+{% endblock %}

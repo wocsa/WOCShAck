@@ -1,0 +1,96 @@
+{% extends "base/base.html" %}
+{% load static %}
+
+{% block title %}Mod — Message Reports{% endblock %}
+
+{% block module_css %}
+<link rel="stylesheet" href="{% static 'base/css/admin.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="mod-page">
+
+  <div class="mod-section-header">
+    <div>
+      <h1 class="mod-section-title">🚨 Message Reports</h1>
+      <p class="mod-section-subtitle">Showing unresolved reports only.</p>
+    </div>
+    <a href="{% url 'community:admin_dashboard' %}" class="mod-btn mod-btn--ghost mod-btn--sm">← Dashboard</a>
+  </div>
+
+  <div class="mod-table-card">
+    <div class="mod-table-scroll">
+      <table class="mod-table">
+        <thead>
+          <tr>
+            <th>Reporter</th>
+            <th>Message From</th>
+            <th>Message Excerpt</th>
+            <th>Reason</th>
+            <th>Status</th>
+            <th>Reported At</th>
+            <th class="text-center">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for report in page_obj %}
+          <tr {% if report.status == 'pending' %}class="row--danger"{% endif %}>
+            <td>{{ report.reporter.username|escape }}</td>
+            <td>{{ report.message.sender.username|escape }}</td>
+            <td>
+              <span class="mod-table-ellipsis" title="{{ report.message.content|escape }}">
+                {{ report.message.content|escape|truncatechars:80 }}
+              </span>
+            </td>
+            <td>{{ report.reason|escape|truncatechars:100 }}</td>
+            <td>
+              {% if report.status == "pending" %}
+                <span class="mod-badge mod-badge--danger">Pending</span>
+              {% elif report.status == "reviewed" %}
+                <span class="mod-badge mod-badge--warning">Reviewed</span>
+              {% else %}
+                <span class="mod-badge mod-badge--success">Resolved</span>
+              {% endif %}
+            </td>
+            <td style="white-space:nowrap;">{{ report.created_at|date:"Y-m-d H:i" }}</td>
+            <td class="text-center">
+              <div class="mod-actions">
+                <form method="post"
+                      action="{% url 'community:admin_message_report_resolve' report.id %}">
+                  {% csrf_token %}
+                  <button type="submit" class="mod-btn mod-btn--success mod-btn--sm">Resolve</button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="7" class="mod-table-empty">🎉 No open reports — all clear!</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  {# Pagination #}
+  {% if page_obj.has_other_pages %}
+  <div class="mod-pagination">
+    {% if page_obj.has_previous %}
+    <a href="?page={{ page_obj.previous_page_number }}" class="mod-page-btn">«</a>
+    {% else %}
+    <span class="mod-page-btn mod-page-btn--disabled">«</span>
+    {% endif %}
+
+    <span class="mod-page-btn mod-page-btn--active">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+
+    {% if page_obj.has_next %}
+    <a href="?page={{ page_obj.next_page_number }}" class="mod-page-btn">»</a>
+    {% else %}
+    <span class="mod-page-btn mod-page-btn--disabled">»</span>
+    {% endif %}
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

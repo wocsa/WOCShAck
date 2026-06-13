@@ -1,0 +1,228 @@
+{% extends "base/base.html" %}
+{% load static %}
+
+
+{% block title %}Moderation Statistics - Chatbot{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'base/css/admin.css' %}">
+<style>
+  /* page-specific: bar chart visualisation */
+  .stats-section { margin-bottom: 30px; }
+  .chart-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 25px; margin-bottom: 30px; }
+  @media (max-width: 768px) { .chart-grid { grid-template-columns: 1fr; } }
+  /* page-specific: chart card header/body (inside mod-table-card) */
+  .chart-header { padding: 15px 20px; background: #f8f9fa; border-bottom: 1px solid #eee; font-weight: 600; }
+  .chart-body { padding: 20px; }
+  /* page-specific: horizontal bar chart rows */
+  .bar-chart { width: 100%; }
+  .bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .bar-label { width: 120px; font-size: 0.85rem; color: #555; text-align: right; flex-shrink: 0; }
+  .bar-container { flex: 1; background: #f0f0f0; border-radius: 4px; height: 24px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 4px; transition: width 0.3s ease; display: flex; align-items: center; padding-left: 8px; color: white; font-size: 0.8rem; font-weight: 600; }
+  .bar-fill.purple { background: #6366f1; }
+  .bar-fill.green { background: #10b981; }
+  .bar-fill.yellow { background: #f59e0b; }
+  .bar-fill.red { background: #ef4444; }
+  .bar-fill.blue { background: #3b82f6; }
+  .bar-count { width: 40px; font-size: 0.85rem; color: #333; font-weight: 600; }
+  /* page-specific: quality score grid */
+  .quality-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
+  @media (max-width: 768px) { .quality-grid { grid-template-columns: 1fr; } }
+  .quality-item { text-align: center; }
+  .quality-score { font-size: 2rem; font-weight: 700; }
+  .quality-label { font-size: 0.85rem; color: #666; }
+  /* page-specific: moderator / action-log lists */
+  .moderator-list { list-style: none; padding: 0; }
+  .moderator-list li { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f0f0f0; font-size: 0.9rem; }
+  .moderator-list li:last-child { border-bottom: none; }
+  .action-log-list { max-height: 400px; overflow-y: auto; }
+  .log-entry { padding: 10px 0; border-bottom: 1px solid #f0f0f0; font-size: 0.9rem; }
+  .log-entry:last-child { border-bottom: none; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="mod-section-header">
+    <h1 class="mod-section-title">Moderation Statistics</h1>
+    <a href="{% url 'chatbot:admin_dashboard' %}" class="mod-btn mod-btn--secondary">&larr; Back to Dashboard</a>
+</div>
+
+{# Flag statistics #}
+<div class="stats-section">
+    <p class="mod-section-subtitle" style="margin-bottom:12px;">Flag Overview</p>
+    <div class="mod-stats">
+        <div class="mod-stat-card">
+            <div class="mod-stat-accent"></div>
+            <div class="mod-stat-body"><div class="mod-stat-info"><div class="mod-stat-label">Total Flags</div><div class="mod-stat-value">{{ total_flags }}</div></div></div>
+        </div>
+        <div class="mod-stat-card">
+            <div class="mod-stat-accent mod-stat-accent--warning"></div>
+            <div class="mod-stat-body"><div class="mod-stat-info"><div class="mod-stat-label">Pending</div><div class="mod-stat-value">{{ pending_flags }}</div></div></div>
+        </div>
+        <div class="mod-stat-card">
+            <div class="mod-stat-accent mod-stat-accent--success"></div>
+            <div class="mod-stat-body"><div class="mod-stat-info"><div class="mod-stat-label">Resolved</div><div class="mod-stat-value">{{ resolved_flags }}</div></div></div>
+        </div>
+        <div class="mod-stat-card">
+            <div class="mod-stat-accent mod-stat-accent--danger"></div>
+            <div class="mod-stat-body"><div class="mod-stat-info"><div class="mod-stat-label">Dismissed</div><div class="mod-stat-value">{{ dismissed_flags }}</div></div></div>
+        </div>
+    </div>
+</div>
+
+<div class="chart-grid">
+    {# Flags by reason #}
+    <div class="mod-table-card">
+        <div class="chart-header">Flags by Reason</div>
+        <div class="chart-body">
+            {% if flags_by_reason %}
+            <div class="bar-chart">
+                {% for item in flags_by_reason %}
+                <div class="bar-row">
+                    <span class="bar-label">{{ item.reason }}</span>
+                    <div class="bar-container">
+                        <div class="bar-fill purple" style="width: {% widthratio item.count total_flags 100 %}%;">
+                            {% if item.count > 0 %}{{ item.count }}{% endif %}
+                        </div>
+                    </div>
+                    <span class="bar-count">{{ item.count }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p style="color: #888; text-align: center;">No data yet</p>
+            {% endif %}
+        </div>
+    </div>
+
+    {# Flags by severity #}
+    <div class="mod-table-card">
+        <div class="chart-header">Flags by Severity</div>
+        <div class="chart-body">
+            {% if flags_by_severity %}
+            <div class="bar-chart">
+                {% for item in flags_by_severity %}
+                <div class="bar-row">
+                    <span class="bar-label">{{ item.severity }}</span>
+                    <div class="bar-container">
+                        <div class="bar-fill {% if item.severity == 'critical' %}red{% elif item.severity == 'high' %}yellow{% elif item.severity == 'medium' %}blue{% else %}green{% endif %}" style="width: {% widthratio item.count total_flags 100 %}%;">
+                            {% if item.count > 0 %}{{ item.count }}{% endif %}
+                        </div>
+                    </div>
+                    <span class="bar-count">{{ item.count }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p style="color: #888; text-align: center;">No data yet</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{# Edit statistics #}
+<div class="stats-section">
+    <p class="mod-section-subtitle" style="margin-bottom:12px;">Edit Statistics</p>
+    <div class="mod-stats">
+        <div class="mod-stat-card">
+            <div class="mod-stat-accent"></div>
+            <div class="mod-stat-body"><div class="mod-stat-info"><div class="mod-stat-label">Total Edits</div><div class="mod-stat-value">{{ total_edits }}</div></div></div>
+        </div>
+        <div class="mod-stat-card">
+            <div class="mod-stat-accent mod-stat-accent--success"></div>
+            <div class="mod-stat-body"><div class="mod-stat-info"><div class="mod-stat-label">Approved</div><div class="mod-stat-value">{{ approved_edits }}</div></div></div>
+        </div>
+        <div class="mod-stat-card">
+            <div class="mod-stat-accent mod-stat-accent--danger"></div>
+            <div class="mod-stat-body"><div class="mod-stat-info"><div class="mod-stat-label">Rejected</div><div class="mod-stat-value">{{ rejected_edits }}</div></div></div>
+        </div>
+        <div class="mod-stat-card">
+            <div class="mod-stat-accent mod-stat-accent--warning"></div>
+            <div class="mod-stat-body"><div class="mod-stat-info"><div class="mod-stat-label">Pending</div><div class="mod-stat-value">{{ pending_edits_count }}</div></div></div>
+        </div>
+    </div>
+</div>
+
+{# Knowledge Base and Quality #}
+<div class="chart-grid">
+    <div class="mod-table-card">
+        <div class="chart-header">Knowledge Base</div>
+        <div class="chart-body">
+            <div class="mod-stats" style="margin-bottom: 0;">
+                <div class="mod-stat-card" style="box-shadow: none; border: 1px solid #eee;">
+                    <div class="mod-stat-accent"></div>
+                    <div class="mod-stat-body"><div class="mod-stat-info"><div class="mod-stat-label">Total Entries</div><div class="mod-stat-value">{{ total_kb_entries }}</div></div></div>
+                </div>
+                <div class="mod-stat-card" style="box-shadow: none; border: 1px solid #eee;">
+                    <div class="mod-stat-accent mod-stat-accent--success"></div>
+                    <div class="mod-stat-body"><div class="mod-stat-info"><div class="mod-stat-label">Active</div><div class="mod-stat-value">{{ active_kb_entries }}</div></div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="mod-table-card">
+        <div class="chart-header">Average Quality Scores</div>
+        <div class="chart-body">
+            {% if avg_quality.avg_overall %}
+            <div class="quality-grid">
+                <div class="quality-item">
+                    <div class="quality-score">{{ avg_quality.avg_accuracy|floatformat:1 }}</div>
+                    <div class="quality-label">Accuracy</div>
+                </div>
+                <div class="quality-item">
+                    <div class="quality-score">{{ avg_quality.avg_helpfulness|floatformat:1 }}</div>
+                    <div class="quality-label">Helpfulness</div>
+                </div>
+                <div class="quality-item">
+                    <div class="quality-score">{{ avg_quality.avg_tone|floatformat:1 }}</div>
+                    <div class="quality-label">Tone</div>
+                </div>
+                <div class="quality-item">
+                    <div class="quality-score">{{ avg_quality.avg_overall|floatformat:1 }}</div>
+                    <div class="quality-label">Overall</div>
+                </div>
+            </div>
+            {% else %}
+            <p style="color: #888; text-align: center;">No quality scores yet</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{# Moderator Activity and Action Log #}
+<div class="chart-grid">
+    <div class="mod-table-card">
+        <div class="chart-header">Top Moderators</div>
+        <div class="chart-body">
+            {% if moderator_activity %}
+            <ul class="moderator-list">
+                {% for mod in moderator_activity %}
+                <li>
+                    <span>{{ mod.actor_username }}</span>
+                    <span><strong>{{ mod.action_count }}</strong> actions</span>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p style="color: #888; text-align: center;">No activity yet</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="mod-table-card">
+        <div class="chart-header">Recent Action Log</div>
+        <div class="chart-body action-log-list">
+            {% for action in recent_actions %}
+            <div class="log-entry">
+                <strong>{{ action.actor_username }}</strong> - {{ action.get_action_type_display }}
+                <br><small style="color: #888;">{{ action.created_at|timesince }} ago{% if action.description %} | {{ action.description|truncatewords:10 }}{% endif %}</small>
+            </div>
+            {% empty %}
+            <p style="color: #888; text-align: center;">No actions yet</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

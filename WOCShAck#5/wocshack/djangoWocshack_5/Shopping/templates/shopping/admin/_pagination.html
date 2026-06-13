@@ -1,0 +1,27 @@
+{% if page_obj.has_other_pages %}
+<div class="mod-pagination" aria-label="Pagination">
+  {% if page_obj.has_previous %}
+  <a class="mod-page-btn" href="?page=1{{ extra_params }}">&laquo;&laquo;</a>
+  <a class="mod-page-btn" href="?page={{ page_obj.previous_page_number }}{{ extra_params }}">&laquo;</a>
+  {% else %}
+  <span class="mod-page-btn mod-page-btn--disabled">&laquo;&laquo;</span>
+  <span class="mod-page-btn mod-page-btn--disabled">&laquo;</span>
+  {% endif %}
+
+  {% for num in page_obj.paginator.page_range %}
+    {% if page_obj.number == num %}
+    <span class="mod-page-btn mod-page-btn--active">{{ num }}</span>
+    {% elif num > page_obj.number|add:"-3" and num < page_obj.number|add:"3" %}
+    <a class="mod-page-btn" href="?page={{ num }}{{ extra_params }}">{{ num }}</a>
+    {% endif %}
+  {% endfor %}
+
+  {% if page_obj.has_next %}
+  <a class="mod-page-btn" href="?page={{ page_obj.next_page_number }}{{ extra_params }}">&raquo;</a>
+  <a class="mod-page-btn" href="?page={{ page_obj.paginator.num_pages }}{{ extra_params }}">&raquo;&raquo;</a>
+  {% else %}
+  <span class="mod-page-btn mod-page-btn--disabled">&raquo;</span>
+  <span class="mod-page-btn mod-page-btn--disabled">&raquo;&raquo;</span>
+  {% endif %}
+</div>
+{% endif %}

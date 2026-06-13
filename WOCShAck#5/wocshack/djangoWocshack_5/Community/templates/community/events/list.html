@@ -1,0 +1,163 @@
+{% extends "base/base.html" %}
+{% load static %}
+{% load community_tags %}
+
+{% block title %}VRC — Events & Workshops{% endblock %}
+
+{% block module_css %}
+<link rel="stylesheet" href="{% static 'community/css/content.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="main-container">
+<nav class="vrc-breadcrumbs">
+  <a href="{% url 'community:index' %}">Community</a>
+  <span class="bc-sep">›</span>
+  <span class="bc-current">Events</span>
+</nav>
+<div class="content-wrapper">
+
+  <div class="content-header">
+    <div>
+      <h1 class="content-title">Events & Workshops</h1>
+      <p class="content-subtitle">Workshops, webinars, and meetups</p>
+    </div>
+    {% check_content_creator request.user as can_create %}
+    {% if can_create %}
+    <a href="{% url 'community:event_create' %}" class="content-btn content-btn--primary">+ Create Event</a>
+    {% endif %}
+  </div>
+
+  {# Filters #}
+  <div class="filter-bar">
+    <div class="filter-group">
+      <span class="filter-label">Type:</span>
+      <a href="?{% if active_format %}format={{ active_format }}&{% endif %}{% if show_past %}past=1{% endif %}"
+         class="filter-chip {% if not active_type %}filter-chip--active{% endif %}">All</a>
+      {% for val, label in event_types %}
+      <a href="?type={{ val }}{% if active_format %}&format={{ active_format }}{% endif %}{% if show_past %}&past=1{% endif %}"
+         class="filter-chip {% if active_type == val %}filter-chip--active{% endif %}">
+        {{ label }}
+      </a>
+      {% endfor %}
+    </div>
+    <div class="filter-group">
+      <span class="filter-label">Format:</span>
+      <a href="?{% if active_type %}type={{ active_type }}&{% endif %}{% if show_past %}past=1{% endif %}"
+         class="filter-chip {% if not active_format %}filter-chip--active{% endif %}">All</a>
+      {% for val, label in formats %}
+      <a href="?{% if active_type %}type={{ active_type }}&{% endif %}format={{ val }}{% if show_past %}&past=1{% endif %}"
+         class="filter-chip {% if active_format == val %}filter-chip--active{% endif %}">
+        {{ label }}
+      </a>
+      {% endfor %}
+    </div>
+    <div class="filter-group">
+      {% if show_past %}
+      <a href="?{% if active_type %}type={{ active_type }}&{% endif %}{% if active_format %}format={{ active_format }}{% endif %}"
+         class="filter-chip filter-chip--active">Upcoming only</a>
+      {% else %}
+      <a href="?{% if active_type %}type={{ active_type }}&{% endif %}{% if active_format %}format={{ active_format }}&{% endif %}past=1"
+         class="filter-chip">Show past</a>
+      {% endif %}
+    </div>
+  </div>
+
+  {# My Drafts — only visible to the organizer #}
+  {% if my_drafts %}
+  <div style="margin-bottom:1.5rem;">
+    <h2 style="font-size:1rem;font-weight:600;color:var(--vrc-gray-500);margin-bottom:.75rem;display:flex;align-items:center;gap:.4rem;">
+      <span style="background:#fef3c7;color:#d97706;border:1px solid #fcd34d;border-radius:.375rem;padding:.15rem .5rem;font-size:.75rem;font-weight:700;text-transform:uppercase;">Draft</span>
+      My Unpublished Events
+    </h2>
+    <div class="event-list">
+      {% for event in my_drafts %}
+      <article class="event-card" style="border-left:3px solid #fcd34d;opacity:.85;">
+        <div class="event-card-date">
+          <span class="event-day">{{ event.start_datetime|date:"d" }}</span>
+          <span class="event-month">{{ event.start_datetime|date:"M" }}</span>
+        </div>
+        <div class="event-card-body">
+          <div class="event-card-tags">
+            <span class="event-type-badge event-type-badge--{{ event.event_type }}">{{ event.get_event_type_display }}</span>
+            <span style="font-size:.72rem;font-weight:600;padding:.15rem .5rem;border-radius:.25rem;background:#fef3c7;color:#d97706;">Draft</span>
+          </div>
+          <h2 class="event-card-title">
+            <a href="{% url 'community:event_detail' event.id %}">{{ event.title }}</a>
+          </h2>
+          <div class="event-card-meta">
+            <span>🕐 {{ event.start_datetime|date:"H:i" }} {{ event.timezone }}</span>
+          </div>
+        </div>
+        <div class="event-card-action">
+          <a href="{% url 'community:event_edit' event.id %}" class="content-btn content-btn--sm">Edit</a>
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {% if page_obj.object_list %}
+  <div class="event-list">
+    {% for event in page_obj %}
+    <article class="event-card">
+      <div class="event-card-date">
+        <span class="event-day">{{ event.start_datetime|date:"d" }}</span>
+        <span class="event-month">{{ event.start_datetime|date:"M" }}</span>
+      </div>
+      <div class="event-card-body">
+        <div class="event-card-tags">
+          <span class="event-type-badge event-type-badge--{{ event.event_type }}">{{ event.get_event_type_display }}</span>
+          <span class="event-format-badge">{{ event.get_format_display }}</span>
+        </div>
+        <h2 class="event-card-title">
+          <a href="{% url 'community:event_detail' event.id %}">{{ event.title }}</a>
+        </h2>
+        <div class="event-card-meta">
+          <span>🕐 {{ event.start_datetime|date:"H:i" }} {{ event.timezone }}</span>
+          {% if event.capacity %}
+          <span>·</span>
+          <span>👥 {{ event.registration_count }}/{{ event.capacity }}</span>
+          {% endif %}
+          <span>·</span>
+          <span>By {{ event.organizer.username }}</span>
+        </div>
+      </div>
+      <div class="event-card-action">
+        {% if event.id|stringformat:"s" in user_registrations %}
+          <span class="event-registered-badge">✓ Registered</span>
+        {% else %}
+          {% if event.is_full %}
+          <span class="event-full-badge">Full</span>
+          {% else %}
+          <a href="{% url 'community:event_detail' event.id %}" class="content-btn content-btn--sm content-btn--primary">Register</a>
+          {% endif %}
+        {% endif %}
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+
+  {% if page_obj.has_other_pages %}
+  <div class="content-pagination">
+    {% if page_obj.has_previous %}
+    <a href="?{% if active_type %}type={{ active_type }}&{% endif %}{% if active_format %}format={{ active_format }}&{% endif %}{% if show_past %}past=1&{% endif %}page={{ page_obj.previous_page_number }}" class="page-btn">← Prev</a>
+    {% endif %}
+    <span class="page-info">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+    {% if page_obj.has_next %}
+    <a href="?{% if active_type %}type={{ active_type }}&{% endif %}{% if active_format %}format={{ active_format }}&{% endif %}{% if show_past %}past=1&{% endif %}page={{ page_obj.next_page_number }}" class="page-btn">Next →</a>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {% else %}
+  <div class="content-empty">
+    <span class="content-empty-icon">📅</span>
+    <p>No upcoming events found.</p>
+  </div>
+  {% endif %}
+
+</div>
+</div>
+{% endblock %}

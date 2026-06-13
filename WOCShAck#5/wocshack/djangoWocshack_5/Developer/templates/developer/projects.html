@@ -1,0 +1,76 @@
+{% extends 'base/base.html' %}
+{% block title %}My Projects - V.R.C{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dev-container { max-width: 1000px; margin: 0 auto; padding: var(--vrc-spacing-xl); }
+    .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--vrc-spacing-xl); }
+    .page-header h1 { font-size: var(--vrc-font-size-2xl); font-weight: var(--vrc-font-weight-bold); color: var(--vrc-gray-800); }
+    .btn-primary { padding: 10px 20px; background: var(--vrc-gradient); color: white; border: none; border-radius: var(--vrc-radius-md); text-decoration: none; font-size: var(--vrc-font-size-sm); }
+    .projects-table { width: 100%; background: var(--vrc-white); border-radius: var(--vrc-radius-lg); box-shadow: var(--vrc-shadow-md); overflow: hidden; }
+    .projects-table th { background: var(--vrc-gray-50); padding: 12px 16px; text-align: left; font-size: var(--vrc-font-size-sm); color: var(--vrc-gray-500); font-weight: var(--vrc-font-weight-medium); border-bottom: 1px solid var(--vrc-gray-200); }
+    .projects-table td { padding: 12px 16px; border-bottom: 1px solid var(--vrc-gray-100); font-size: var(--vrc-font-size-sm); }
+    .projects-table tr:last-child td { border-bottom: none; }
+    .projects-table a { color: var(--vrc-primary); text-decoration: none; font-weight: var(--vrc-font-weight-medium); }
+    .projects-table a:hover { text-decoration: underline; }
+    .badge { display: inline-block; padding: 2px 10px; border-radius: var(--vrc-radius-full); font-size: var(--vrc-font-size-xs); font-weight: var(--vrc-font-weight-medium); }
+    .badge-draft { background: var(--vrc-gray-200); color: var(--vrc-gray-600); }
+    .badge-published { background: var(--vrc-success-light); color: var(--vrc-success); }
+    .badge-archived { background: var(--vrc-warning-light); color: var(--vrc-warning); }
+    .action-links { display: flex; gap: 8px; }
+    .action-links a { font-size: var(--vrc-font-size-xs); }
+    .btn-sm-danger { color: var(--vrc-error); font-size: var(--vrc-font-size-xs); background: none; border: none; cursor: pointer; }
+    .back-link { display: inline-block; margin-bottom: var(--vrc-spacing-lg); color: var(--vrc-primary); text-decoration: none; font-size: var(--vrc-font-size-sm); }
+    .empty-state { text-align: center; padding: var(--vrc-spacing-2xl); color: var(--vrc-gray-500); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dev-container">
+    <a href="{% url 'developer_dashboard' %}" class="back-link">&larr; Back to Dashboard</a>
+    <div class="page-header">
+        <h1>My Projects</h1>
+        <a href="{% url 'developer_create_project' %}" class="btn-primary">+ New Project</a>
+    </div>
+
+    {% if projects %}
+    <table class="projects-table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Status</th>
+                <th>Updated</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for project in projects %}
+            <tr>
+                <td><a href="{% url 'developer_editor' %}?project={{ project.id }}">{{ project.name }}</a></td>
+                <td><span class="badge badge-{{ project.status }}">{{ project.get_status_display }}</span></td>
+                <td>{{ project.updated_at|date:"M d, Y H:i" }}</td>
+                <td>
+                    <div class="action-links">
+                        <a href="{% url 'developer_edit_project' project_id=project.id %}">Edit</a>
+                        <a href="{% url 'developer_versions' project_id=project.id %}">Versions</a>
+                        {% if project.status != 'published' %}
+                        <a href="{% url 'developer_publish' project_id=project.id %}">Publish</a>
+                        {% endif %}
+                        <form method="post" action="{% url 'developer_delete_project' project_id=project.id %}" style="display:inline;" onsubmit="return confirm('Delete this project?');">
+                            {% csrf_token %}
+                            <button type="submit" class="btn-sm-danger">Delete</button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">
+        <p>No projects yet. Create your first CSS project to get started!</p>
+        <a href="{% url 'developer_create_project' %}" class="btn-primary" style="display: inline-block; margin-top: var(--vrc-spacing-md);">Create Project</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

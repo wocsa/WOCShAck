@@ -1,0 +1,82 @@
+{% extends 'base/base.html' %}
+{% block title %}Developer Profile - V.R.C{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dev-container { max-width: 800px; margin: 0 auto; padding: var(--vrc-spacing-xl); }
+    .profile-card { background: var(--vrc-white); border-radius: var(--vrc-radius-lg); padding: var(--vrc-spacing-xl); box-shadow: var(--vrc-shadow-md); }
+    .profile-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: var(--vrc-spacing-lg); }
+    .profile-name { font-size: var(--vrc-font-size-2xl); font-weight: var(--vrc-font-weight-bold); color: var(--vrc-gray-800); }
+    .profile-tagline { color: var(--vrc-gray-500); margin-top: var(--vrc-spacing-xs); }
+    .profile-field { margin-bottom: var(--vrc-spacing-md); }
+    .profile-field label { font-size: var(--vrc-font-size-sm); color: var(--vrc-gray-500); text-transform: uppercase; letter-spacing: 0.05em; }
+    .profile-field .value { color: var(--vrc-gray-800); margin-top: 2px; }
+    .profile-field .value a { color: var(--vrc-primary); text-decoration: none; }
+    .btn-edit { display: inline-block; padding: 8px 20px; background: var(--vrc-gradient); color: white; border-radius: var(--vrc-radius-md); text-decoration: none; font-size: var(--vrc-font-size-sm); }
+    .specialties { display: flex; flex-wrap: wrap; gap: var(--vrc-spacing-xs); margin-top: 4px; }
+    .specialty-tag { background: #ede9fe; color: #8b5cf6; padding: 2px 10px; border-radius: var(--vrc-radius-full); font-size: var(--vrc-font-size-xs); }
+    .verified-badge { display: inline-block; background: var(--vrc-success-light); color: var(--vrc-success); padding: 2px 8px; border-radius: var(--vrc-radius-full); font-size: var(--vrc-font-size-xs); font-weight: var(--vrc-font-weight-medium); }
+    .back-link { display: inline-block; margin-bottom: var(--vrc-spacing-lg); color: var(--vrc-primary); text-decoration: none; font-size: var(--vrc-font-size-sm); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dev-container">
+    <a href="{% url 'developer_dashboard' %}" class="back-link">&larr; Back to Dashboard</a>
+    <div class="profile-card">
+        <div class="profile-header">
+            <div>
+                <div class="profile-name">
+                    {{ profile.display_name }}
+                    {% if profile.is_verified %}<span class="verified-badge">Verified</span>{% endif %}
+                </div>
+                {% if profile.tagline %}<div class="profile-tagline">{{ profile.tagline }}</div>{% endif %}
+            </div>
+            <div style="display: flex; gap: var(--vrc-spacing-sm); align-items: center;">
+                <a href="/account/profile/?username={{ user.username }}" class="btn-edit" style="background: var(--vrc-gray-100); color: var(--vrc-gray-700);">View Public Profile</a>
+                <a href="{% url 'edit_developer_profile' %}" class="btn-edit">Edit Profile</a>
+            </div>
+        </div>
+
+        {% if profile.website %}
+        <div class="profile-field">
+            <label>Website</label>
+            <div class="value"><a href="{{ profile.website }}" target="_blank" rel="noopener">{{ profile.website }}</a></div>
+        </div>
+        {% endif %}
+
+        {% if profile.github_url %}
+        <div class="profile-field">
+            <label>GitHub</label>
+            <div class="value"><a href="{{ profile.github_url }}" target="_blank" rel="noopener">{{ profile.github_url }}</a></div>
+        </div>
+        {% endif %}
+
+        {% if profile.twitter_url %}
+        <div class="profile-field">
+            <label>Twitter</label>
+            <div class="value"><a href="{{ profile.twitter_url }}" target="_blank" rel="noopener">{{ profile.twitter_url }}</a></div>
+        </div>
+        {% endif %}
+
+        <div class="profile-field">
+            <label>Commission Rate</label>
+            <div class="value">{{ profile.commission_rate|floatformat:0 }}%</div>
+        </div>
+
+        {% if profile.specialties %}
+        <div class="profile-field">
+            <label>Specialties</label>
+            <div class="specialties">
+                {% for s in profile.specialties %}<span class="specialty-tag">{{ s }}</span>{% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="profile-field">
+            <label>Member Since</label>
+            <div class="value">{{ profile.created_at|date:"F j, Y" }}</div>
+        </div>
+    </div>
+</div>
+{% endblock %}
