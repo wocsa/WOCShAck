@@ -1,0 +1,147 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Reports{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'base/css/admin.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="mod-page">
+  <div class="mod-page-header">
+    <h1 class="mod-page-title">Reports</h1>
+    <a href="{% url 'admin_panel:dashboard' %}" class="mod-btn mod-btn-outline">Back to Dashboard</a>
+  </div>
+
+  <div class="filter-card">
+    <form method="get">
+      <div class="filter-row">
+        <div class="filter-group">
+          <label for="status">Status</label>
+          <select name="status" id="status" class="form-control">
+            <option value="all" {% if current_filters.status == 'all' %}selected{% endif %}>All</option>
+            {% for value, label in status_choices %}
+              <option value="{{ value }}" {% if current_filters.status == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="filter-group">
+          <label for="priority">Priority</label>
+          <select name="priority" id="priority" class="form-control">
+            <option value="all" {% if current_filters.priority == 'all' %}selected{% endif %}>All</option>
+            {% for value, label in priority_choices %}
+              <option value="{{ value }}" {% if current_filters.priority == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="filter-group">
+          <label for="type">Type</label>
+          <select name="type" id="type" class="form-control">
+            <option value="all" {% if current_filters.type == 'all' %}selected{% endif %}>All</option>
+            {% for value, label in type_choices %}
+              <option value="{{ value }}" {% if current_filters.type == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="filter-group">
+          <label for="assignment">Assignment</label>
+          <select name="assignment" id="assignment" class="form-control">
+            <option value="" {% if not current_filters.assignment %}selected{% endif %}>All</option>
+            <option value="unassigned" {% if current_filters.assignment == 'unassigned' %}selected{% endif %}>Unassigned</option>
+            <option value="mine" {% if current_filters.assignment == 'mine' %}selected{% endif %}>Mine</option>
+          </select>
+        </div>
+        <div class="filter-group" style="flex:2;min-width:200px;">
+          <label for="search">Search</label>
+          <input type="text" name="search" id="search" class="form-control" value="{{ current_filters.search|default:'' }}" placeholder="Description, reporter, notes...">
+        </div>
+        <div class="filter-group" style="flex:0;min-width:auto;">
+          <label>&nbsp;</label>
+          <button type="submit" class="mod-btn mod-btn-primary">Filter</button>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <div class="mod-card">
+    <div class="mod-card-body">
+      {% if page_obj.object_list %}
+        <table class="mod-table">
+          <thead>
+            <tr>
+              <th>Priority</th>
+              <th>Type</th>
+              <th>Reporter</th>
+              <th>Description</th>
+              <th>Status</th>
+              <th>Assigned To</th>
+              <th>Created</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for report in page_obj.object_list %}
+              <tr>
+                <td>
+                  {% if report.priority == 'critical' %}
+                    <span class="badge badge-danger">{{ report.get_priority_display }}</span>
+                  {% elif report.priority == 'high' %}
+                    <span class="badge badge-warning">{{ report.get_priority_display }}</span>
+                  {% elif report.priority == 'medium' %}
+                    <span class="badge badge-info">{{ report.get_priority_display }}</span>
+                  {% else %}
+                    <span class="badge badge-secondary">{{ report.get_priority_display }}</span>
+                  {% endif %}
+                </td>
+                <td>{{ report.get_report_type_display }}</td>
+                <td><a href="{% url 'admin_panel:user_overview' report.reporter.username %}">{{ report.reporter.username }}</a></td>
+                <td style="max-width:280px;">{{ report.description|truncatechars:100|escape }}</td>
+                <td>
+                  {% if report.status == 'pending' %}
+                    <span class="badge badge-warning">{{ report.get_status_display }}</span>
+                  {% elif report.status == 'resolved' %}
+                    <span class="badge badge-success">{{ report.get_status_display }}</span>
+                  {% else %}
+                    <span class="badge badge-secondary">{{ report.get_status_display }}</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if report.assigned_to %}{{ report.assigned_to.username }}{% else %}<span class="muted">Unassigned</span>{% endif %}
+                </td>
+                <td class="date-cell">{{ report.created_at|date:"M j, Y" }}<br>{{ report.created_at|time:"H:i" }}</td>
+                <td><a href="{% url 'admin_panel:report_detail' report.id %}" class="mod-btn mod-btn-outline mod-btn-sm">View</a></td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+
+        {% if page_obj.has_other_pages %}
+          <div class="pagination">
+            {% if page_obj.has_previous %}
+              <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page=1">First</a>
+              <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.previous_page_number }}">Previous</a>
+            {% endif %}
+            <span class="page-link page-link-active">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+            {% if page_obj.has_next %}
+              <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.next_page_number }}">Next</a>
+              <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.paginator.num_pages }}">Last</a>
+            {% endif %}
+          </div>
+        {% endif %}
+      {% else %}
+        <div class="empty-state">
+          <h4>No reports found</h4>
+          <p>
+            {% if current_filters.status or current_filters.priority or current_filters.type or current_filters.assignment or current_filters.search %}
+              No reports match your current filters.
+            {% else %}
+              No reports have been submitted yet.
+            {% endif %}
+          </p>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

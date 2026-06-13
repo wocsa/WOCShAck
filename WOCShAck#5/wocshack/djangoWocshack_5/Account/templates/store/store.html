@@ -1,0 +1,298 @@
+{% extends "base/base_account.html" %}
+{% load static %}
+
+
+{% block title %}V.R.C - Premium Store{% endblock %}
+
+{% block account_title %}Premium Store{% endblock %}
+
+{% block account_subtitle %}
+<p class="account-subtitle">Upgrade your account with premium features</p>
+{% if balance is not None %}
+<p class="store-balance">Your Balance: <strong>{{ balance }} NE</strong></p>
+{% endif %}
+{% endblock %}
+
+{% block account_content %}
+<div class="store-container">
+    <div class="store-grid">
+        {% for feature in features %}
+        <div class="store-card {% if feature.owned %}owned{% endif %}">
+            <div class="store-card-header" style="background: linear-gradient(135deg, {{ feature.color }}22 0%, {{ feature.color }}11 100%); border-left: 4px solid {{ feature.color }};">
+                <div class="store-card-icon" style="background: {{ feature.color }};">
+                    {% if feature.icon == 'check-badge' %}
+                    <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor">
+                        <path fill-rule="evenodd" d="M8.603 3.799A4.49 4.49 0 0112 2.25c1.357 0 2.573.6 3.397 1.549a4.49 4.49 0 013.498 1.307 4.491 4.491 0 011.307 3.497A4.49 4.49 0 0121.75 12a4.49 4.49 0 01-1.549 3.397 4.491 4.491 0 01-1.307 3.497 4.491 4.491 0 01-3.497 1.307A4.49 4.49 0 0112 21.75a4.49 4.49 0 01-3.397-1.549 4.49 4.49 0 01-3.498-1.306 4.491 4.491 0 01-1.307-3.498A4.49 4.49 0 012.25 12c0-1.357.6-2.573 1.549-3.397a4.49 4.49 0 011.307-3.497 4.49 4.49 0 013.497-1.307zm7.007 6.387a.75.75 0 10-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 00-1.06 1.06l2.25 2.25a.75.75 0 001.14-.094l3.75-5.25z" clip-rule="evenodd"/>
+                    </svg>
+                    {% elif feature.icon == 'code-bracket' %}
+                    <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor">
+                        <path fill-rule="evenodd" d="M14.447 3.027a.75.75 0 01.527.92l-4.5 16.5a.75.75 0 01-1.448-.394l4.5-16.5a.75.75 0 01.921-.526zM16.72 6.22a.75.75 0 011.06 0l5.25 5.25a.75.75 0 010 1.06l-5.25 5.25a.75.75 0 11-1.06-1.06L21.44 12l-4.72-4.72a.75.75 0 010-1.06zm-9.44 0a.75.75 0 010 1.06L2.56 12l4.72 4.72a.75.75 0 11-1.06 1.06L.97 12.53a.75.75 0 010-1.06l5.25-5.25a.75.75 0 011.06 0z" clip-rule="evenodd"/>
+                    </svg>
+                    {% elif feature.icon == 'paint-brush' %}
+                    <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor">
+                        <path d="M11.47 3.84a.75.75 0 011.06 0l8.69 8.69a.75.75 0 101.06-1.06l-8.689-8.69a2.25 2.25 0 00-3.182 0l-8.69 8.69a.75.75 0 001.061 1.06l8.69-8.69z"/>
+                        <path d="M12 5.432l8.159 8.159c.03.03.06.058.091.086v6.198c0 1.035-.84 1.875-1.875 1.875H15a.75.75 0 01-.75-.75v-4.5a.75.75 0 00-.75-.75h-3a.75.75 0 00-.75.75V21a.75.75 0 01-.75.75H5.625a1.875 1.875 0 01-1.875-1.875v-6.198a2.29 2.29 0 00.091-.086L12 5.43z"/>
+                    </svg>
+                    {% endif %}
+                </div>
+                <div class="store-card-title-area">
+                    <h3 class="store-card-title">{{ feature.name }}</h3>
+                    <span class="store-card-price" style="color: {{ feature.color }};">{{ feature.price }} NE</span>
+                </div>
+            </div>
+            <div class="store-card-body">
+                <p class="store-card-description">{{ feature.description }}</p>
+                <div class="store-card-actions">
+                    {% if feature.owned %}
+                    <span class="store-owned-badge">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                            <path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zm13.36-1.814a.75.75 0 10-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 00-1.06 1.06l2.25 2.25a.75.75 0 001.14-.094l3.75-5.25z" clip-rule="evenodd"/>
+                        </svg>
+                        Owned
+                    </span>
+                    {% if feature.type == 'custom_theme' %}
+                    <a href="{% url 'customize_theme' %}" class="store-customize-btn">Customize</a>
+                    {% endif %}
+                    {% else %}
+                    <a href="{% url 'store_purchase' feature.type %}" class="store-buy-btn" style="background: {{ feature.color }};">
+                        Purchase for {{ feature.price }} NE
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="store-info-section">
+        <h3>How It Works</h3>
+        <div class="store-info-grid">
+            <div class="store-info-item">
+                <div class="store-info-number">1</div>
+                <p>Choose a feature you want to purchase</p>
+            </div>
+            <div class="store-info-item">
+                <div class="store-info-number">2</div>
+                <p>Confirm with your bank PIN and account password</p>
+            </div>
+            <div class="store-info-item">
+                <div class="store-info-number">3</div>
+                <p>Payment is deducted from your bank balance</p>
+            </div>
+            <div class="store-info-item">
+                <div class="store-info-number">4</div>
+                <p>Feature is activated on your account instantly</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .store-balance {
+        font-size: 1rem;
+        color: var(--vrc-gray-600);
+        margin-top: 0.5rem;
+    }
+
+    .store-balance strong {
+        color: var(--vrc-primary);
+        font-weight: 700;
+    }
+
+    .store-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    .store-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+    }
+
+    .store-card {
+        background: var(--vrc-white);
+        border: 1px solid var(--vrc-gray-200);
+        border-radius: var(--vrc-radius-xl);
+        overflow: hidden;
+        transition: all 0.2s ease;
+    }
+
+    .store-card:hover {
+        box-shadow: var(--vrc-shadow-md);
+        transform: translateY(-2px);
+    }
+
+    .store-card.owned {
+        opacity: 0.85;
+    }
+
+    .store-card-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1.25rem;
+    }
+
+    .store-card-icon {
+        width: 56px;
+        height: 56px;
+        border-radius: var(--vrc-radius-lg);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        flex-shrink: 0;
+    }
+
+    .store-card-title-area {
+        flex-grow: 1;
+    }
+
+    .store-card-title {
+        font-size: 1.125rem;
+        font-weight: 700;
+        color: var(--vrc-gray-900);
+        margin: 0 0 0.25rem;
+    }
+
+    .store-card-price {
+        font-size: 1.25rem;
+        font-weight: 800;
+    }
+
+    .store-card-body {
+        padding: 0 1.25rem 1.25rem;
+    }
+
+    .store-card-description {
+        font-size: 0.9rem;
+        color: var(--vrc-gray-600);
+        line-height: 1.5;
+        margin: 0 0 1rem;
+    }
+
+    .store-card-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .store-buy-btn {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.75rem 1.5rem;
+        color: white;
+        font-size: 0.9rem;
+        font-weight: 600;
+        border-radius: var(--vrc-radius-lg);
+        text-decoration: none;
+        transition: all 0.2s ease;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+
+    .store-buy-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        filter: brightness(1.1);
+    }
+
+    .store-owned-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.375rem;
+        padding: 0.5rem 1rem;
+        background: var(--vrc-success-light);
+        color: #065f46;
+        font-size: 0.875rem;
+        font-weight: 600;
+        border-radius: var(--vrc-radius-lg);
+        border: 1px solid #a7f3d0;
+    }
+
+    .store-customize-btn {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.5rem 1rem;
+        background: var(--vrc-gradient);
+        color: white;
+        font-size: 0.875rem;
+        font-weight: 600;
+        border-radius: var(--vrc-radius-lg);
+        text-decoration: none;
+        transition: all 0.2s ease;
+    }
+
+    .store-customize-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: var(--vrc-shadow-primary);
+    }
+
+    /* Info Section */
+    .store-info-section {
+        margin-top: 2.5rem;
+        padding-top: 2rem;
+        border-top: 1px solid var(--vrc-gray-200);
+    }
+
+    .store-info-section h3 {
+        text-align: center;
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--vrc-gray-500);
+        margin-bottom: 1.25rem;
+    }
+
+    .store-info-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1rem;
+    }
+
+    .store-info-item {
+        text-align: center;
+    }
+
+    .store-info-number {
+        width: 32px;
+        height: 32px;
+        background: var(--vrc-gradient);
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.875rem;
+        font-weight: 700;
+        margin: 0 auto 0.5rem;
+    }
+
+    .store-info-item p {
+        font-size: 0.8rem;
+        color: var(--vrc-gray-600);
+        margin: 0;
+        line-height: 1.4;
+    }
+
+    @media (max-width: 768px) {
+        .store-info-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @media (max-width: 480px) {
+        .store-info-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .store-card-header {
+            flex-direction: column;
+            text-align: center;
+        }
+    }
+</style>
+{% endblock %}

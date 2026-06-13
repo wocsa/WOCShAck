@@ -1,0 +1,151 @@
+{% extends "base/base.html" %}
+{% load static %}
+
+{% block title %}VRC — {{ action }} Post{% endblock %}
+
+{% block module_css %}
+<link rel="stylesheet" href="{% static 'community/css/content.css' %}">
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.css">
+<style>
+    /* SimpleMDE overrides */
+    .CodeMirror {
+        border: 1px solid #ddd !important;
+        border-radius: 8px !important;
+    }
+    .editor-toolbar {
+        border: 1px solid #ddd !important;
+        border-bottom: none !important;
+        border-radius: 8px 8px 0 0 !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="main-container">
+<nav class="vrc-breadcrumbs">
+  <a href="{% url 'community:index' %}">Community</a>
+  <span class="bc-sep">›</span>
+  <a href="{% url 'community:blog_list' %}">Blog</a>
+  <span class="bc-sep">›</span>
+  <span class="bc-current">{{ action }} Post</span>
+</nav>
+<div class="form-wrapper">
+
+  <div class="form-header">
+    <h1 class="form-title">{{ action }} Blog Post</h1>
+    <a href="{% url 'community:blog_list' %}" class="content-btn">← Back</a>
+  </div>
+
+  <form method="post" enctype="multipart/form-data" class="content-form">
+    {% csrf_token %}
+
+    <div class="form-group">
+      <label class="form-label">Title *</label>
+      <input type="text" name="title" class="form-input" required maxlength="255"
+        value="{{ post.title|default:'' }}">
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Category</label>
+        <select name="category" class="form-select">
+          <option value="">— None —</option>
+          {% for cat in categories %}
+          <option value="{{ cat.id }}" {% if post.category_id == cat.id %}selected{% endif %}>{{ cat.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Status</label>
+        <select name="status" class="form-select">
+          <option value="draft" {% if not post or post.status == 'draft' %}selected{% endif %}>Draft</option>
+          <option value="published" {% if post.status == 'published' %}selected{% endif %}>Published</option>
+          <option value="archived" {% if post.status == 'archived' %}selected{% endif %}>Archived</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Tags <span class="form-hint">(comma-separated)</span></label>
+      <input type="text" name="tags" class="form-input" maxlength="255"
+        value="{{ post.tags|default:'' }}" placeholder="css, tutorial">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Featured Image</label>
+      <input type="file" name="featured_image" class="form-input" accept="image/*">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Content * <span class="form-hint">(Markdown supported)</span></label>
+      <textarea name="content" id="id_content" class="form-textarea" rows="20" required>{{ post.content|default:'' }}</textarea>
+    </div>
+
+    <div class="form-checkboxes">
+      {% if request.user.is_staff %}
+      <label class="form-check">
+        <input type="checkbox" name="is_featured" {% if post.is_featured %}checked{% endif %}>
+        Featured post
+      </label>
+      <label class="form-check">
+        <input type="checkbox" name="is_pinned" {% if post.is_pinned %}checked{% endif %}>
+        Pinned
+      </label>
+      {% endif %}
+      <label class="form-check">
+        <input type="checkbox" name="allow_comments" {% if not post or post.allow_comments %}checked{% endif %}>
+        Allow comments
+      </label>
+    </div>
+
+    <div class="form-actions">
+      <button type="submit" class="content-btn content-btn--primary">{{ action }} Post</button>
+      <a href="{% url 'community:blog_list' %}" class="content-btn">Cancel</a>
+    </div>
+  </form>
+
+</div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.js"></script>
+<script>
+// Initialize SimpleMDE editor for blog content
+var contentTextarea = document.getElementById('id_content');
+if (contentTextarea) {
+    var simplemde = new SimpleMDE({
+        element: contentTextarea,
+        spellChecker: false,
+        autosave: {
+            enabled: false
+        },
+        placeholder: 'Write your blog post content here. Markdown is supported.',
+        toolbar: [
+            'bold', 'italic', 'heading', '|',
+            'quote', 'unordered-list', 'ordered-list', '|',
+            'link', 'image', 'code', '|',
+            'preview', 'side-by-side', 'fullscreen', '|',
+            'guide'
+        ],
+        status: ['lines', 'words'],
+        renderingConfig: {
+            singleLineBreaks: false,
+            codeSyntaxHighlighting: false,
+        },
+    });
+    contentTextarea.removeAttribute('required');
+
+    // Sync SimpleMDE content to textarea before form submit
+    var blogForm = contentTextarea.closest('form');
+    if (blogForm) {
+        blogForm.addEventListener('submit', function() {
+            simplemde.codemirror.save();
+        });
+    }
+}
+</script>
+{% endblock %}

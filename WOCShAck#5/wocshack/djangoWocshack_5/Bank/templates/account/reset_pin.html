@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>V.R.C - Reset PIN</title>
+    {% load static %}
+    <link rel="icon" type="image/svg+xml" href="{% static 'img/favicon.svg' %}">
+    <link rel="stylesheet" href="{% static 'css/account/pin.css' %}">
+    <link rel="stylesheet" href="{% static 'header/css/header.css' %}">
+    <style>
+        body { padding-top: 70px; }
+        .reset-form {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+        .reset-form label {
+            font-size: 0.85rem;
+            color: #888;
+            margin-bottom: 0.25rem;
+            display: block;
+        }
+        .reset-form input {
+            width: 100%;
+            padding: 0.65rem 0.9rem;
+            border: 1px solid #333;
+            border-radius: 6px;
+            background: #1a1a2e;
+            color: #e0e0e0;
+            font-size: 1rem;
+            box-sizing: border-box;
+        }
+        .reset-form input:focus {
+            outline: none;
+            border-color: #4f8ef7;
+        }
+        .reset-error {
+            color: #e74c3c;
+            font-size: 0.85rem;
+            min-height: 1.2em;
+            text-align: center;
+        }
+        .back-link {
+            display: block;
+            text-align: center;
+            margin-top: 1rem;
+            font-size: 0.85rem;
+            color: #888;
+        }
+        .back-link a {
+            color: #4f8ef7;
+            text-decoration: none;
+        }
+        .back-link a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    {% if user.is_authenticated %}
+        {% include 'header/html/header_account.html' %}
+    {% else %}
+        {% include 'header/html/header.html' %}
+    {% endif %}
+    <div class="pin-container">
+        <div class="pin-card">
+            <div class="pin-header">
+                <h1>Reset PIN</h1>
+                <p class="pin-subtitle">Enter your account password and choose a new 6-digit PIN</p>
+            </div>
+
+            <form class="reset-form" id="resetForm" onsubmit="submitReset(event)">
+                {% csrf_token %}
+                <div>
+                    <label for="password">Account Password</label>
+                    <input type="password" id="password" name="password" autocomplete="current-password" required>
+                </div>
+                <div>
+                    <label for="new_pin">New PIN (6 digits)</label>
+                    <input type="password" id="new_pin" name="new_pin" maxlength="6" pattern="\d{6}" inputmode="numeric" autocomplete="new-password" required>
+                </div>
+                <div>
+                    <label for="confirm_pin">Confirm New PIN</label>
+                    <input type="password" id="confirm_pin" name="confirm_pin" maxlength="6" pattern="\d{6}" inputmode="numeric" autocomplete="new-password" required>
+                </div>
+
+                <p class="reset-error" id="resetError"></p>
+
+                <div class="pin-actions">
+                    <button type="submit" class="pin-btn primary" id="submitBtn">Reset PIN</button>
+                </div>
+            </form>
+
+            <div class="security-notice">
+                <span>🔒</span>
+                <span>Your new PIN is encrypted and secure</span>
+            </div>
+
+            <p class="back-link"><a href="{% url 'bank_pin' %}">Back to PIN entry</a></p>
+        </div>
+    </div>
+
+    <script>
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        async function submitReset(event) {
+            event.preventDefault();
+            const errorEl = document.getElementById('resetError');
+            const submitBtn = document.getElementById('submitBtn');
+            errorEl.textContent = '';
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Processing...';
+
+            const password = document.getElementById('password').value;
+            const new_pin = document.getElementById('new_pin').value;
+            const confirm_pin = document.getElementById('confirm_pin').value;
+
+            try {
+                const response = await fetch('{% url "bank_reset_pin" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken'),
+                    },
+                    body: JSON.stringify({ password, new_pin, confirm_pin }),
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    window.location.href = data.redirect_url || '{% url "bank_pin" %}';
+                } else {
+                    errorEl.textContent = data.message || 'An error occurred. Please try again.';
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Reset PIN';
+                }
+            } catch (err) {
+                errorEl.textContent = 'Network error. Please try again.';
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Reset PIN';
+            }
+        }
+    </script>
+    <script src="{% static 'header/js/hamburger_menu.js' %}"></script>
+    {% if user.is_authenticated %}
+    <script src="{% static 'header/js/user_hamburger_menu.js' %}"></script>
+    {% endif %}
+</body>
+</html>

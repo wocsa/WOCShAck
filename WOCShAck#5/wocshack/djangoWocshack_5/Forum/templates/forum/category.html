@@ -1,0 +1,363 @@
+{% extends "base/base_forum.html" %}
+{% load static %}
+
+
+{% block title %}{{ category.name }} - V.R.C Forum{% endblock %}
+
+{% block extra_css %}
+<style>
+    .category-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 30px;
+        border-radius: 16px;
+        margin-bottom: 20px;
+    }
+    .breadcrumb {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        margin-bottom: 10px;
+        font-size: 0.9rem;
+    }
+    .breadcrumb a {
+        color: rgba(255,255,255,0.8);
+        text-decoration: none;
+    }
+    .breadcrumb a:hover {
+        color: white;
+    }
+    .breadcrumb span {
+        opacity: 0.6;
+    }
+    .category-header h1 {
+        font-size: 2rem;
+        margin-bottom: 5px;
+    }
+    .category-header p {
+        opacity: 0.9;
+    }
+
+    .category-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+    .new-topic-btn {
+        padding: 12px 24px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: transform 0.2s ease;
+    }
+    .new-topic-btn:hover {
+        transform: translateY(-2px);
+        color: white;
+    }
+    .new-topic-btn svg {
+        width: 20px;
+        height: 20px;
+    }
+
+    .sort-options {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+    }
+    .sort-options label {
+        font-size: 0.9rem;
+        color: #666;
+    }
+    .sort-options select {
+        padding: 8px 12px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        background: white;
+        cursor: pointer;
+    }
+
+    .topics-list {
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    .topic-row {
+        display: flex;
+        align-items: center;
+        padding: 15px 20px;
+        border-bottom: 1px solid #eee;
+        gap: 15px;
+        transition: background 0.2s ease;
+    }
+    .topic-row:last-child {
+        border-bottom: none;
+    }
+    .topic-row:hover {
+        background: #f8f9fa;
+    }
+    .topic-icon {
+        width: 40px;
+        height: 40px;
+        background: #f0f0f0;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #667eea;
+        flex-shrink: 0;
+    }
+    .topic-icon.pinned {
+        background: #fef3c7;
+        color: #d97706;
+    }
+    .topic-icon.locked {
+        background: #fee2e2;
+        color: #dc2626;
+    }
+    .topic-icon svg {
+        width: 20px;
+        height: 20px;
+    }
+    .topic-info {
+        flex: 1;
+        min-width: 0;
+    }
+    .topic-title-link {
+        font-weight: 600;
+        color: #333;
+        text-decoration: none;
+        display: block;
+        margin-bottom: 3px;
+    }
+    .topic-title-link:hover {
+        color: #667eea;
+    }
+    .topic-meta {
+        font-size: 0.85rem;
+        color: #888;
+    }
+    .topic-meta a {
+        color: #667eea;
+        text-decoration: none;
+    }
+    .topic-stats {
+        display: flex;
+        gap: 20px;
+        color: #888;
+        font-size: 0.9rem;
+        text-align: center;
+    }
+    .topic-stats span {
+        display: flex;
+        flex-direction: column;
+    }
+    .topic-stats strong {
+        color: #333;
+    }
+    .topic-last-post {
+        font-size: 0.85rem;
+        color: #888;
+        text-align: right;
+        min-width: 150px;
+    }
+    .topic-last-post a {
+        color: #667eea;
+        text-decoration: none;
+    }
+
+    .no-topics {
+        text-align: center;
+        padding: 60px 20px;
+        color: #666;
+    }
+    .no-topics h3 {
+        margin-bottom: 10px;
+    }
+
+    /* Pagination */
+    .pagination-container {
+        display: flex;
+        justify-content: center;
+        margin-top: 30px;
+    }
+    .pagination {
+        display: flex;
+        gap: 5px;
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    .pagination a, .pagination span {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 40px;
+        height: 40px;
+        padding: 0 12px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 500;
+        transition: all 0.2s ease;
+    }
+    .pagination a {
+        background: white;
+        color: #333;
+        border: 1px solid #ddd;
+    }
+    .pagination a:hover {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-color: transparent;
+    }
+    .pagination .current {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+    .pagination .disabled {
+        background: #f5f5f5;
+        color: #ccc;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="category-header">
+    <div class="breadcrumb">
+        <a href="{% url 'forum_index' %}">Forum</a>
+        <span>/</span>
+        <span>{{ category.name }}</span>
+    </div>
+    <h1>{{ category.name }}</h1>
+    <p>{{ category.description }}</p>
+</div>
+
+<div class="category-actions">
+    {% if user.is_authenticated %}
+    <a href="{% url 'forum_create_topic' category_slug=category.slug %}" class="new-topic-btn">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+        </svg>
+        New Topic
+    </a>
+    {% else %}
+    <a href="{% url 'login' %}?next={{ request.path }}" class="new-topic-btn">
+        Log in to post
+    </a>
+    {% endif %}
+
+    <div class="sort-options">
+        <label for="sort-select">Sort by:</label>
+        <select id="sort-select" onchange="updateSort(this.value)">
+            <option value="-last_activity" {% if sort_by == '-last_activity' %}selected{% endif %}>Recent Activity</option>
+            <option value="-created_at" {% if sort_by == '-created_at' %}selected{% endif %}>Newest</option>
+            <option value="created_at" {% if sort_by == 'created_at' %}selected{% endif %}>Oldest</option>
+            <option value="-view_count" {% if sort_by == '-view_count' %}selected{% endif %}>Most Viewed</option>
+            <option value="title" {% if sort_by == 'title' %}selected{% endif %}>Title A-Z</option>
+        </select>
+    </div>
+</div>
+
+<div class="topics-list">
+    {% for topic in topics %}
+    <div class="topic-row">
+        <div class="topic-icon {% if topic.is_pinned %}pinned{% elif topic.is_locked %}locked{% endif %}">
+            {% if topic.is_pinned %}
+            <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z"/>
+            </svg>
+            {% elif topic.is_locked %}
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+            {% else %}
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+            </svg>
+            {% endif %}
+        </div>
+        <div class="topic-info">
+            <a href="{% url 'forum_topic' topic_id=topic.id %}" class="topic-title-link">
+                {{ topic.title }}
+            </a>
+            <div class="topic-meta">
+                Started by <a href="{% url 'forum_user_profile' username=topic.author.username %}">{{ topic.author.username }}</a>
+                | {{ topic.created_at|timesince }} ago
+            </div>
+        </div>
+        <div class="topic-stats">
+            <span>
+                <strong>{{ topic.reply_count|default:0 }}</strong>
+                Replies
+            </span>
+            <span>
+                <strong>{{ topic.view_count }}</strong>
+                Views
+            </span>
+        </div>
+        <div class="topic-last-post">
+            {% if topic.last_post_date %}
+            {{ topic.last_post_date|timesince }} ago
+            {% else %}
+            No replies
+            {% endif %}
+        </div>
+    </div>
+    {% empty %}
+    <div class="no-topics">
+        <h3>No topics yet</h3>
+        <p>Be the first to start a discussion in this category!</p>
+    </div>
+    {% endfor %}
+</div>
+
+{% if page_obj.has_other_pages %}
+<div class="pagination-container">
+    <nav class="pagination">
+        {% if page_obj.has_previous %}
+        <a href="?page=1&sort={{ sort_by }}">&laquo;</a>
+        <a href="?page={{ page_obj.previous_page_number }}&sort={{ sort_by }}">&lsaquo;</a>
+        {% else %}
+        <span class="disabled">&laquo;</span>
+        <span class="disabled">&lsaquo;</span>
+        {% endif %}
+
+        {% for num in page_obj.paginator.page_range %}
+            {% if page_obj.number == num %}
+            <span class="current">{{ num }}</span>
+            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+            <a href="?page={{ num }}&sort={{ sort_by }}">{{ num }}</a>
+            {% endif %}
+        {% endfor %}
+
+        {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}&sort={{ sort_by }}">&rsaquo;</a>
+        <a href="?page={{ page_obj.paginator.num_pages }}&sort={{ sort_by }}">&raquo;</a>
+        {% else %}
+        <span class="disabled">&rsaquo;</span>
+        <span class="disabled">&raquo;</span>
+        {% endif %}
+    </nav>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function updateSort(value) {
+    const url = new URL(window.location.href);
+    url.searchParams.set('sort', value);
+    url.searchParams.delete('page');
+    window.location.href = url.toString();
+}
+</script>
+{% endblock %}

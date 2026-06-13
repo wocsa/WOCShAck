@@ -1,0 +1,224 @@
+{# Mention autocomplete CSS and JS for SimpleMDE editors #}
+
+<style>
+    .mention-dropdown {
+        position: absolute;
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+        max-height: 200px;
+        overflow-y: auto;
+        z-index: 10000;
+        min-width: 180px;
+        display: none;
+    }
+    .mention-dropdown.active {
+        display: block;
+    }
+    .mention-item {
+        padding: 8px 14px;
+        cursor: pointer;
+        font-size: 0.95rem;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: #333;
+    }
+    .mention-item:first-child {
+        border-radius: 8px 8px 0 0;
+    }
+    .mention-item:last-child {
+        border-radius: 0 0 8px 8px;
+    }
+    .mention-item:hover,
+    .mention-item.selected {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+    .mention-item .mention-at {
+        color: #667eea;
+        font-weight: 600;
+    }
+    .mention-item:hover .mention-at,
+    .mention-item.selected .mention-at {
+        color: white;
+    }
+    .mention-hint {
+        padding: 8px 14px;
+        font-size: 0.8rem;
+        color: #999;
+        font-style: italic;
+    }
+</style>
+
+<div class="mention-dropdown" id="mentionDropdown"></div>
+
+<script>
+// ==========================================================================
+// @MENTION AUTOCOMPLETE FOR SIMPLEMDE
+// ==========================================================================
+
+(function() {
+    var dropdown = document.getElementById('mentionDropdown');
+    var selectedIndex = -1;
+    var mentionQuery = '';
+    var mentionStartPos = null;
+    var activeEditor = null;
+    var fetchTimeout = null;
+
+    function setupMentionAutocomplete(simplemdeInstance) {
+        var cm = simplemdeInstance.codemirror;
+
+        cm.on('change', function(editor, change) {
+            if (change.origin === 'setValue') return;
+
+            var cursor = editor.getCursor();
+            var line = editor.getLine(cursor.line);
+            var textBeforeCursor = line.substring(0, cursor.ch);
+
+            // Find the last @ that starts a mention (after space, start of line, or after newline)
+            var atMatch = textBeforeCursor.match(/(^|[\s(])@([a-zA-Z0-9_-]*)$/);
+
+            if (atMatch) {
+                mentionQuery = atMatch[2];
+                mentionStartPos = {
+                    line: cursor.line,
+                    ch: cursor.ch - mentionQuery.length - 1  // -1 for the @
+                };
+                activeEditor = editor;
+
+                if (mentionQuery.length >= 1) {
+                    // Debounce API calls
+                    clearTimeout(fetchTimeout);
+                    fetchTimeout = setTimeout(function() {
+                        fetchMentionSuggestions(mentionQuery, editor, cursor);
+                    }, 200);
+                } else {
+                    // Just typed @, show hint
+                    showDropdownHint(editor, cursor);
+                }
+            } else {
+                hideDropdown();
+            }
+        });
+
+        cm.on('keydown', function(editor, e) {
+            if (!dropdown.classList.contains('active')) return;
+
+            var items = dropdown.querySelectorAll('.mention-item');
+            if (items.length === 0) return;
+
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                selectedIndex = Math.min(selectedIndex + 1, items.length - 1);
+                updateSelection(items);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                selectedIndex = Math.max(selectedIndex - 1, 0);
+                updateSelection(items);
+            } else if (e.key === 'Enter' || e.key === 'Tab') {
+                if (selectedIndex >= 0 && selectedIndex < items.length) {
+                    e.preventDefault();
+                    insertMention(items[selectedIndex].dataset.username);
+                }
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                hideDropdown();
+            }
+        });
+
+        // Hide on blur
+        cm.on('blur', function() {
+            setTimeout(function() { hideDropdown(); }, 200);
+        });
+    }
+
+    function fetchMentionSuggestions(query, editor, cursor) {
+        fetch('/forum/api/mentions/autocomplete/?q=' + encodeURIComponent(query))
+            .then(function(res) { return res.json(); })
+            .then(function(data) {
+                if (data.users && data.users.length > 0) {
+                    showDropdown(data.users, editor, cursor);
+                } else {
+                    hideDropdown();
+                }
+            })
+            .catch(function() {
+                hideDropdown();
+            });
+    }
+
+    function showDropdown(users, editor, cursor) {
+        selectedIndex = 0;
+        var html = '';
+        users.forEach(function(user, i) {
+            html += '<div class="mention-item' + (i === 0 ? ' selected' : '') + '" data-username="' + user.username + '">'
+                  + '<span class="mention-at">@</span>' + user.username
+                  + '</div>';
+        });
+        dropdown.innerHTML = html;
+        dropdown.classList.add('active');
+
+        // Position dropdown near the cursor
+        positionDropdown(editor, cursor);
+
+        // Add click handlers
+        var items = dropdown.querySelectorAll('.mention-item');
+        items.forEach(function(item) {
+            item.addEventListener('mousedown', function(e) {
+                e.preventDefault();
+                insertMention(item.dataset.username);
+            });
+        });
+    }
+
+    function showDropdownHint(editor, cursor) {
+        selectedIndex = -1;
+        dropdown.innerHTML = '<div class="mention-hint">Type a username...</div>';
+        dropdown.classList.add('active');
+        positionDropdown(editor, cursor);
+    }
+
+    function positionDropdown(editor, cursor) {
+        var coords = editor.cursorCoords(cursor, 'page');
+        dropdown.style.left = coords.left + 'px';
+        dropdown.style.top = (coords.bottom + 4) + 'px';
+        dropdown.style.position = 'fixed';
+    }
+
+    function hideDropdown() {
+        dropdown.classList.remove('active');
+        dropdown.innerHTML = '';
+        selectedIndex = -1;
+        mentionQuery = '';
+        mentionStartPos = null;
+        clearTimeout(fetchTimeout);
+    }
+
+    function updateSelection(items) {
+        items.forEach(function(item, i) {
+            if (i === selectedIndex) {
+                item.classList.add('selected');
+            } else {
+                item.classList.remove('selected');
+            }
+        });
+    }
+
+    function insertMention(username) {
+        if (!activeEditor || !mentionStartPos) return;
+
+        var cursor = activeEditor.getCursor();
+        // Replace from @ to current cursor position with @username + space
+        var from = mentionStartPos;
+        var to = cursor;
+        activeEditor.replaceRange('@' + username + ' ', from, to);
+        hideDropdown();
+        activeEditor.focus();
+    }
+
+    // Expose setup function globally
+    window.setupMentionAutocomplete = setupMentionAutocomplete;
+})();
+</script>

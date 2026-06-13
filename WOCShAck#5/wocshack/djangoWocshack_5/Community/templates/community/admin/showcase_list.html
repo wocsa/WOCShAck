@@ -1,0 +1,158 @@
+{% extends "base/base.html" %}
+{% load static %}
+
+{% block title %}Mod — Showcase{% endblock %}
+
+{% block module_css %}
+<link rel="stylesheet" href="{% static 'base/css/admin.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="mod-page">
+
+  <div class="mod-section-header">
+    <h1 class="mod-section-title">🎨 Showcase Items</h1>
+    <a href="{% url 'community:admin_dashboard' %}" class="mod-btn mod-btn--ghost mod-btn--sm">← Dashboard</a>
+  </div>
+
+  {# Filter form #}
+  <form method="get">
+    <div class="mod-filter-bar">
+      <input type="text" name="search" value="{{ search|escape }}" placeholder="Search title or author…"
+             class="mod-filter-input">
+      <button type="submit" class="mod-btn mod-btn--primary mod-btn--sm">Filter</button>
+      {% if search %}
+      <a href="{% url 'community:admin_showcase_list' %}" class="mod-btn mod-btn--ghost mod-btn--sm">Clear</a>
+      {% endif %}
+    </div>
+  </form>
+
+  <div class="mod-table-card">
+    <div class="mod-table-scroll">
+      <table class="mod-table">
+        <thead>
+          <tr>
+            <th>Title</th>
+            <th>Author</th>
+            <th>Category</th>
+            <th class="text-center">Featured</th>
+            <th class="text-center">Approved</th>
+            <th>Created</th>
+            <th>Preview</th>
+            <th class="text-center">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in page_obj %}
+          <tr>
+            <td>
+              <a href="{% url 'community:showcase_detail' item.id %}" target="_blank"
+                 class="mod-table-link">{{ item.title|escape }}</a>
+            </td>
+            <td>{{ item.author.username|escape }}</td>
+            <td>{{ item.get_category_display|escape }}</td>
+            <td class="text-center">
+              {% if item.is_featured %}
+                <span class="mod-badge mod-badge--warning">⭐ Featured</span>
+              {% else %}
+                <span class="mod-badge mod-badge--light">No</span>
+              {% endif %}
+            </td>
+            <td class="text-center">
+              {% if item.is_approved %}
+                <span class="mod-badge mod-badge--success">✓ Approved</span>
+              {% else %}
+                <span class="mod-badge mod-badge--gray">Pending</span>
+              {% endif %}
+            </td>
+            <td style="white-space:nowrap;">{{ item.created_at|date:"Y-m-d" }}</td>
+            <td>
+              {% if item.preview_gif %}
+                <img src="{{ item.preview_gif.url }}" alt="preview" style="width:60px;height:60px;object-fit:cover;border-radius:4px;">
+              {% else %}
+                <span class="mod-badge mod-badge--light" style="font-size:0.75rem;">No GIF</span>
+              {% endif %}
+            </td>
+            <td class="text-center">
+              <div class="mod-actions">
+
+                {# Feature / Unfeature #}
+                {% if item.is_featured %}
+                <form method="post" action="{% url 'community:admin_showcase_action' %}">
+                  {% csrf_token %}
+                  <input type="hidden" name="item_id" value="{{ item.id }}">
+                  <input type="hidden" name="action" value="unfeature">
+                  <button type="submit" class="mod-btn mod-btn--ghost mod-btn--sm">Unfeature</button>
+                </form>
+                {% else %}
+                <form method="post" action="{% url 'community:admin_showcase_action' %}">
+                  {% csrf_token %}
+                  <input type="hidden" name="item_id" value="{{ item.id }}">
+                  <input type="hidden" name="action" value="feature">
+                  <button type="submit" class="mod-btn mod-btn--warning mod-btn--sm">Feature</button>
+                </form>
+                {% endif %}
+
+                {# Approve (only if not yet approved) #}
+                {% if not item.is_approved %}
+                <form method="post" action="{% url 'community:admin_showcase_action' %}">
+                  {% csrf_token %}
+                  <input type="hidden" name="item_id" value="{{ item.id }}">
+                  <input type="hidden" name="action" value="approve">
+                  <button type="submit" class="mod-btn mod-btn--success mod-btn--sm">Approve</button>
+                </form>
+                {% endif %}
+
+                {# Remove #}
+                <form method="post" action="{% url 'community:admin_showcase_action' %}"
+                      onsubmit="return confirm('Remove &quot;{{ item.title|escapejs }}&quot;?');">
+                  {% csrf_token %}
+                  <input type="hidden" name="item_id" value="{{ item.id }}">
+                  <input type="hidden" name="action" value="remove">
+                  <button type="submit" class="mod-btn mod-btn--danger mod-btn--sm">Remove</button>
+                </form>
+
+                {# Generate GIF #}
+                <form method="post" action="{% url 'community:admin_showcase_action' %}">
+                  {% csrf_token %}
+                  <input type="hidden" name="item_id" value="{{ item.id }}">
+                  <input type="hidden" name="action" value="generate_gif">
+                  <button type="submit" class="mod-btn mod-btn--ghost mod-btn--sm">Gen GIF</button>
+                </form>
+
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="8" class="mod-table-empty">No showcase items found.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  {# Pagination #}
+  {% if page_obj.has_other_pages %}
+  <div class="mod-pagination">
+    {% if page_obj.has_previous %}
+    <a href="?search={{ search|urlencode }}&page={{ page_obj.previous_page_number }}"
+       class="mod-page-btn">«</a>
+    {% else %}
+    <span class="mod-page-btn mod-page-btn--disabled">«</span>
+    {% endif %}
+
+    <span class="mod-page-btn mod-page-btn--active">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+
+    {% if page_obj.has_next %}
+    <a href="?search={{ search|urlencode }}&page={{ page_obj.next_page_number }}"
+       class="mod-page-btn">»</a>
+    {% else %}
+    <span class="mod-page-btn mod-page-btn--disabled">»</span>
+    {% endif %}
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

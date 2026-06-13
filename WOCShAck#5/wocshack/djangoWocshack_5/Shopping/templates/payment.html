@@ -1,0 +1,508 @@
+{% extends "base/base_shop.html" %}
+{% load static %}
+
+
+{% block title %}V.R.C - Secure Payment{% endblock %}
+
+{% block module_css %}
+<link rel="stylesheet" href="{% static 'css/cart.css' %}">
+{% endblock %}
+
+{% block extra_css %}
+{% block loader %}{% endblock %}
+<style>
+    /* Enhanced payment page styling with dual authentication */
+    .payment-container {
+        max-width: 700px;
+        margin: 2rem auto;
+        padding: 2rem 1rem 2rem;
+    }
+
+    .payment-back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.375rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: var(--vrc-gray-500, #6b7280);
+        text-decoration: none;
+        margin-bottom: 1.5rem;
+        transition: color 0.2s;
+    }
+
+    .payment-back-link:hover {
+        color: var(--vrc-primary, #667eea);
+    }
+
+    .cart-title {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--vrc-gray-900, #111827);
+        margin-bottom: 1.5rem;
+    }
+
+    /* Payment Summary Card */
+    .payment-summary-card {
+        background: var(--vrc-gray-50, #f9fafb);
+        border: 1px solid var(--vrc-gray-200, #e5e7eb);
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .payment-summary-title {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--vrc-gray-700, #374151);
+        margin: 0 0 1rem;
+    }
+
+    .payment-summary-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.75rem;
+        font-size: 0.95rem;
+        color: var(--vrc-gray-600, #4b5563);
+    }
+
+    .payment-summary-row.payment-discount {
+        color: var(--vrc-success, #10b981);
+    }
+
+    .payment-summary-divider {
+        height: 1px;
+        background: var(--vrc-gray-200, #e5e7eb);
+        margin: 1rem 0;
+    }
+
+    .payment-summary-row.payment-total {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--vrc-gray-900, #111827);
+        margin-bottom: 0;
+    }
+
+    /* Balance Information */
+    .payment-balance-info {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.875rem;
+        padding: 1rem 1.25rem;
+        background: #ecfdf5;
+        border: 1px solid #a7f3d0;
+        border-radius: 12px;
+        margin-bottom: 1.5rem;
+    }
+
+    .payment-balance-info svg {
+        flex-shrink: 0;
+        color: #059669;
+        margin-top: 0.125rem;
+    }
+
+    .payment-balance-info.insufficient {
+        background: #fef2f2;
+        border-color: #fecaca;
+    }
+
+    .payment-balance-info.insufficient svg {
+        color: #dc2626;
+    }
+
+    .payment-balance-details {
+        flex: 1;
+    }
+
+    .payment-balance-current {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.95rem;
+        color: #065f46;
+        margin-bottom: 0.25rem;
+    }
+
+    .payment-balance-info.insufficient .payment-balance-current {
+        color: #991b1b;
+    }
+
+    .payment-balance-current strong {
+        font-weight: 700;
+    }
+
+    .balance-after {
+        display: block;
+        font-size: 0.85rem;
+        color: #059669;
+        opacity: 0.85;
+    }
+
+    .insufficient-warning {
+        display: flex;
+        align-items: center;
+        gap: 0.375rem;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #dc2626;
+    }
+
+    /* Payment Form Sections */
+    .payment-section {
+        background: white;
+        border: 1px solid var(--vrc-gray-200, #e5e7eb);
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .payment-auth-section {
+        border: 2px solid var(--vrc-primary, #667eea);
+        background: linear-gradient(to bottom, #f5f7ff, white);
+    }
+
+    .payment-section-title {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 1.125rem;
+        font-weight: 700;
+        color: var(--vrc-gray-900, #111827);
+        margin: 0 0 0.5rem;
+    }
+
+    .payment-auth-subtitle {
+        font-size: 0.875rem;
+        color: var(--vrc-gray-600, #4b5563);
+        margin: 0 0 1.25rem;
+        line-height: 1.5;
+    }
+
+    .payment-auth-notice {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.5rem;
+        padding: 0.875rem;
+        background: rgba(102, 126, 234, 0.1);
+        border-radius: 8px;
+        margin-top: 1rem;
+    }
+
+    .payment-auth-notice svg {
+        flex-shrink: 0;
+        color: var(--vrc-primary, #667eea);
+        margin-top: 0.125rem;
+    }
+
+    .payment-auth-notice span {
+        font-size: 0.85rem;
+        color: var(--vrc-gray-700, #374151);
+        line-height: 1.4;
+    }
+
+    .form-help-text {
+        display: block;
+        font-size: 0.8rem;
+        color: var(--vrc-gray-500, #6b7280);
+        margin-top: 0.375rem;
+    }
+
+    .payment-auth-input {
+        font-family: monospace;
+        letter-spacing: 0.05em;
+    }
+
+    .payment-input select, select.payment-input {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        font-size: 1rem;
+        border: 2px solid var(--vrc-gray-200, #e5e7eb);
+        border-radius: 8px;
+        background: white;
+        cursor: pointer;
+        transition: border-color 0.2s;
+    }
+    select.payment-input:focus {
+        outline: none;
+        border-color: var(--vrc-primary, #667eea);
+    }
+
+    /* Card hint row displayed when a BankCard record exists for the user */
+    .card-hint {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1rem;
+        background: #f0f9ff;
+        border: 1px solid #bae6fd;
+        border-radius: 8px;
+        font-size: 0.875rem;
+        color: #0369a1;
+    }
+
+    .card-hint svg {
+        flex-shrink: 0;
+        color: #0369a1;
+    }
+
+    .card-status-active {
+        margin-left: auto;
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: #059669;
+    }
+
+    .card-status-frozen {
+        margin-left: auto;
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: #dc2626;
+    }
+
+    .card-status-frozen a {
+        color: #dc2626;
+    }
+
+    .card-status-cancelled {
+        margin-left: auto;
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: #6b7280;
+    }
+
+    .payment-submit-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+
+    .payment-submit-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    @media (max-width: 640px) {
+        .form-row {
+            flex-direction: column;
+        }
+
+        .payment-summary-row {
+            font-size: 0.875rem;
+        }
+
+        .payment-summary-row.payment-total {
+            font-size: 1.125rem;
+        }
+
+        .form-actions {
+            flex-direction: column;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content_wrapper_class %}{% endblock %}
+
+{% block content %}
+<div class="cart-page-wrapper">
+    <div class="payment-container">
+        <a href="{% url 'cart' %}" class="payment-back-link">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="15 18 9 12 15 6"/>
+            </svg>
+            Back to Cart
+        </a>
+
+        <h1 class="cart-title">Secure Payment</h1>
+
+        <!-- Order Summary -->
+        <div class="payment-summary-card">
+            <h3 class="payment-summary-title">Order Summary</h3>
+            <div class="payment-summary-row">
+                <span>Subtotal ({{ cart_item_count }} item{{ cart_item_count|pluralize }})</span>
+                <strong>{{ total }} Neuros</strong>
+            </div>
+            {% if discount_amount > 0 %}
+            <div class="payment-summary-row payment-discount">
+                <span>Discount ({{ coupon_code }})</span>
+                <strong>-{{ discount_amount }} Neuros</strong>
+            </div>
+            {% endif %}
+            <div class="payment-summary-divider"></div>
+            <div class="payment-summary-row payment-total">
+                <span>Total</span>
+                <strong>{{ final_total }} Neuros</strong>
+            </div>
+        </div>
+
+        <!-- Balance Information -->
+        {% if balance is not None %}
+        <div class="payment-balance-info {% if balance < final_total %}insufficient{% endif %}">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
+                <line x1="1" y1="10" x2="23" y2="10"/>
+            </svg>
+            <div class="payment-balance-details">
+                <div class="payment-balance-current">
+                    <span>Current Balance:</span>
+                    <strong>{{ balance }} Neuros</strong>
+                </div>
+                {% if balance < final_total %}
+                <span class="insufficient-warning">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                        <path fill-rule="evenodd" d="M9.401 3.003c1.155-2 4.043-2 5.197 0l7.355 12.748c1.154 2-.29 4.5-2.599 4.5H4.645c-2.309 0-3.752-2.5-2.598-4.5L9.4 3.003zM12 8.25a.75.75 0 01.75.75v3.75a.75.75 0 01-1.5 0V9a.75.75 0 01.75-.75zm0 8.25a.75.75 0 100-1.5.75.75 0 000 1.5z" clip-rule="evenodd"/>
+                    </svg>
+                    Insufficient funds - Please add funds to your account
+                </span>
+                {% else %}
+                <span class="balance-after">Balance after purchase: {{ balance_after_purchase }} Neuros</span>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Payment Form with Dual Authentication -->
+        <form action="" method="POST" class="payment-form">
+            {% csrf_token %}
+            <input type="hidden" name="total" value="{{ final_total }}">
+
+            <!-- Billing Information Section -->
+            <div class="payment-section">
+                <h3 class="payment-section-title">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
+                        <circle cx="12" cy="7" r="4"/>
+                    </svg>
+                    Billing Information
+                </h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="first_name">First Name</label>
+                        <input type="text" id="first_name" name="first_name"
+                               value="{{ first_name|default:'' }}"
+                               placeholder="Enter your first name"
+                               class="payment-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="name">Last Name</label>
+                        <input type="text" id="name" name="name"
+                               value="{{ last_name|default:'' }}"
+                               placeholder="Enter your last name"
+                               class="payment-input" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" name="email"
+                               value="{{ email|default:user.email }}"
+                               placeholder="your@email.com"
+                               class="payment-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="phone">Phone Number</label>
+                        <input type="tel" id="phone" name="phone"
+                               value="{{ phone|default:'' }}"
+                               placeholder="+1 234 567 8900"
+                               class="payment-input">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card Details Section -->
+            <div class="payment-section">
+                <h3 class="payment-section-title">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
+                        <line x1="1" y1="10" x2="23" y2="10"/>
+                    </svg>
+                    Card Details
+                </h3>
+
+                {% if user_cards %}
+                <div class="form-group">
+                    <label for="card_number">Select Card</label>
+                    <select id="card_number" name="card_number" class="payment-input" required>
+                        <option value="">-- Select a card --</option>
+                        {% for card in user_cards %}
+                        <option value="{{ card.payment_number }}"
+                            {% if card.payment_number == card_number %}selected{% endif %}
+                            {% if card.status == 'frozen' %}data-frozen="1"{% endif %}>
+                            {{ card.masked_number }} ({{ card.card_type|capfirst }}){% if card.status == 'frozen' %} &#x2014; Frozen{% endif %}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <small class="form-help-text">Select one of your V.R.C cards. Frozen cards must be unfrozen in <a href="/banking/dashboard/">Banking Dashboard</a> first.</small>
+                </div>
+                {% else %}
+                <div class="card-hint" style="background:#fef2f2;border-color:#fecaca;color:#991b1b;">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                    </svg>
+                    <span>No registered cards found. Please <a href="/banking/dashboard/" style="color:#991b1b;">generate a card</a> in your Banking Dashboard first.</span>
+                </div>
+                <input type="hidden" name="card_number" value="">
+                {% endif %}
+            </div>
+
+            <!-- Dual Authentication Section -->
+            <div class="payment-section payment-auth-section">
+                <h3 class="payment-section-title">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                        <path d="M7 11V7a5 5 0 0110 0v4"/>
+                    </svg>
+                    Secure Payment Authentication
+                </h3>
+                <p class="payment-auth-subtitle">
+                    For your security, verify your identity with your account password and bank PIN, and provide your card number to authorize this purchase.
+                </p>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="password">Account Password</label>
+                        <input type="password" id="password" name="password"
+                               placeholder="Enter your account password"
+                               class="payment-input payment-auth-input"
+                               autocomplete="current-password" required>
+                        <small class="form-help-text">Your WOCShAck account password</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="pin">Bank PIN</label>
+                        <input type="password" id="pin" name="pin"
+                               placeholder="Enter your bank PIN"
+                               class="payment-input payment-auth-input"
+                               autocomplete="off"
+                               maxlength="10"
+                               inputmode="numeric" required>
+                        <small class="form-help-text">Your banking PIN (6 digits)</small>
+                    </div>
+                </div>
+
+                <div class="payment-auth-notice">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                        <path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zm8.706-1.442c1.146-.573 2.437.463 2.126 1.706l-.709 2.836.042-.02a.75.75 0 01.67 1.34l-.04.022c-1.147.573-2.438-.463-2.127-1.706l.71-2.836-.042.02a.75.75 0 11-.671-1.34l.041-.022zM12 9a.75.75 0 100-1.5.75.75 0 000 1.5z" clip-rule="evenodd"/>
+                    </svg>
+                    <span>Card number, password, and PIN together protect your account from unauthorized purchases.</span>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="cart-btn cart-btn-primary payment-submit-btn"
+                        {% if balance is not None and balance < final_total %}disabled{% endif %}>
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
+                        <line x1="1" y1="10" x2="23" y2="10"/>
+                    </svg>
+                    Authorize & Complete Payment - {{ final_total }} Neuros
+                </button>
+                <a href="{% url 'cart' %}" class="cart-btn cart-btn-secondary">Cancel Payment</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}{% endblock %}

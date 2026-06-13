@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% load static %}
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="{% static 'css/payments/initialization.css' %}">
+    {% block title %}
+    {% endblock %}
+</head>
+<body>
+  <div class="loader">
+    <div class="ring"></div>
+    <div class="ring"></div>
+    <div class="ring"></div>
+    <div class="ring"></div>
+  </div>
+{% block script %}
+{% endblock %}
+</body>
+</html>
+

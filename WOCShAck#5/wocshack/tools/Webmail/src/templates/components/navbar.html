@@ -1,0 +1,40 @@
+<header class="main-header"
+    style="background: rgba(13, 17, 23, 0.8) !important; backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); border-bottom: 1px solid rgba(255,255,255,0.1); position: fixed; top: 0; left: 0; width: 100%; z-index: 1050; padding: 12px 0;">
+    <nav class="container-fluid px-4 d-flex justify-content-between align-items-center">
+        <a href="/" style="text-decoration: none; display: flex; align-items: center; gap: 15px;">
+            <div
+                style="width: 36px; height: 36px; border-radius: 8px; background: linear-gradient(135deg, var(--accent-blue, #58a6ff), #8a2be2); display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; color: white; box-shadow: 0 4px 10px rgba(88, 166, 255, 0.3);">
+                T</div>
+            <div style="font-family: 'Outfit', sans-serif;">
+                <h1 style="color: #fff; margin:0; font-size: 1.25rem; font-weight: 600; line-height: 1;">TrackBox</h1>
+                <p style="color: var(--text-secondary, #8b949e); margin:0; font-size: 0.75rem; letter-spacing: 0.3px;">
+                    <em>Because who needs secrets?</em></p>
+            </div>
+        </a>
+        <ul class="list-unstyled d-flex m-0 align-items-center gap-3" style="font-family: 'Outfit', sans-serif;">
+            {% if username %}
+            <li style="color: #e6edf3;" class="d-none d-md-block">Welcome, <span
+                    style="color: #58a6ff; font-weight: 500;">{{ username }}</span>!</li>
+            <li><button onclick="window.location.href='/client'"
+                    style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); font-weight: 500; border-radius: 8px; color: #fff; padding: 8px 16px; cursor: pointer; transition: all 0.2s;"
+                    onmouseover="this.style.background='rgba(255,255,255,0.2)'"
+                    onmouseout="this.style.background='rgba(255,255,255,0.1)'">Inbox</button></li>
+            <li><button onclick="window.location.href='/client/disconnect'"
+                    style="border-radius: 8px; font-weight: 500; background: linear-gradient(135deg, #f85149, #b91c1c); border: none; color: white; padding: 8px 16px; cursor: pointer; box-shadow: 0 4px 10px rgba(248, 81, 73, 0.3); transition: all 0.2s;"
+                    onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 6px 12px rgba(248,81,73,0.4)'"
+                    onmouseout="this.style.transform='none'; this.style.boxShadow='0 4px 10px rgba(248, 81, 73, 0.3)'">Disconnect</button>
+            </li>
+            {% else %}
+            <li><button onclick="window.location.href='/signup'"
+                    style="background: linear-gradient(135deg, #58a6ff, #3b82f6); border: none; font-weight: 500; border-radius: 8px; color: white; padding: 8px 20px; cursor: pointer; box-shadow: 0 4px 10px rgba(88, 166, 255, 0.3); transition: all 0.2s;"
+                    onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 6px 12px rgba(88,166,255,0.4)'"
+                    onmouseout="this.style.transform='none'; this.style.boxShadow='0 4px 10px rgba(88, 166, 255, 0.3)'">Sign
+                    Up</button></li>
+            <li><button onclick="window.location.href='/connect'"
+                    style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); font-weight: 500; border-radius: 8px; color: #fff; padding: 8px 20px; cursor: pointer; transition: all 0.2s;"
+                    onmouseover="this.style.background='rgba(255,255,255,0.2)'"
+                    onmouseout="this.style.background='rgba(255,255,255,0.1)'">Connect</button></li>
+            {% endif %}
+        </ul>
+    </nav>
+</header>

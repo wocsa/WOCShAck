@@ -1,0 +1,99 @@
+{% extends 'base/base.html' %}
+{% block title %}E-Shop Coupons - V.R.C{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dev-container { max-width: 960px; margin: 0 auto; padding: var(--vrc-spacing-xl); }
+    .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--vrc-spacing-xl); }
+    .page-header h1 { font-size: var(--vrc-font-size-2xl); font-weight: var(--vrc-font-weight-bold); }
+    .btn-primary { padding: 10px 20px; background: var(--vrc-gradient); color: white; border: none; border-radius: var(--vrc-radius-md); cursor: pointer; text-decoration: none; font-size: var(--vrc-font-size-sm); }
+    .btn-danger { padding: 6px 14px; background: #ef4444; color: white; border: none; border-radius: var(--vrc-radius-md); cursor: pointer; font-size: var(--vrc-font-size-xs); }
+    .table-card { background: var(--vrc-white); border-radius: var(--vrc-radius-lg); box-shadow: var(--vrc-shadow-md); overflow: hidden; }
+    table { width: 100%; border-collapse: collapse; }
+    th { background: var(--vrc-gray-50); padding: 12px 16px; text-align: left; font-size: var(--vrc-font-size-xs); font-weight: var(--vrc-font-weight-semibold); color: var(--vrc-gray-600); text-transform: uppercase; letter-spacing: 0.05em; }
+    td { padding: 12px 16px; border-top: 1px solid var(--vrc-gray-100); font-size: var(--vrc-font-size-sm); vertical-align: middle; }
+    tr:hover td { background: var(--vrc-gray-50); }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 9999px; font-size: var(--vrc-font-size-xs); font-weight: var(--vrc-font-weight-medium); }
+    .badge-active { background: #d1fae5; color: #065f46; }
+    .badge-inactive { background: #fee2e2; color: #991b1b; }
+    .badge-expired { background: #fef3c7; color: #92400e; }
+    .empty-state { text-align: center; padding: var(--vrc-spacing-2xl); color: var(--vrc-gray-500); }
+    .empty-state p { margin-bottom: var(--vrc-spacing-lg); }
+    .info-box { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: var(--vrc-radius-md); padding: var(--vrc-spacing-md) var(--vrc-spacing-lg); margin-bottom: var(--vrc-spacing-xl); font-size: var(--vrc-font-size-sm); color: #1e40af; }
+    .back-link { display: inline-block; margin-bottom: var(--vrc-spacing-lg); color: var(--vrc-primary); text-decoration: none; font-size: var(--vrc-font-size-sm); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dev-container">
+    <a href="{% url 'developer_dashboard' %}" class="back-link">&larr; Back to Dashboard</a>
+    <div class="page-header">
+        <h1>E-Shop Coupons</h1>
+        <a href="{% url 'developer_create_coupon' %}" class="btn-primary">+ New Coupon</a>
+    </div>
+
+    <div class="info-box">
+        Coupons created here apply to <strong>all your CSS products</strong> in the e-shop. When a buyer enters your coupon code at checkout, the discount is applied only to your items in their cart.
+    </div>
+
+    {% if messages %}
+    {% for message in messages %}
+    <div style="padding: 12px 16px; margin-bottom: var(--vrc-spacing-md); border-radius: var(--vrc-radius-md); background: {% if message.tags == 'error' %}#fee2e2{% else %}#d1fae5{% endif %}; color: {% if message.tags == 'error' %}#991b1b{% else %}#065f46{% endif %}; font-size: var(--vrc-font-size-sm);">
+        {{ message }}
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    <div class="table-card">
+        {% if coupons %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Code</th>
+                    <th>Type</th>
+                    <th>Value</th>
+                    <th>Min Order</th>
+                    <th>Uses</th>
+                    <th>Valid Until</th>
+                    <th>Status</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for coupon in coupons %}
+                {% now "Y-m-d H:i:s" as now_str %}
+                <tr>
+                    <td><strong>{{ coupon.code }}</strong>{% if coupon.description %}<br><span style="color: var(--vrc-gray-500); font-size: var(--vrc-font-size-xs);">{{ coupon.description }}</span>{% endif %}</td>
+                    <td>{{ coupon.get_discount_type_display }}</td>
+                    <td>{% if coupon.discount_type == 'percentage' %}{{ coupon.discount_value }}%{% else %}{{ coupon.discount_value }} NE{% endif %}</td>
+                    <td>{% if coupon.minimum_order_amount > 0 %}{{ coupon.minimum_order_amount }} NE{% else %}—{% endif %}</td>
+                    <td>{{ coupon.current_uses }}{% if coupon.max_uses > 0 %} / {{ coupon.max_uses }}{% else %} / &infin;{% endif %}</td>
+                    <td>{% if coupon.valid_until %}{{ coupon.valid_until|date:"M d, Y" }}{% else %}No expiry{% endif %}</td>
+                    <td>
+                        {% if not coupon.is_active %}
+                            <span class="badge badge-inactive">Inactive</span>
+                        {% elif coupon.valid_until and coupon.valid_until < now %}
+                            <span class="badge badge-expired">Expired</span>
+                        {% else %}
+                            <span class="badge badge-active">Active</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <form method="post" action="{% url 'developer_delete_coupon' coupon.id %}" onsubmit="return confirm('Delete coupon {{ coupon.code }}?');">
+                            {% csrf_token %}
+                            <button type="submit" class="btn-danger">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state">
+            <p>You haven't created any e-shop coupons yet.</p>
+            <a href="{% url 'developer_create_coupon' %}" class="btn-primary">Create your first coupon</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

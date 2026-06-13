@@ -1,0 +1,78 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Auto-Moderation Logs{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'base/css/admin.css' %}">
+<style>
+  .time-cell { font-size: var(--vrc-font-size-xs); color: var(--vrc-gray-500); white-space: nowrap; }
+  .match-cell { font-size: var(--vrc-font-size-xs); color: var(--vrc-gray-500); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="mod-page">
+  <div class="mod-page-header">
+    <h1 class="mod-page-title">Auto-Moderation Logs</h1>
+    <a href="{% url 'admin_panel:automod_rules' %}" class="mod-btn mod-btn-outline">Back to Rules</a>
+  </div>
+
+  <div class="mod-card">
+    <div class="mod-card-body">
+      {% if page_obj.object_list %}
+        <table class="mod-table">
+          <thead>
+            <tr>
+              <th>Time</th>
+              <th>Rule</th>
+              <th>User</th>
+              <th>Action</th>
+              <th>Confidence</th>
+              <th>Review Status</th>
+              <th>Trigger Match</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for log in page_obj.object_list %}
+              <tr>
+                <td class="time-cell">{{ log.created_at|date:"M j H:i" }}</td>
+                <td>{{ log.rule.name }}</td>
+                <td>
+                  {% if log.user %}
+                    <a href="{% url 'admin_panel:user_overview' log.user.username %}">{{ log.user.username }}</a>
+                  {% else %}
+                    -
+                  {% endif %}
+                </td>
+                <td><span class="badge badge-warning">{{ log.action_taken }}</span></td>
+                <td>
+                  {% if log.confidence_score >= 0.8 %}
+                    <span class="badge badge-success">{{ log.confidence_score|floatformat:2 }}</span>
+                  {% elif log.confidence_score >= 0.6 %}
+                    <span class="badge badge-warning">{{ log.confidence_score|floatformat:2 }}</span>
+                  {% else %}
+                    <span class="badge badge-danger">{{ log.confidence_score|floatformat:2 }}</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if log.review_status == 'approved' %}
+                    <span class="badge badge-success">{{ log.get_review_status_display }}</span>
+                  {% elif log.review_status == 'rejected' %}
+                    <span class="badge badge-danger">{{ log.get_review_status_display }}</span>
+                  {% else %}
+                    <span class="badge badge-secondary">{{ log.get_review_status_display }}</span>
+                  {% endif %}
+                </td>
+                <td class="match-cell">{{ log.trigger_match|truncatechars:50|escape }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <div class="empty-state">No auto-moderation logs found.</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

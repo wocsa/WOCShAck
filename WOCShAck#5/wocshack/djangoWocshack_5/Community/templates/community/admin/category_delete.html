@@ -1,0 +1,39 @@
+{% extends "base/base.html" %}
+{% load static %}
+
+{% block title %}Mod — Delete Category{% endblock %}
+
+{% block module_css %}
+<link rel="stylesheet" href="{% static 'base/css/admin.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="mod-page">
+
+  <div class="mod-section-header">
+    <div>
+      <h1 class="mod-section-title">Delete Category</h1>
+    </div>
+    <a href="{% url 'community:category_list' %}" class="mod-btn mod-btn--ghost mod-btn--sm">← Categories</a>
+  </div>
+
+  <div class="mod-table-card" style="max-width:540px;">
+    <p style="margin-bottom:0.75rem;">
+      Are you sure you want to delete the category
+      <strong>{{ category.name|escape }}</strong>?
+    </p>
+    <p class="mod-badge mod-badge--warning" style="display:inline-block;margin-bottom:1.25rem;">
+      Warning: any blog posts in this category will have their category unlinked but will not be deleted.
+    </p>
+
+    <div style="display:flex;gap:0.75rem;">
+      <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="mod-btn mod-btn--danger">Yes, delete</button>
+      </form>
+      <a href="{% url 'community:category_list' %}" class="mod-btn mod-btn--ghost">Cancel</a>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

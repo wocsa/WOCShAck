@@ -1,0 +1,99 @@
+{% extends "base/base.html" %}
+{% load static %}
+
+
+{% block title %}V.R.C - {{ mission.title }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/missions.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="mission-detail-card animate-fade-in-up">
+    <div class="card">
+        <!-- Header with title and actions -->
+        <div class="mission-detail-header">
+            <div>
+                <div class="mission-detail-badges">
+                    <span class="badge badge-priority-{{ mission.priority }}">{{ mission.get_priority_display }}</span>
+                    <span class="badge badge-status-{{ mission.status }}">{{ mission.get_status_display }}</span>
+                    {% if mission.category %}
+                    <span class="badge badge-category">{{ mission.category }}</span>
+                    {% endif %}
+                    {% if mission.is_staff_shared %}
+                    <span class="badge badge-shared">Shared</span>
+                    {% endif %}
+                    {% if mission.is_overdue %}
+                    <span class="badge" style="background: var(--vrc-error-light); color: #991b1b;">⚠ Overdue</span>
+                    {% endif %}
+                </div>
+                <h1 style="font-size: var(--vrc-font-size-2xl); margin-bottom: 0;">{{ mission.title }}</h1>
+            </div>
+            {% if mission.user == request.user %}
+            <div style="display: flex; gap: var(--vrc-spacing-sm); flex-shrink: 0;">
+                <a href="{% url 'mission_update' mission.id %}" class="btn btn-secondary btn-sm">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    Edit
+                </a>
+                <form method="post" action="{% url 'mission_delete' mission.id %}" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this mission?');">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger btn-sm">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+                        Delete
+                    </button>
+                </form>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Description -->
+        {% if mission.description %}
+        <div class="mission-detail-description">{{ mission.description }}</div>
+        {% else %}
+        <p style="color: var(--vrc-gray-400); font-style: italic; margin-bottom: var(--vrc-spacing-xl);">No description provided.</p>
+        {% endif %}
+
+        <!-- Metadata grid -->
+        <div class="mission-detail-meta">
+            <div class="meta-item">
+                <span class="meta-label">Status</span>
+                <span class="meta-value">{{ mission.get_status_display }}</span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-label">Priority</span>
+                <span class="meta-value">{{ mission.get_priority_display }}</span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-label">Category</span>
+                <span class="meta-value">{{ mission.category|default:"—" }}</span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-label">Due Date</span>
+                <span class="meta-value {% if mission.is_overdue %}overdue-text{% endif %}">
+                    {% if mission.due_date %}
+                        {% if mission.is_overdue %}⚠ {% endif %}{{ mission.due_date|date:"M d, Y H:i" }}
+                    {% else %}
+                        —
+                    {% endif %}
+                </span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-label">Created</span>
+                <span class="meta-value">{{ mission.created_at|date:"M d, Y H:i" }}</span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-label">Last Updated</span>
+                <span class="meta-value">{{ mission.updated_at|date:"M d, Y H:i" }}</span>
+            </div>
+        </div>
+
+        <!-- Back link -->
+        <div style="margin-top: var(--vrc-spacing-xl);">
+            <a href="{% url 'mission_list' %}" class="btn btn-ghost">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+                Back to Mission Board
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

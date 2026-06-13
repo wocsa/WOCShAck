@@ -1,0 +1,254 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}{{ target_user.username }} - Moderation Overview{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'base/css/admin.css' %}">
+<style>
+  .user-summary { background: #fff; border-radius: var(--vrc-radius-xl); box-shadow: var(--vrc-shadow-sm); padding: var(--vrc-spacing-4); margin-bottom: var(--vrc-spacing-5); display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: var(--vrc-spacing-4); }
+  .summary-item { font-size: var(--vrc-font-size-sm); }
+  .summary-item strong { display: block; color: var(--vrc-gray-500); font-size: var(--vrc-font-size-xs); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+  .summary-item span { color: var(--vrc-gray-800); font-weight: 500; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: var(--vrc-spacing-5); margin-bottom: var(--vrc-spacing-5); }
+  @media (max-width: 700px) { .two-col { grid-template-columns: 1fr; } }
+  .three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--vrc-spacing-5); margin-bottom: var(--vrc-spacing-5); }
+  @media (max-width: 900px) { .three-col { grid-template-columns: 1fr; } }
+  .sanction-item { border: 1px solid var(--vrc-gray-100); border-radius: var(--vrc-radius-md); padding: var(--vrc-spacing-3); margin-bottom: var(--vrc-spacing-3); }
+  .sanction-item:last-child { margin-bottom: 0; }
+  .sanction-item-ban { border-color: #fca5a5; }
+  .sanction-item-top { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--vrc-spacing-3); }
+  .sanction-item-meta { font-size: var(--vrc-font-size-xs); color: var(--vrc-gray-600); margin-top: 6px; display: flex; flex-direction: column; gap: 2px; }
+  .sanction-item-meta strong { color: var(--vrc-gray-700); }
+  .section-label { font-size: var(--vrc-font-size-sm); font-weight: 600; color: var(--vrc-gray-700); margin-bottom: var(--vrc-spacing-3); }
+  .timeline-item { padding-bottom: var(--vrc-spacing-3); margin-bottom: var(--vrc-spacing-3); border-bottom: 1px solid var(--vrc-gray-50); }
+  .timeline-item:last-child { border-bottom: none; padding-bottom: 0; margin-bottom: 0; }
+  .timeline-date { font-size: var(--vrc-font-size-xs); color: var(--vrc-gray-400); margin-bottom: 4px; }
+  .timeline-text { font-size: var(--vrc-font-size-xs); color: var(--vrc-gray-600); margin-top: 4px; }
+  .actions-dropdown { position: relative; display: inline-block; }
+  .actions-menu { display: flex; flex-direction: column; gap: 4px; }
+  .empty-text { color: var(--vrc-gray-400); font-size: var(--vrc-font-size-sm); }
+  .mod-link { color: #667eea; text-decoration: none; }
+  .mod-link:hover { text-decoration: underline; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="mod-page">
+  <div class="mod-page-header">
+    <h1 class="mod-page-title">{{ target_user.username }} — Moderation Overview</h1>
+    <div style="display:flex;gap:var(--vrc-spacing-2);flex-wrap:wrap;">
+      <a href="{% url 'admin_panel:dashboard' %}" class="mod-btn mod-btn-outline">Dashboard</a>
+      <a href="{% url 'admin_panel:issue_warning' target_user.username %}" class="mod-btn mod-btn-outline">Issue Warning</a>
+      <a href="{% url 'admin_panel:mute_user' target_user.username %}" class="mod-btn mod-btn-outline">Mute User</a>
+      <a href="{% url 'admin_panel:ban_user' target_user.username %}" class="mod-btn mod-btn-danger">Ban User</a>
+    </div>
+  </div>
+
+  <div class="user-summary">
+    <div class="summary-item">
+      <strong>Username</strong>
+      <span>{{ target_user.username }}</span>
+    </div>
+    <div class="summary-item">
+      <strong>Joined</strong>
+      <span>{{ target_user.date_joined|date:"M j, Y" }}</span>
+    </div>
+    <div class="summary-item">
+      <strong>Warning Points</strong>
+      <span>
+        <span class="badge {% if total_warning_points >= 10 %}badge-danger{% elif total_warning_points >= 5 %}badge-warning{% else %}badge-secondary{% endif %}">
+          {{ total_warning_points }}
+        </span>
+      </span>
+    </div>
+    <div class="summary-item">
+      <strong>Pending Appeals</strong>
+      <span><span class="badge badge-info">{{ pending_appeals.count }}</span></span>
+    </div>
+    <div class="summary-item">
+      <strong>Staff</strong>
+      <span>
+        {% if target_user.is_staff %}
+          <span class="badge badge-success">Yes</span>
+        {% else %}
+          <span class="badge badge-secondary">No</span>
+        {% endif %}
+      </span>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <!-- Active Sanctions -->
+    <div class="mod-card">
+      <div class="mod-card-header">
+        <h5>Active Sanctions</h5>
+      </div>
+      <div class="mod-card-body">
+        {% if active_warnings %}
+          <div class="section-label">Warnings</div>
+          {% for warning in active_warnings %}
+            <div class="sanction-item">
+              <div>
+                <span class="badge badge-warning">{{ warning.get_warning_type_display }}</span>
+                <span class="badge badge-secondary">{{ warning.points }} pts</span>
+              </div>
+              <div class="sanction-item-meta">
+                <span><strong>Reason:</strong> {{ warning.reason|escape }}</span>
+                <span><strong>Expires:</strong> {{ warning.expires_at|date:"M j, Y" }}</span>
+              </div>
+            </div>
+          {% endfor %}
+        {% endif %}
+
+        {% if active_mutes %}
+          <div class="section-label" style="margin-top:var(--vrc-spacing-3);">Mutes</div>
+          {% for mute in active_mutes %}
+            <div class="sanction-item">
+              <div class="sanction-item-top">
+                <div>
+                  <span class="badge badge-info">{{ mute.get_scope_display }}</span>
+                  {% if mute.is_permanent %}<span class="badge badge-danger">Permanent</span>{% endif %}
+                  <div class="sanction-item-meta">
+                    <span><strong>Reason:</strong> {{ mute.reason|escape }}</span>
+                    {% if not mute.is_permanent %}
+                      <span><strong>Expires:</strong> {{ mute.expires_at|date:"M j, Y H:i" }}</span>
+                    {% endif %}
+                  </div>
+                </div>
+                <form method="post" action="{% url 'admin_panel:lift_mute' mute.id %}" style="display:inline;">
+                  {% csrf_token %}
+                  <input type="hidden" name="lift_reason" value="Lifted manually">
+                  <button type="submit" class="mod-btn mod-btn-success mod-btn-sm" onclick="return confirm('Lift this mute?')">Lift</button>
+                </form>
+              </div>
+            </div>
+          {% endfor %}
+        {% endif %}
+
+        {% if active_bans %}
+          <div class="section-label" style="margin-top:var(--vrc-spacing-3);">Bans</div>
+          {% for ban in active_bans %}
+            <div class="sanction-item sanction-item-ban">
+              <div class="sanction-item-top">
+                <div>
+                  <span class="badge badge-danger">{{ ban.get_ban_type_display }}</span>
+                  {% if ban.allow_appeal %}<span class="badge badge-info">Appeal Allowed</span>{% endif %}
+                  <div class="sanction-item-meta">
+                    <span><strong>Reason:</strong> {{ ban.reason|escape }}</span>
+                    {% if ban.expires_at %}
+                      <span><strong>Expires:</strong> {{ ban.expires_at|date:"M j, Y H:i" }}</span>
+                    {% else %}
+                      <span><strong>Type:</strong> Permanent</span>
+                    {% endif %}
+                  </div>
+                </div>
+                <form method="post" action="{% url 'admin_panel:lift_ban' ban.id %}" style="display:inline;">
+                  {% csrf_token %}
+                  <input type="hidden" name="lift_reason" value="Lifted manually">
+                  <button type="submit" class="mod-btn mod-btn-success mod-btn-sm" onclick="return confirm('Lift this ban?')">Lift</button>
+                </form>
+              </div>
+            </div>
+          {% endfor %}
+        {% endif %}
+
+        {% if not active_warnings and not active_mutes and not active_bans %}
+          <p class="empty-text">No active sanctions.</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Pending Appeals -->
+    <div class="mod-card">
+      <div class="mod-card-header">
+        <h5>Pending Appeals <span class="badge badge-primary">{{ pending_appeals.count }}</span></h5>
+      </div>
+      <div class="mod-card-body">
+        {% if pending_appeals %}
+          {% for appeal in pending_appeals %}
+            <div class="sanction-item">
+              <div class="sanction-item-top">
+                <div>
+                  <span class="badge badge-info">{{ appeal.get_sanction_type_display }}</span>
+                  <span class="badge badge-warning">{{ appeal.get_status_display }}</span>
+                  <div class="sanction-item-meta">
+                    <span><strong>Appeal:</strong> {{ appeal.appeal_text|truncatechars:100|escape }}</span>
+                    <span><strong>Submitted:</strong> {{ appeal.created_at|date:"M j, Y H:i" }}</span>
+                  </div>
+                </div>
+                <a href="{% url 'admin_panel:appeal_review' appeal.id %}" class="mod-btn mod-btn-outline mod-btn-sm">Review</a>
+              </div>
+            </div>
+          {% endfor %}
+        {% else %}
+          <p class="empty-text">No pending appeals.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- History -->
+  <div class="three-col">
+    <div class="mod-card">
+      <div class="mod-card-header"><h6>Warning History</h6></div>
+      <div class="mod-card-body">
+        {% if warning_history %}
+          {% for warning in warning_history %}
+            <div class="timeline-item">
+              <div class="timeline-date">{{ warning.created_at|date:"M j, Y" }}</div>
+              <span class="badge badge-warning">{{ warning.get_warning_type_display }}</span>
+              <span class="badge badge-secondary">{{ warning.points }} pts</span>
+              <div class="timeline-text">{{ warning.reason|truncatechars:50|escape }}</div>
+            </div>
+          {% endfor %}
+        {% else %}
+          <p class="empty-text">No warnings issued.</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="mod-card">
+      <div class="mod-card-header"><h6>Mute History</h6></div>
+      <div class="mod-card-body">
+        {% if mute_history %}
+          {% for mute in mute_history %}
+            <div class="timeline-item">
+              <div class="timeline-date">{{ mute.created_at|date:"M j, Y" }}</div>
+              <span class="badge badge-info">{{ mute.get_scope_display }}</span>
+              {% if mute.lifted_at %}
+                <span class="badge badge-success">Lifted</span>
+              {% elif mute.is_permanent %}
+                <span class="badge badge-danger">Permanent</span>
+              {% endif %}
+              <div class="timeline-text">{{ mute.reason|truncatechars:50|escape }}</div>
+            </div>
+          {% endfor %}
+        {% else %}
+          <p class="empty-text">No mutes applied.</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="mod-card">
+      <div class="mod-card-header"><h6>Ban History</h6></div>
+      <div class="mod-card-body">
+        {% if ban_history %}
+          {% for ban in ban_history %}
+            <div class="timeline-item">
+              <div class="timeline-date">{{ ban.created_at|date:"M j, Y" }}</div>
+              <span class="badge badge-danger">{{ ban.get_ban_type_display }}</span>
+              {% if ban.lifted_at %}
+                <span class="badge badge-success">Lifted</span>
+              {% endif %}
+              <div class="timeline-text">{{ ban.reason|truncatechars:50|escape }}</div>
+            </div>
+          {% endfor %}
+        {% else %}
+          <p class="empty-text">No bans applied.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

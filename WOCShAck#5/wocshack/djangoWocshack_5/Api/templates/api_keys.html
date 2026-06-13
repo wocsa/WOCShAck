@@ -1,0 +1,500 @@
+{% extends "base/base_account.html" %}
+{% load static %}
+
+
+{% block title %}V.R.C - API Keys{% endblock %}
+
+<!-- Programmatic access starts with an API key, not a guessing contest. Unauthorized enumeration is monitored. -->
+
+{% block account_title %}API Keys Management{% endblock %}
+
+{% block account_subtitle %}
+<p class="account-subtitle">Create and manage API keys for programmatic access</p>
+{% endblock %}
+
+{% block account_content %}
+<div class="api-keys-container">
+
+    <!-- New Key Display (one-time) -->
+    {% if new_api_key %}
+    <div class="api-section">
+        <div class="new-key-alert">
+            <strong>Your new API key:</strong>
+            <div class="new-key-row">
+                <code class="new-key-value" id="new-key-text">{{ new_api_key }}</code>
+                <button type="button" class="copy-btn" onclick="copyApiKey()" title="Copy to clipboard">
+                    <svg id="copy-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                    </svg>
+                    <svg id="check-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
+                        <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                </button>
+            </div>
+            <p class="new-key-warning">Copy it now. It will not be shown again.</p>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Create New API Key -->
+    <div class="api-section">
+        <h2 class="section-title">Create New API Key</h2>
+        <div class="api-generation-card">
+            <form method="POST" action="{% url 'create_api_key' %}" class="create-key-form">
+                {% csrf_token %}
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="key-name">Key Name</label>
+                        <input type="text" id="key-name" name="name" placeholder="e.g. My App" required maxlength="200">
+                    </div>
+                    <div class="form-group">
+                        <label for="key-scopes">Scopes</label>
+                        <input type="text" id="key-scopes" name="scopes" value="read" placeholder="read,write">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="key-expires">Expires in (days)</label>
+                        <input type="number" id="key-expires" name="expires_days" placeholder="Never" min="1">
+                    </div>
+                    <div class="form-group">
+                        <label for="key-rate-min">Rate limit/min</label>
+                        <input type="number" id="key-rate-min" name="rate_limit_per_minute" value="60" min="1">
+                    </div>
+                    <div class="form-group">
+                        <label for="key-rate-day">Rate limit/day</label>
+                        <input type="number" id="key-rate-day" name="rate_limit_per_day" value="5000" min="1">
+                    </div>
+                </div>
+                <button type="submit" class="generate-button">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                    </svg>
+                    Create API Key
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Existing API Keys -->
+    <div class="api-section">
+        <h2 class="section-title">Your API Keys</h2>
+        {% if api_keys %}
+        <div class="api-keys-list">
+            {% for key in api_keys %}
+            <div class="api-key-card {% if not key.is_active %}key-inactive{% endif %}">
+                <div class="api-key-header">
+                    <div class="api-key-name">
+                        <strong>{{ key.name }}</strong>
+                        <code class="api-key-prefix">{{ key.key_prefix }}...</code>
+                    </div>
+                    <span class="status-badge {% if key.is_active %}badge-active{% else %}badge-inactive{% endif %}">
+                        {% if key.is_active %}Active{% else %}Revoked{% endif %}
+                    </span>
+                </div>
+                <div class="api-key-meta">
+                    <span>Scopes: {{ key.scopes|join:", " }}</span>
+                    <span>Created: {{ key.created_at|date:"M j, Y" }}</span>
+                    {% if key.last_used_at %}
+                    <span>Last used: {{ key.last_used_at|date:"M j, Y H:i" }}</span>
+                    {% endif %}
+                    {% if key.expires_at %}
+                    <span>Expires: {{ key.expires_at|date:"M j, Y" }}</span>
+                    {% endif %}
+                </div>
+                {% if key.is_active %}
+                <div class="api-key-actions">
+                    <a href="{% url 'api_key_usage' key_id=key.id %}" class="action-link">Usage</a>
+                    <form method="POST" action="{% url 'regenerate_api_key' key_id=key.id %}" style="display:inline;" onsubmit="return confirm('Regenerate this key? The old key will stop working.');">
+                        {% csrf_token %}
+                        <button type="submit" class="action-link action-warning">Regenerate</button>
+                    </form>
+                    <form method="POST" action="{% url 'revoke_api_key' key.id %}" style="display:inline;" onsubmit="return confirm('Revoke this API key? This cannot be undone.');">
+                        {% csrf_token %}
+                        <button type="submit" class="revoke-button">Revoke</button>
+                    </form>
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="no-keys">You have no API keys yet. Create one above to get started.</p>
+        {% endif %}
+    </div>
+
+    <!-- API Usage Instructions -->
+    <div class="api-section">
+        <h2 class="section-title">How to Use Your API Key</h2>
+        <div class="api-instructions-card">
+            <ol class="instructions-list">
+                <li>
+                    <strong>Create an API Key:</strong> Fill in the form above to create a new key.
+                </li>
+                <li>
+                    <strong>Include the Key in Requests:</strong> Add your API key to the <code>X-API-Key</code> header:
+                    <pre class="code-block">X-API-Key: vrc_your_api_key_here</pre>
+                </li>
+                <li>
+                    <strong>Access Your CSS Files:</strong> Use the authenticated endpoints:
+                    <pre class="code-block">GET /api/css/my/
+GET /api/css/purchased/</pre>
+                </li>
+            </ol>
+            <div class="api-example">
+                <h4>Example Request:</h4>
+                <pre class="code-block">curl -H "X-API-Key: vrc_abc123..." \
+     http://localhost:8000/api/css/my/</pre>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .api-keys-container {
+        margin-top: 2rem;
+    }
+
+    .api-section {
+        margin-bottom: 2.5rem;
+    }
+
+    .section-title {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--vrc-gray-900);
+        margin-bottom: 1rem;
+    }
+
+    /* New key alert */
+    .new-key-alert {
+        background: #f0fdf4;
+        border: 1px solid #86efac;
+        border-radius: var(--vrc-radius-lg);
+        padding: 1.25rem;
+    }
+
+    .new-key-row {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin: 0.75rem 0;
+    }
+
+    .new-key-value {
+        flex: 1;
+        display: block;
+        padding: 0.75rem;
+        background: var(--vrc-gray-900);
+        color: #22c55e;
+        border-radius: var(--vrc-radius-md);
+        font-size: 0.875rem;
+        word-break: break-all;
+        user-select: all;
+    }
+
+    .copy-btn {
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 42px;
+        height: 42px;
+        background: var(--vrc-gray-900);
+        color: #22c55e;
+        border: none;
+        border-radius: var(--vrc-radius-md);
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .copy-btn:hover {
+        background: var(--vrc-gray-800, #1e293b);
+        color: #4ade80;
+    }
+
+    .copy-btn.copied {
+        color: #4ade80;
+    }
+
+    .new-key-warning {
+        color: #dc2626;
+        font-weight: 600;
+        font-size: 0.875rem;
+        margin: 0;
+    }
+
+    /* Create form */
+    .api-generation-card {
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+        border: 1px solid rgba(102, 126, 234, 0.2);
+        border-radius: var(--vrc-radius-xl);
+        padding: 1.5rem;
+    }
+
+    .create-key-form .form-row {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .create-key-form .form-group {
+        flex: 1;
+    }
+
+    .create-key-form label {
+        display: block;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--vrc-gray-700);
+        margin-bottom: 0.35rem;
+    }
+
+    .create-key-form input {
+        width: 100%;
+        padding: 0.55rem 0.75rem;
+        border: 1px solid var(--vrc-gray-300);
+        border-radius: var(--vrc-radius-md);
+        font-size: 0.9rem;
+        color: var(--vrc-gray-800);
+    }
+
+    .create-key-form input:focus {
+        border-color: var(--vrc-primary);
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.12);
+    }
+
+    .generate-button {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1.5rem;
+        background: var(--vrc-gradient);
+        color: var(--vrc-white);
+        border: none;
+        border-radius: var(--vrc-radius-lg);
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .generate-button:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--vrc-shadow-primary);
+    }
+
+    /* Key cards */
+    .api-keys-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .api-key-card {
+        background: var(--vrc-white);
+        border: 1px solid var(--vrc-gray-200);
+        border-radius: var(--vrc-radius-lg);
+        padding: 1.25rem;
+        transition: all 0.2s ease;
+    }
+
+    .api-key-card:hover {
+        border-color: var(--vrc-primary);
+        box-shadow: var(--vrc-shadow-sm);
+    }
+
+    .api-key-card.key-inactive {
+        opacity: 0.6;
+    }
+
+    .api-key-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.75rem;
+    }
+
+    .api-key-name {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .api-key-prefix {
+        font-size: 0.8rem;
+        font-family: 'Courier New', monospace;
+        background: var(--vrc-gray-100);
+        padding: 0.2rem 0.5rem;
+        border-radius: var(--vrc-radius-sm);
+        color: var(--vrc-gray-600);
+    }
+
+    .status-badge {
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 0.2rem 0.6rem;
+        border-radius: var(--vrc-radius-sm);
+    }
+
+    .badge-active {
+        background: #dcfce7;
+        color: #166534;
+    }
+
+    .badge-inactive {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .api-key-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        font-size: 0.8rem;
+        color: var(--vrc-gray-500);
+        margin-bottom: 0.75rem;
+    }
+
+    .api-key-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding-top: 0.75rem;
+        border-top: 1px solid var(--vrc-gray-100);
+    }
+
+    .action-link {
+        font-size: 0.85rem;
+        color: var(--vrc-primary);
+        text-decoration: none;
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 0;
+        font-family: inherit;
+    }
+
+    .action-link:hover {
+        text-decoration: underline;
+    }
+
+    .action-warning {
+        color: #d97706;
+    }
+
+    .revoke-button {
+        font-size: 0.85rem;
+        padding: 0.3rem 0.6rem;
+        background: transparent;
+        border: 1px solid rgba(231, 76, 60, 0.3);
+        color: #e74c3c;
+        border-radius: var(--vrc-radius-sm);
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-family: inherit;
+    }
+
+    .revoke-button:hover {
+        background: rgba(231, 76, 60, 0.1);
+        border-color: rgba(231, 76, 60, 0.5);
+    }
+
+    .no-keys {
+        color: var(--vrc-gray-500);
+        font-style: italic;
+    }
+
+    /* Instructions */
+    .api-instructions-card {
+        background: var(--vrc-gray-50);
+        border-radius: var(--vrc-radius-lg);
+        padding: 1.5rem;
+    }
+
+    .instructions-list {
+        padding-left: 1.25rem;
+    }
+
+    .instructions-list li {
+        margin-bottom: 1rem;
+        color: var(--vrc-gray-700);
+    }
+
+    .code-block {
+        background: var(--vrc-gray-900);
+        color: var(--vrc-gray-100);
+        padding: 0.75rem;
+        border-radius: var(--vrc-radius-sm);
+        font-family: 'Courier New', monospace;
+        font-size: 0.85rem;
+        overflow-x: auto;
+    }
+
+    .api-example {
+        margin-top: 1.5rem;
+        padding: 1rem;
+        background: var(--vrc-white);
+        border-radius: var(--vrc-radius-md);
+    }
+
+    .api-example h4 {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--vrc-gray-900);
+        margin: 0 0 0.5rem;
+    }
+
+    @media (max-width: 768px) {
+        .create-key-form .form-row {
+            flex-direction: column;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block module_js %}
+<script>
+function copyApiKey() {
+    var text = document.getElementById('new-key-text').textContent.trim();
+
+    function onCopied() {
+        document.getElementById('copy-icon').style.display = 'none';
+        document.getElementById('check-icon').style.display = 'block';
+        var btn = document.querySelector('.copy-btn');
+        btn.classList.add('copied');
+        setTimeout(function() {
+            document.getElementById('copy-icon').style.display = 'block';
+            document.getElementById('check-icon').style.display = 'none';
+            btn.classList.remove('copied');
+        }, 2000);
+    }
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(onCopied).catch(function() {
+            fallbackCopy(text, onCopied);
+        });
+    } else {
+        fallbackCopy(text, onCopied);
+    }
+}
+
+function fallbackCopy(text, callback) {
+    var textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.focus();
+    textarea.select();
+    try {
+        document.execCommand('copy');
+        callback();
+    } catch (e) {}
+    document.body.removeChild(textarea);
+}
+</script>
+{% endblock %}

@@ -1,0 +1,276 @@
+{% extends "base/base_account.html" %}
+{% load static %}
+
+
+{% block title %}V.R.C - Backup Codes{% endblock %}
+
+{% block account_title %}Backup Codes{% endblock %}
+
+{% block account_subtitle %}
+<p class="account-subtitle">Recovery codes for two-factor authentication</p>
+{% endblock %}
+
+{% block account_content %}
+<div class="backup-codes-container">
+    <div class="info-card">
+        <div class="info-icon">
+            <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                <path d="M9 12l2 2 4-4"/>
+            </svg>
+        </div>
+        <h3>What are backup codes?</h3>
+        <p>Backup codes are one-time use codes that allow you to access your account if you lose access to your authenticator app. Keep these codes in a safe place.</p>
+    </div>
+
+    <div class="status-card">
+        <div class="status-header">
+            <h3>Your Backup Codes Status</h3>
+        </div>
+        <div class="status-content">
+            {% if has_codes %}
+            <div class="codes-remaining">
+                <span class="count">{{ remaining_codes }}</span>
+                <span class="label">code{{ remaining_codes|pluralize }} remaining</span>
+            </div>
+            {% if remaining_codes <= 3 %}
+            <p class="warning-text">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                    <line x1="12" y1="9" x2="12" y2="13"/>
+                    <line x1="12" y1="17" x2="12.01" y2="17"/>
+                </svg>
+                You are running low on backup codes. Consider generating new ones.
+            </p>
+            {% endif %}
+            {% else %}
+            <div class="no-codes">
+                <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                </svg>
+                <p>You don't have any backup codes yet.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="generate-section">
+        <h3>Generate New Backup Codes</h3>
+        <p class="generate-warning">
+            <strong>Warning:</strong> Generating new codes will invalidate all existing unused codes. Make sure to save the new codes securely.
+        </p>
+        <button class="generate-button" onclick="OpenDialog('generate_codes_dialog')">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"/>
+            </svg>
+            Generate New Codes
+        </button>
+    </div>
+
+    <div class="back-link">
+        <a href="{% url 'settings' %}">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="19" y1="12" x2="5" y2="12"/>
+                <polyline points="12 19 5 12 12 5"/>
+            </svg>
+            Back to Settings
+        </a>
+    </div>
+</div>
+
+<dialog id="generate_codes_dialog">
+    <div class="dialog-wrapper">
+        <form method="POST" action="{% url 'generate_backup_codes' %}">
+            {% csrf_token %}
+            <h2>Confirm Code Generation</h2>
+            <p style="color: var(--vrc-gray-600); margin-bottom: 1rem;">
+                Enter your password to generate new backup codes. This will invalidate any existing unused codes.
+            </p>
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" required placeholder="Enter your password">
+            <div class="dialog-buttons">
+                <button type="submit" class="save-button">Generate Codes</button>
+                <button type="button" class="cancel-button" onclick="document.getElementById('generate_codes_dialog').close()">Cancel</button>
+            </div>
+        </form>
+    </div>
+</dialog>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .backup-codes-container {
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    .info-card {
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+        border-radius: var(--vrc-radius-xl);
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        text-align: center;
+    }
+
+    .info-icon {
+        color: var(--vrc-primary);
+        margin-bottom: 1rem;
+    }
+
+    .info-card h3 {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--vrc-gray-900);
+        margin-bottom: 0.5rem;
+    }
+
+    .info-card p {
+        color: var(--vrc-gray-600);
+        font-size: 0.9rem;
+        line-height: 1.5;
+        margin: 0;
+    }
+
+    .status-card {
+        background: var(--vrc-white);
+        border-radius: var(--vrc-radius-xl);
+        border: 1px solid var(--vrc-gray-200);
+        overflow: hidden;
+        margin-bottom: 1.5rem;
+    }
+
+    .status-header {
+        background: var(--vrc-gray-50);
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--vrc-gray-200);
+    }
+
+    .status-header h3 {
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--vrc-gray-900);
+    }
+
+    .status-content {
+        padding: 1.5rem;
+        text-align: center;
+    }
+
+    .codes-remaining {
+        margin-bottom: 1rem;
+    }
+
+    .codes-remaining .count {
+        display: block;
+        font-size: 3rem;
+        font-weight: 700;
+        color: var(--vrc-primary);
+    }
+
+    .codes-remaining .label {
+        font-size: 1rem;
+        color: var(--vrc-gray-600);
+    }
+
+    .warning-text {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        color: #92400e;
+        background: #fef3c7;
+        padding: 0.75rem 1rem;
+        border-radius: var(--vrc-radius-lg);
+        font-size: 0.875rem;
+        margin: 0;
+    }
+
+    .no-codes {
+        color: var(--vrc-gray-500);
+        padding: 1rem;
+    }
+
+    .no-codes svg {
+        margin-bottom: 1rem;
+        opacity: 0.5;
+    }
+
+    .no-codes p {
+        margin: 0;
+    }
+
+    .generate-section {
+        background: var(--vrc-gray-50);
+        border-radius: var(--vrc-radius-xl);
+        padding: 1.5rem;
+        text-align: center;
+    }
+
+    .generate-section h3 {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--vrc-gray-900);
+        margin-bottom: 0.75rem;
+    }
+
+    .generate-warning {
+        font-size: 0.85rem;
+        color: var(--vrc-gray-600);
+        margin-bottom: 1rem;
+    }
+
+    .generate-button {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.875rem 1.5rem;
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--vrc-white);
+        background: var(--vrc-gradient);
+        border: none;
+        border-radius: var(--vrc-radius-lg);
+        cursor: pointer;
+        transition: all var(--vrc-transition-normal);
+        box-shadow: var(--vrc-shadow-primary);
+    }
+
+    .generate-button:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--vrc-shadow-primary-lg);
+    }
+
+    .back-link {
+        margin-top: 2rem;
+        text-align: center;
+    }
+
+    .back-link a {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: var(--vrc-primary);
+        text-decoration: none;
+        font-size: 0.9rem;
+    }
+
+    .back-link a:hover {
+        text-decoration: underline;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function OpenDialog(DialogId) {
+    const dialog = document.getElementById(DialogId);
+    const wrapper = dialog.querySelector(".dialog-wrapper");
+    dialog.onclick = (e) => {
+        if (!wrapper.contains(e.target)) dialog.close();
+    };
+    dialog.showModal();
+}
+</script>
+{% endblock %}

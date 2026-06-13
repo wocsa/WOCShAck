@@ -1,0 +1,16 @@
+{% extends "base/base.html" %}
+{% load static %}
+
+{# Used for forum pages - includes forum-specific headers and styles #}
+
+{% block body_class %}vrc-body forum-page{% endblock %}
+
+{% block module_css %}
+<link rel="stylesheet" href="{% static 'css/forum.css' %}">
+{% endblock %}
+
+{% block content_wrapper_class %}forum-container{% endblock %}
+
+{% block content %}
+<p>Welcome to the V.R.C Community Forum</p>
+{% endblock %}

@@ -1,0 +1,312 @@
+{% extends "base/base_shop.html" %}
+{% load static %}
+
+
+{% block title %}V.R.C - My Wishlist{% endblock %}
+
+{% block module_css %}
+<link rel="stylesheet" href="{% static 'css/shop.css' %}">
+{% endblock %}
+
+{% block content_wrapper_class %}{% endblock %}
+
+{% block content %}
+<div class="layout">
+    <div class="main-content">
+        <div class="page-header">
+            <svg class="page-header-icon" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+            </svg>
+            <h1 class="page-title">My Wishlist</h1>
+            <p class="page-subtitle">{{ wishlist_items.count }} item{{ wishlist_items.count|pluralize }} saved for later</p>
+        </div>
+
+        {% if wishlist_items %}
+        <div class="wishlist-grid">
+            {% for item in wishlist_items %}
+            <div class="wishlist-item">
+                <svg class="heart-badge" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                </svg>
+                <div class="css-preview">
+                    {% if item.css_file.preview_gif %}
+                    <img src="{{ item.css_file.preview_gif.url }}" alt="Preview of {{ item.css_file.name }}" loading="lazy" draggable="false" oncontextmenu="return false;">
+                    {% else %}
+                    <span class="preview-placeholder">Preview loading...</span>
+                    {% endif %}
+                </div>
+                <h2 class="item-name">{{ item.css_file.name }}</h2>
+                <p class="item-author">By <a href="{% url 'seller_by_css' item.css_file.id %}" class="author-link">{{ item.css_file.author }}</a></p>
+                <p class="item-price">{{ item.css_file.price }} Neuros</p>
+                <p class="item-added">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    Added {{ item.added_at|date:"M d, Y" }}
+                </p>
+                <div class="wishlist-actions">
+                    <a href="{% url 'move_to_cart' item.css_file.id %}" class="cart_button">Add to Cart</a>
+                    <a href="{% url 'remove_from_wishlist' item.css_file.id %}" class="remove-btn" title="Remove from wishlist">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-wishlist">
+            <svg class="empty-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+            </svg>
+            <h2>Your wishlist is empty</h2>
+            <p>Browse the marketplace and save items you love!</p>
+            <a href="{% url 'shop' %}" class="cart_button">Browse CSS Loaders</a>
+        </div>
+        {% endif %}
+
+        <div class="back-link">
+            <a href="{% url 'shop' %}">&larr; Back to Shop</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .page-header {
+        text-align: center;
+        margin-bottom: 2rem;
+        padding: 2rem;
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 20px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    }
+    .page-header-icon {
+        width: 60px;
+        height: 60px;
+        margin: 0 auto 1rem;
+        color: #e74c3c;
+    }
+    .page-title {
+        font-size: 2.2rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin: 0 0 0.5rem 0;
+    }
+    .page-subtitle {
+        color: #666;
+        margin: 0;
+        font-size: 1rem;
+    }
+
+    .wishlist-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .wishlist-item {
+        position: relative;
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 16px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s ease;
+        border: 2px solid transparent;
+    }
+    .wishlist-item:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(231, 76, 60, 0.15);
+        border-color: rgba(231, 76, 60, 0.2);
+    }
+    .wishlist-item .css-preview {
+        width: 140px;
+        height: 140px;
+        margin: 0 auto 1rem;
+        border-radius: 12px;
+        overflow: hidden;
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .wishlist-item .css-preview img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 12px;
+        /* Prevent right-click save and drag */
+        -webkit-user-drag: none;
+        user-select: none;
+        pointer-events: none;
+    }
+    .wishlist-item .css-preview .preview-placeholder {
+        color: rgba(255, 255, 255, 0.3);
+        font-size: 0.7rem;
+        text-align: center;
+        padding: 10px;
+    }
+    .item-name {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #333;
+        margin: 0 0 5px;
+        text-align: center;
+    }
+    .item-author {
+        font-size: 0.85rem;
+        color: #666;
+        margin: 0 0 8px;
+        text-align: center;
+    }
+    .author-link {
+        color: #667eea;
+        text-decoration: none;
+        font-weight: 500;
+    }
+    .author-link:hover {
+        text-decoration: underline;
+        color: #764ba2;
+    }
+    .item-price {
+        font-size: 1.25rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin: 8px 0;
+        text-align: center;
+    }
+    .item-added {
+        font-size: 0.75rem;
+        color: #999;
+        margin: 0 0 15px;
+        text-align: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+    }
+    .item-added svg {
+        width: 14px;
+        height: 14px;
+    }
+
+    .wishlist-actions {
+        display: flex;
+        gap: 0.75rem;
+        align-items: center;
+        justify-content: center;
+    }
+    .wishlist-actions .cart_button {
+        flex: 1;
+        text-align: center;
+        text-decoration: none;
+        padding: 10px 20px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 10px;
+        font-weight: 600;
+        transition: all 0.2s ease;
+    }
+    .wishlist-actions .cart_button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    }
+    .remove-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        background: rgba(231, 76, 60, 0.1);
+        color: #e74c3c;
+        transition: all 0.2s ease;
+        text-decoration: none;
+    }
+    .remove-btn:hover {
+        background: #e74c3c;
+        color: white;
+        transform: scale(1.05);
+    }
+    .remove-btn svg {
+        width: 20px;
+        height: 20px;
+    }
+
+    .heart-badge {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        width: 30px;
+        height: 30px;
+        color: #e74c3c;
+    }
+
+    .empty-wishlist {
+        text-align: center;
+        padding: 4rem 2rem;
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 20px;
+        max-width: 500px;
+        margin: 0 auto;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    }
+    .empty-icon {
+        width: 100px;
+        height: 100px;
+        color: #e0e0e0;
+        margin-bottom: 1.5rem;
+    }
+    .empty-wishlist h2 {
+        color: #333;
+        margin: 0 0 0.5rem;
+        font-size: 1.5rem;
+    }
+    .empty-wishlist p {
+        color: #666;
+        margin: 0 0 1.5rem;
+    }
+    .empty-wishlist .cart_button {
+        display: inline-block;
+        text-decoration: none;
+        padding: 12px 30px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 10px;
+        font-weight: 600;
+        transition: all 0.2s ease;
+    }
+    .empty-wishlist .cart_button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    }
+
+    .back-link {
+        text-align: center;
+        margin-top: 2rem;
+    }
+    .back-link a {
+        color: #667eea;
+        text-decoration: none;
+        font-weight: 500;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 20px;
+        border-radius: 10px;
+        background: rgba(102, 126, 234, 0.1);
+        transition: all 0.2s ease;
+    }
+    .back-link a:hover {
+        background: rgba(102, 126, 234, 0.2);
+    }
+</style>
+{% endblock %}

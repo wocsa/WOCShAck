@@ -1,0 +1,354 @@
+{% extends "base/base_account.html" %}
+{% load static %}
+
+
+{% block title %}V.R.C - Login History{% endblock %}
+
+{% block breadcrumbs %}
+<nav class="vrc-breadcrumbs">
+    <a href="{% url 'account' %}">Account</a>
+    <span class="bc-sep">›</span>
+    <span class="bc-current">Login History</span>
+</nav>
+{% endblock %}
+
+{% block account_title %}Login History{% endblock %}
+
+{% block account_subtitle %}
+<p class="account-subtitle">View your recent login activity and security events</p>
+{% endblock %}
+
+{% block account_content %}
+<div class="history-container">
+    <!-- Statistics Cards -->
+    <div class="stats-row">
+        <div class="stat-card">
+            <div class="stat-icon">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"/>
+                    <path d="M12 6v6l4 2"/>
+                </svg>
+            </div>
+            <div class="stat-value">{{ total_logins }}</div>
+            <div class="stat-label">Total Logins</div>
+        </div>
+        <div class="stat-card success">
+            <div class="stat-icon">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                    <polyline points="22 4 12 14.01 9 11.01"/>
+                </svg>
+            </div>
+            <div class="stat-value">{{ successful_logins }}</div>
+            <div class="stat-label">Successful</div>
+        </div>
+        <div class="stat-card danger">
+            <div class="stat-icon">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="15" y1="9" x2="9" y2="15"/>
+                    <line x1="9" y1="9" x2="15" y2="15"/>
+                </svg>
+            </div>
+            <div class="stat-value">{{ failed_logins }}</div>
+            <div class="stat-label">Failed</div>
+        </div>
+    </div>
+
+    <!-- History Table -->
+    <div class="history-table-container">
+        <table class="history-table">
+            <thead>
+                <tr>
+                    <th>Date & Time</th>
+                    <th>Status</th>
+                    <th>Device</th>
+                    <th>IP Address</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in history %}
+                <tr>
+                    <td class="timestamp">
+                        <span class="date">{{ entry.timestamp|date:"M d, Y" }}</span>
+                        <span class="time">{{ entry.timestamp|time:"H:i" }}</span>
+                    </td>
+                    <td>
+                        {% if entry.status == 'success' %}
+                        <span class="status-badge success">Success</span>
+                        {% elif entry.status == 'failed' %}
+                        <span class="status-badge danger">Failed</span>
+                        {% elif entry.status == '2fa_required' %}
+                        <span class="status-badge warning">2FA Pending</span>
+                        {% else %}
+                        <span class="status-badge">{{ entry.get_status_display }}</span>
+                        {% endif %}
+                    </td>
+                    <td class="device">
+                        {% if entry.device_type == 'mobile' %}
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
+                            <line x1="12" y1="18" x2="12.01" y2="18"/>
+                        </svg>
+                        {% elif entry.device_type == 'tablet' %}
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="4" y="2" width="16" height="20" rx="2" ry="2"/>
+                            <line x1="12" y1="18" x2="12.01" y2="18"/>
+                        </svg>
+                        {% else %}
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+                            <line x1="8" y1="21" x2="16" y2="21"/>
+                            <line x1="12" y1="17" x2="12" y2="21"/>
+                        </svg>
+                        {% endif %}
+                        <span>{{ entry.device_type|title }}</span>
+                    </td>
+                    <td class="ip">{{ entry.ip_address|default:"Unknown" }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" class="empty-message">No login history available yet.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if history.has_other_pages %}
+    <div class="pagination">
+        {% if history.has_previous %}
+        <a href="?page={{ history.previous_page_number }}" class="page-link">&laquo; Previous</a>
+        {% endif %}
+
+        <span class="page-info">Page {{ history.number }} of {{ history.paginator.num_pages }}</span>
+
+        {% if history.has_next %}
+        <a href="?page={{ history.next_page_number }}" class="page-link">Next &raquo;</a>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <div class="back-link">
+        <a href="{% url 'settings' %}">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="19" y1="12" x2="5" y2="12"/>
+                <polyline points="12 19 5 12 12 5"/>
+            </svg>
+            Back to Settings
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .history-container {
+        max-width: 900px;
+        margin: 0 auto;
+    }
+
+    .stats-row {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-card {
+        background: var(--vrc-gray-50);
+        border-radius: var(--vrc-radius-lg);
+        padding: 1.25rem;
+        text-align: center;
+    }
+
+    .stat-card.success {
+        background: var(--vrc-success-light);
+    }
+
+    .stat-card.danger {
+        background: var(--vrc-error-light);
+    }
+
+    .stat-card .stat-icon {
+        color: var(--vrc-primary);
+        margin-bottom: 0.5rem;
+    }
+
+    .stat-card.success .stat-icon {
+        color: #059669;
+    }
+
+    .stat-card.danger .stat-icon {
+        color: #dc2626;
+    }
+
+    .stat-card .stat-value {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: var(--vrc-gray-900);
+    }
+
+    .stat-card .stat-label {
+        font-size: 0.8rem;
+        color: var(--vrc-gray-600);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .history-table-container {
+        background: var(--vrc-white);
+        border-radius: var(--vrc-radius-lg);
+        overflow: hidden;
+        box-shadow: var(--vrc-shadow-sm);
+        border: 1px solid var(--vrc-gray-200);
+    }
+
+    .history-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .history-table th {
+        background: var(--vrc-gray-50);
+        padding: 1rem;
+        text-align: left;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--vrc-gray-600);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        border-bottom: 1px solid var(--vrc-gray-200);
+    }
+
+    .history-table td {
+        padding: 1rem;
+        border-bottom: 1px solid var(--vrc-gray-100);
+        font-size: 0.9rem;
+    }
+
+    .history-table tr:last-child td {
+        border-bottom: none;
+    }
+
+    .history-table tr:hover {
+        background: var(--vrc-gray-50);
+    }
+
+    .timestamp .date {
+        display: block;
+        font-weight: 600;
+        color: var(--vrc-gray-900);
+    }
+
+    .timestamp .time {
+        font-size: 0.8rem;
+        color: var(--vrc-gray-500);
+    }
+
+    .status-badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+
+    .status-badge.success {
+        background: #d1fae5;
+        color: #065f46;
+    }
+
+    .status-badge.danger {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .status-badge.warning {
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+    .device {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: var(--vrc-gray-600);
+    }
+
+    .ip {
+        font-family: monospace;
+        font-size: 0.85rem;
+        color: var(--vrc-gray-600);
+    }
+
+    .empty-message {
+        text-align: center;
+        color: var(--vrc-gray-500);
+        padding: 2rem !important;
+    }
+
+    .pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 1rem;
+        margin-top: 1.5rem;
+    }
+
+    .page-link {
+        padding: 0.5rem 1rem;
+        background: var(--vrc-white);
+        border: 1px solid var(--vrc-gray-200);
+        border-radius: var(--vrc-radius-md);
+        color: var(--vrc-primary);
+        text-decoration: none;
+        font-size: 0.9rem;
+    }
+
+    .page-link:hover {
+        background: var(--vrc-gray-50);
+    }
+
+    .page-info {
+        color: var(--vrc-gray-600);
+        font-size: 0.9rem;
+    }
+
+    .back-link {
+        margin-top: 2rem;
+        text-align: center;
+    }
+
+    .back-link a {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: var(--vrc-primary);
+        text-decoration: none;
+        font-size: 0.9rem;
+    }
+
+    .back-link a:hover {
+        text-decoration: underline;
+    }
+
+    @media (max-width: 768px) {
+        .stats-row {
+            grid-template-columns: 1fr;
+        }
+
+        .history-table th,
+        .history-table td {
+            padding: 0.75rem 0.5rem;
+            font-size: 0.8rem;
+        }
+
+        .ip {
+            display: none;
+        }
+    }
+</style>
+{% endblock %}

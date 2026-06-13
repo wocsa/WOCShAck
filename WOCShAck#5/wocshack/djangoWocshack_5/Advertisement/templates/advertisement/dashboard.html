@@ -1,0 +1,75 @@
+{% extends "base/base.html" %}
+{% load static %}
+
+{% block title %}V.R.C — Advertiser Dashboard{% endblock %}
+
+{% block content %}
+<div style="max-width:1000px; margin:2rem auto;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; flex-wrap:wrap; gap:1rem;">
+        <h1 style="margin:0; font-size:1.75rem; color:var(--vrc-gray-900);">My Advertisements</h1>
+        <a href="{% url 'create_advertisement' %}" class="btn btn-primary">+ New Ad</a>
+    </div>
+
+    {% if my_ads %}
+    <div style="background:white; border-radius:var(--vrc-radius-xl); box-shadow:0 2px 10px rgba(0,0,0,0.06); overflow:hidden;">
+        <table style="width:100%; border-collapse:collapse;">
+            <thead>
+                <tr style="background:var(--vrc-gray-50); border-bottom:2px solid var(--vrc-gray-200);">
+                    <th style="padding:1rem; text-align:left; color:var(--vrc-gray-700); font-weight:600;">Title</th>
+                    <th style="padding:1rem; text-align:left; color:var(--vrc-gray-700); font-weight:600;">Zone</th>
+                    <th style="padding:1rem; text-align:center; color:var(--vrc-gray-700); font-weight:600;">Status</th>
+                    <th style="padding:1rem; text-align:right; color:var(--vrc-gray-700); font-weight:600;">Impressions</th>
+                    <th style="padding:1rem; text-align:right; color:var(--vrc-gray-700); font-weight:600;">Clicks</th>
+                    <th style="padding:1rem; text-align:right; color:var(--vrc-gray-700); font-weight:600;">CTR</th>
+                    <th style="padding:1rem; text-align:center; color:var(--vrc-gray-700); font-weight:600;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ad in my_ads %}
+                <tr style="border-bottom:1px solid var(--vrc-gray-100);">
+                    <td style="padding:1rem; color:var(--vrc-gray-900); font-weight:500;">
+                        <a href="{% url 'advertisement_detail' ad.id %}" style="color:inherit; text-decoration:none;">{{ ad.title|truncatechars:40 }}</a>
+                    </td>
+                    <td style="padding:1rem; color:var(--vrc-gray-600); font-size:0.875rem;">{{ ad.get_placement_zone_display }}</td>
+                    <td style="padding:1rem; text-align:center;">
+                        {% if ad.status == 'active' %}
+                        <span style="background:#d1fae5; color:#065f46; padding:0.25rem 0.75rem; border-radius:20px; font-size:0.8rem; font-weight:600;">Active</span>
+                        {% elif ad.status == 'pending' %}
+                        <span style="background:#fef3c7; color:#92400e; padding:0.25rem 0.75rem; border-radius:20px; font-size:0.8rem; font-weight:600;">Pending</span>
+                        {% elif ad.status == 'rejected' %}
+                        <span style="background:#fee2e2; color:#991b1b; padding:0.25rem 0.75rem; border-radius:20px; font-size:0.8rem; font-weight:600;">Rejected</span>
+                        {% elif ad.status == 'approved' %}
+                        <span style="background:#dbeafe; color:#1e40af; padding:0.25rem 0.75rem; border-radius:20px; font-size:0.8rem; font-weight:600;">Approved</span>
+                        {% else %}
+                        <span style="background:var(--vrc-gray-100); color:var(--vrc-gray-600); padding:0.25rem 0.75rem; border-radius:20px; font-size:0.8rem; font-weight:600;">{{ ad.get_status_display }}</span>
+                        {% endif %}
+                    </td>
+                    <td style="padding:1rem; text-align:right; color:var(--vrc-gray-700);">{{ ad.impression_count }}</td>
+                    <td style="padding:1rem; text-align:right; color:var(--vrc-gray-700);">{{ ad.click_count }}</td>
+                    <td style="padding:1rem; text-align:right; color:var(--vrc-gray-700);">{{ ad.ctr }}%</td>
+                    <td style="padding:1rem; text-align:center;">
+                        <div style="display:flex; gap:0.5rem; justify-content:center;">
+                            <a href="{% url 'ad_stats' ad.id %}" style="font-size:0.8rem; color:#667eea; text-decoration:none; font-weight:500;">Stats</a>
+                            {% if ad.status == 'approved' %}
+                            <a href="{% url 'activate_ad' ad.id %}" style="font-size:0.8rem; color:#7c3aed; text-decoration:none; font-weight:600;">Pay &amp; Activate</a>
+                            {% endif %}
+                            {% if ad.status == 'pending' or ad.status == 'rejected' %}
+                            <a href="{% url 'edit_advertisement' ad.id %}" style="font-size:0.8rem; color:#f59e0b; text-decoration:none; font-weight:500;">Edit</a>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div style="text-align:center; padding:4rem 2rem; background:white; border-radius:var(--vrc-radius-xl); box-shadow:0 2px 10px rgba(0,0,0,0.06);">
+        <div style="font-size:3rem; margin-bottom:1rem;">📣</div>
+        <h2 style="color:var(--vrc-gray-700); margin-bottom:0.75rem;">No advertisements yet</h2>
+        <p style="color:var(--vrc-gray-500); margin-bottom:1.5rem;">Create your first ad to start reaching the V.R.C community.</p>
+        <a href="{% url 'create_advertisement' %}" class="btn btn-primary">Create Advertisement</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

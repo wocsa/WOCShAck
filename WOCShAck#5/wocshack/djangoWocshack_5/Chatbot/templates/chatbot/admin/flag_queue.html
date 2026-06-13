@@ -1,0 +1,115 @@
+{% extends "base/base.html" %}
+{% load static %}
+
+
+{% block title %}Flagged Responses - Chatbot Moderation{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'base/css/admin.css' %}">
+<style>
+  /* page-specific: severity and status badge colour scales */
+  .severity-badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; }
+  .severity-low { background: #e0f2fe; color: #0369a1; }
+  .severity-medium { background: #fef3c7; color: #92400e; }
+  .severity-high { background: #fed7aa; color: #c2410c; }
+  .severity-critical { background: #ef4444; color: white; }
+  .status-badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
+  .status-pending { background: #fef3c7; color: #92400e; }
+  .status-under_review { background: #e0e7ff; color: #4f46e5; }
+  .status-resolved { background: #d1fae5; color: #059669; }
+  .status-dismissed { background: #e5e7eb; color: #6b7280; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="mod-section-header">
+    <h1 class="mod-section-title">Flagged Responses</h1>
+    <a href="{% url 'chatbot:admin_dashboard' %}" class="mod-btn mod-btn--secondary">&larr; Back to Dashboard</a>
+</div>
+
+<form method="get" class="mod-filter-bar">
+    <select name="status" id="status" class="mod-filter-select">
+        <option value="">All Statuses</option>
+        {% for value, label in status_choices %}
+        <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+    </select>
+    <select name="severity" id="severity" class="mod-filter-select">
+        <option value="">All Severities</option>
+        {% for value, label in severity_choices %}
+        <option value="{{ value }}" {% if severity_filter == value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+    </select>
+    <select name="reason" id="reason" class="mod-filter-select">
+        <option value="">All Reasons</option>
+        {% for value, label in reason_choices %}
+        <option value="{{ value }}" {% if reason_filter == value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+    </select>
+    <button type="submit" class="mod-btn mod-btn--primary">Filter</button>
+</form>
+
+{% if flags %}
+<div class="mod-table-card">
+    <div class="mod-table-scroll">
+        <table class="mod-table">
+            <thead>
+                <tr>
+                    <th>Severity</th>
+                    <th>Reason</th>
+                    <th>Response Preview</th>
+                    <th>Flagged By</th>
+                    <th>Status</th>
+                    <th>Assigned To</th>
+                    <th>Created</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for flag in flags %}
+                <tr>
+                    <td><span class="severity-badge severity-{{ flag.severity }}">{{ flag.get_severity_display }}</span></td>
+                    <td>{{ flag.get_reason_display }}</td>
+                    <td class="mod-table-ellipsis">{{ flag.chat_message.response|truncatewords:15 }}</td>
+                    <td>{% if flag.flagged_by %}{{ flag.flagged_by.username }}{% else %}Anonymous{% endif %}</td>
+                    <td><span class="status-badge status-{{ flag.status }}">{{ flag.get_status_display }}</span></td>
+                    <td>{% if flag.assigned_to %}{{ flag.assigned_to.username }}{% else %}-{% endif %}</td>
+                    <td>{{ flag.created_at|timesince }} ago</td>
+                    <td><a href="{% url 'chatbot:flag_detail' flag_id=flag.id %}" class="mod-table-link">Review</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if page_obj.has_other_pages %}
+    <div style="display:flex;justify-content:center;padding:16px;">
+        <nav class="mod-pagination">
+            {% if page_obj.has_previous %}
+            <a class="mod-page-btn" href="?page={{ page_obj.previous_page_number }}&status={{ status_filter }}&severity={{ severity_filter }}&reason={{ reason_filter }}">&laquo; Prev</a>
+            {% else %}
+            <span class="mod-page-btn mod-page-btn--disabled">&laquo; Prev</span>
+            {% endif %}
+            {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                <span class="mod-page-btn mod-page-btn--active">{{ num }}</span>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                <a class="mod-page-btn" href="?page={{ num }}&status={{ status_filter }}&severity={{ severity_filter }}&reason={{ reason_filter }}">{{ num }}</a>
+                {% endif %}
+            {% endfor %}
+            {% if page_obj.has_next %}
+            <a class="mod-page-btn" href="?page={{ page_obj.next_page_number }}&status={{ status_filter }}&severity={{ severity_filter }}&reason={{ reason_filter }}">Next &raquo;</a>
+            {% else %}
+            <span class="mod-page-btn mod-page-btn--disabled">Next &raquo;</span>
+            {% endif %}
+        </nav>
+    </div>
+    {% endif %}
+</div>
+
+{% else %}
+<div class="mod-table-empty">
+    <p>No flagged responses matching your filters.</p>
+</div>
+{% endif %}
+{% endblock %}

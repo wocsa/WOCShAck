@@ -1,0 +1,91 @@
+{% extends "base/base.html" %}
+{% load static %}
+
+{% block title %}VRC — Notifications{% endblock %}
+
+{% block module_css %}
+<link rel="stylesheet" href="{% static 'community/css/notifications.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="main-container">
+<nav class="vrc-breadcrumbs">
+  <a href="{% url 'community:index' %}">Community</a>
+  <span class="bc-sep">›</span>
+  <span class="bc-current">Notifications</span>
+</nav>
+<div class="notif-wrapper">
+
+  <div class="notif-header">
+    <div>
+      <h1 class="notif-title">Notifications</h1>
+      {% if unread_count > 0 %}
+      <span class="notif-badge">{{ unread_count }} unread</span>
+      {% endif %}
+    </div>
+    <div class="notif-actions">
+      {% if unread_count > 0 %}
+      <form method="post" action="{% url 'community:mark_all_read' %}">
+        {% csrf_token %}
+        <button type="submit" class="notif-btn notif-btn--secondary">Mark all as read</button>
+      </form>
+      {% endif %}
+      <a href="{% url 'community:notification_preferences' %}" class="notif-btn notif-btn--ghost">
+        ⚙ Preferences
+      </a>
+    </div>
+  </div>
+
+  {% if notifications %}
+  <ul class="notif-list">
+    {% for notif in notifications %}
+    <li class="notif-item {% if not notif.is_read %}notif-item--unread{% endif %} notif-item--{{ notif.priority }}">
+      <div class="notif-icon">
+        {% if notif.notif_type == 'friend_request' %}👥
+        {% elif notif.notif_type == 'friend_accept' %}🤝
+        {% elif notif.notif_type == 'new_message' %}💬
+        {% elif notif.notif_type == 'level_up' %}⬆
+        {% elif notif.notif_type == 'achievement' %}🏅
+        {% elif notif.notif_type == 'daily_reward' %}🎁
+        {% elif notif.notif_type == 'new_follower' %}➕
+        {% elif notif.notif_type == 'streak_broken' %}💔
+        {% elif notif.notif_type == 'streak_shield' %}🛡
+        {% elif notif.notif_type == 'new_blog_post' %}📝
+        {% elif notif.notif_type == 'blog_comment' %}💬
+        {% elif notif.notif_type == 'forum_reply' %}↩
+        {% elif notif.notif_type == 'forum_mention' %}@
+        {% elif notif.notif_type == 'order_update' %}📦
+        {% elif notif.notif_type == 'ad_status' %}📢
+        {% elif notif.notif_type == 'new_review' %}⭐
+        {% elif notif.notif_type == 'mission_assigned' %}🎯
+        {% else %}🔔{% endif %}
+      </div>
+      <div class="notif-body">
+        <p class="notif-item-title">{{ notif.title }}</p>
+        <p class="notif-item-msg">{{ notif.message }}</p>
+        <span class="notif-item-date">{{ notif.created_at|timesince }} ago</span>
+      </div>
+      <div class="notif-item-actions">
+        {% if notif.action_url %}
+        <a href="{{ notif.action_url }}" class="notif-btn notif-btn--sm">View</a>
+        {% endif %}
+        {% if not notif.is_read %}
+        <form method="post" action="{% url 'community:mark_notification_read' notif.id %}">
+          {% csrf_token %}
+          <button type="submit" class="notif-btn notif-btn--sm notif-btn--ghost">✓</button>
+        </form>
+        {% endif %}
+      </div>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <div class="notif-empty">
+    <span class="notif-empty-icon">🔔</span>
+    <p>No notifications yet.</p>
+  </div>
+  {% endif %}
+
+</div>
+</div>
+{% endblock %}

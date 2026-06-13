@@ -1,0 +1,132 @@
+{% extends "base/base.html" %}
+{% load static community_tags %}
+
+{% block title %}VRC — {{ post.title }}{% endblock %}
+
+{% block module_css %}
+<link rel="stylesheet" href="{% static 'community/css/content.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="main-container">
+
+<nav class="vrc-breadcrumbs">
+  <a href="/">Home</a>
+  <span class="bc-sep">›</span>
+  <a href="{% url 'community:index' %}">Community</a>
+  <span class="bc-sep">›</span>
+  <a href="{% url 'community:blog_list' %}">Blog</a>
+  <span class="bc-sep">›</span>
+  <span class="bc-current">{{ post.title }}</span>
+</nav>
+
+<div class="post-detail-wrapper">
+
+  <div class="post-detail-header">
+    <div class="post-detail-meta">
+      {% if post.category %}
+      <a href="{% url 'community:blog_list' %}?category={{ post.category.slug }}" class="post-category">{{ post.category.name }}</a>
+      {% endif %}
+      {% if post.is_featured %}<span class="post-badge post-badge--featured">⭐ Featured</span>{% endif %}
+    </div>
+    <h1 class="post-detail-title">{{ post.title }}</h1>
+    <div class="post-detail-info">
+      <span class="post-author">{{ post.author.username }}</span>
+      <span class="post-dot">·</span>
+      <span class="post-date">{{ post.published_at|date:"F d, Y" }}</span>
+      <span class="post-dot">·</span>
+      <span class="post-views">{{ post.view_count }} views</span>
+    </div>
+    {% if post.tags %}
+    <div class="post-tags">
+      {% for tag in post.tag_list %}<span class="post-tag">{{ tag }}</span>{% endfor %}
+    </div>
+    {% endif %}
+    {% if request.user.is_staff %}
+    <div class="post-staff-actions">
+      <a href="{% url 'community:blog_edit' post.slug %}" class="content-btn content-btn--sm">Edit</a>
+      <form method="post" action="{% url 'community:blog_delete' post.slug %}" style="display:inline">
+        {% csrf_token %}
+        <button type="submit" class="content-btn content-btn--sm content-btn--danger"
+          onclick="return confirm('Delete this post?')">Delete</button>
+      </form>
+    </div>
+    {% endif %}
+  </div>
+
+  {% if post.featured_image %}
+  <div class="post-detail-img">
+    <img src="{{ post.featured_image.url }}" alt="{{ post.title }}">
+  </div>
+  {% endif %}
+
+  <div class="post-detail-content">
+    {{ post.content|markdownify }}
+  </div>
+
+  {# Comments section #}
+  {% if post.allow_comments %}
+  <section class="comments-section">
+    <h2 class="comments-title">Comments</h2>
+
+    {% if comments %}
+    <div class="comments-list">
+      {% for comment in comments %}
+      <div class="comment">
+        <div class="comment-header">
+          <span class="comment-author">{{ comment.author.username }}</span>
+          <span class="comment-date">{{ comment.created_at|date:"M d, Y" }}</span>
+        </div>
+        <div class="comment-body">{{ comment.content|markdownify }}</div>
+        {% if comment.replies.all %}
+        <div class="comment-replies">
+          {% for reply in comment.replies.all %}
+          {% if reply.status == 'approved' %}
+          <div class="comment comment--reply">
+            <div class="comment-header">
+              <span class="comment-author">{{ reply.author.username }}</span>
+              <span class="comment-date">{{ reply.created_at|date:"M d, Y" }}</span>
+            </div>
+            <div class="comment-body">{{ reply.content|markdownify }}</div>
+          </div>
+          {% endif %}
+          {% endfor %}
+        </div>
+        {% endif %}
+        {% if request.user.is_authenticated %}
+        <details class="comment-reply-toggle">
+          <summary>Reply</summary>
+          <form method="post" action="{% url 'community:blog_comment_add' post.slug %}" class="comment-form comment-form--reply">
+            {% csrf_token %}
+            <input type="hidden" name="parent_id" value="{{ comment.id }}">
+            <textarea name="content" class="comment-input" rows="2" placeholder="Write a reply…" maxlength="2000" required></textarea>
+            <button type="submit" class="content-btn content-btn--sm">Post reply</button>
+          </form>
+        </details>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="comments-empty">No comments yet. Be the first!</p>
+    {% endif %}
+
+    {% if request.user.is_authenticated %}
+    <form method="post" action="{% url 'community:blog_comment_add' post.slug %}" class="comment-form">
+      {% csrf_token %}
+      <h3 class="comment-form-title">Leave a comment</h3>
+      <textarea name="content" class="comment-input" rows="4" placeholder="Share your thoughts…" maxlength="2000" required></textarea>
+      <p class="form-hint">Markdown supported (bold, italic, code, links…)</p>
+
+      <button type="submit" class="content-btn content-btn--primary">Post comment</button>
+    </form>
+    {% else %}
+    <p class="comments-login"><a href="{% url 'login' %}">Log in</a> to leave a comment.</p>
+    {% endif %}
+  </section>
+  {% endif %}
+
+
+</div>
+</div>
+{% endblock %}

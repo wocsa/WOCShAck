@@ -1,0 +1,17 @@
+{% extends "base/base_bank.html" %}
+{% block title %}Webhook Settings{% endblock %}
+{% block content %}
+<div class="container mt-4">
+    <h2>Webhook Notification Settings</h2>
+    <p class="text-muted">Enter a URL to receive transfer notifications. We'll send a test request to verify it works.</p>
+    <form method="POST">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="webhook_url" class="form-label">Webhook URL</label>
+            <input type="url" class="form-control" id="webhook_url" name="webhook_url"
+                   placeholder="https://your-server.com/webhook" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Test &amp; Save Webhook</button>
+    </form>
+</div>
+{% endblock %}

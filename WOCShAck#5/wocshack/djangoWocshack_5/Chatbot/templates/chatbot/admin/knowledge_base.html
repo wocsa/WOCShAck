@@ -1,0 +1,297 @@
+{% extends "base/base.html" %}
+{% load static %}
+
+
+{% block title %}Knowledge Base Moderation - Chatbot{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'base/css/admin.css' %}">
+<style>
+  /* page-specific: knowledge base specific badge/status */
+  .category-badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; background: #e0e7ff; color: #4f46e5; }
+  .status-active { color: #10b981; font-weight: 600; }
+  .status-inactive { color: #ef4444; font-weight: 600; }
+  /* page-specific: toggle buttons */
+  .btn-toggle-on { background: #d1fae5; color: #059669; }
+  .btn-toggle-off { background: #fecaca; color: #dc2626; }
+  /* page-specific: truncated text cell */
+  .text-preview { max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.9rem; }
+  /* page-specific: recent KB history list inside mod-table-card */
+  .recent-history-header { padding: 15px 20px; background: #f8f9fa; border-bottom: 1px solid #eee; font-weight: 600; }
+  .history-item { padding: 10px 20px; border-bottom: 1px solid #f0f0f0; font-size: 0.9rem; }
+  .history-item:last-child { border-bottom: none; }
+  /* page-specific: "Add Entry" button (green) */
+  .btn-add-entry { padding: 8px 20px; background: #10b981; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 500; font-size: 0.95rem; text-decoration: none; display: inline-block; }
+  .btn-add-entry:hover { background: #059669; }
+  .header-actions { display: flex; align-items: center; gap: 15px; }
+  /* page-specific: modal overlay */
+  .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
+  .modal-overlay.active { display: flex; }
+  .modal-content { background: white; border-radius: 16px; width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 40px rgba(0,0,0,0.2); }
+  .modal-header { padding: 20px 25px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+  .modal-header h2 { font-size: 1.3rem; color: #333; margin: 0; }
+  .modal-close { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #888; padding: 0 5px; line-height: 1; }
+  .modal-close:hover { color: #333; }
+  .modal-body { padding: 25px; }
+  .modal-form-group { margin-bottom: 20px; }
+  .modal-form-group label { display: block; margin-bottom: 8px; font-weight: 500; color: #555; }
+  .modal-form-group input, .modal-form-group textarea, .modal-form-group select { width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 0.95rem; box-sizing: border-box; font-family: inherit; }
+  .modal-form-group textarea { min-height: 100px; resize: vertical; }
+  .modal-form-group .help-text { font-size: 0.85rem; color: #888; margin-top: 5px; }
+  .modal-actions { display: flex; gap: 10px; justify-content: flex-end; padding-top: 10px; }
+  .btn-submit { padding: 10px 24px; background: #6366f1; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 500; font-size: 0.95rem; }
+  .btn-submit:hover { background: #4f46e5; }
+  .btn-cancel { padding: 10px 24px; background: #6b7280; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 500; font-size: 0.95rem; }
+  .btn-cancel:hover { background: #4b5563; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Knowledge Base Moderation</h1>
+    <div class="header-actions">
+        <button type="button" class="btn-add-entry" id="openAddEntryModal">+ Add New Entry</button>
+        <a href="{% url 'chatbot:admin_dashboard' %}" class="back-link">&larr; Back to Dashboard</a>
+    </div>
+</div>
+
+<form method="get" class="filters-bar">
+    <div class="filter-group">
+        <label for="q">Search:</label>
+        <input type="text" name="q" id="q" value="{{ search_query }}" placeholder="Search entries...">
+    </div>
+    <div class="filter-group">
+        <label for="category">Category:</label>
+        <select name="category" id="category">
+            <option value="">All</option>
+            {% for cat in categories %}
+            <option value="{{ cat }}" {% if category_filter == cat %}selected{% endif %}>{{ cat }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="filter-group">
+        <label for="active">Status:</label>
+        <select name="active" id="active">
+            <option value="">All</option>
+            <option value="true" {% if active_filter == 'true' %}selected{% endif %}>Active</option>
+            <option value="false" {% if active_filter == 'false' %}selected{% endif %}>Inactive</option>
+        </select>
+    </div>
+    <button type="submit" class="filter-btn">Filter</button>
+</form>
+
+{% if entries %}
+<table class="kb-table">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Category</th>
+            <th>Question</th>
+            <th>Answer</th>
+            <th>Status</th>
+            <th>Updated</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for entry in entries %}
+        <tr>
+            <td>{{ entry.id }}</td>
+            <td><span class="category-badge">{{ entry.category }}</span></td>
+            <td class="text-preview">{{ entry.question|truncatewords:10 }}</td>
+            <td class="text-preview">{{ entry.answer|truncatewords:10 }}</td>
+            <td>
+                {% if entry.is_active %}
+                <span class="status-active">Active</span>
+                {% else %}
+                <span class="status-inactive">Inactive</span>
+                {% endif %}
+            </td>
+            <td>{{ entry.updated_at|timesince }} ago</td>
+            <td>
+                <form method="post" action="{% url 'chatbot:toggle_kb_entry' entry_id=entry.id %}" style="display: inline;">
+                    {% csrf_token %}
+                    {% if entry.is_active %}
+                    <button type="submit" class="btn-sm btn-toggle-off" title="Deactivate">Deactivate</button>
+                    {% else %}
+                    <button type="submit" class="btn-sm btn-toggle-on" title="Activate">Activate</button>
+                    {% endif %}
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% if page_obj.has_other_pages %}
+<div class="pagination-container">
+    {% if page_obj.has_previous %}
+    <a href="?page={{ page_obj.previous_page_number }}&q={{ search_query }}&category={{ category_filter }}&active={{ active_filter }}">&laquo; Prev</a>
+    {% endif %}
+    {% for num in page_obj.paginator.page_range %}
+        {% if page_obj.number == num %}
+        <span class="current">{{ num }}</span>
+        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+        <a href="?page={{ num }}&q={{ search_query }}&category={{ category_filter }}&active={{ active_filter }}">{{ num }}</a>
+        {% endif %}
+    {% endfor %}
+    {% if page_obj.has_next %}
+    <a href="?page={{ page_obj.next_page_number }}&q={{ search_query }}&category={{ category_filter }}&active={{ active_filter }}">Next &raquo;</a>
+    {% endif %}
+</div>
+{% endif %}
+
+{% else %}
+<div class="empty-state">
+    <p>No knowledge base entries matching your filters.</p>
+</div>
+{% endif %}
+
+{% if recent_kb_actions %}
+<div class="recent-history">
+    <div class="recent-history-header">Recent Knowledge Base Changes</div>
+    {% for action in recent_kb_actions %}
+    <div class="history-item">
+        <strong>{{ action.moderator.username|default:"System" }}</strong> -
+        {{ action.get_action_display }} |
+        {{ action.created_at|timesince }} ago
+        {% if action.reason %} - {{ action.reason|truncatewords:10 }}{% endif %}
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+{# Uses CSRF token for protection against cross-site request forgery #}
+<div class="modal-overlay" id="addEntryModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Add New Knowledge Base Entry</h2>
+            <button type="button" class="modal-close" id="closeAddEntryModal">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form method="post" action="{% url 'chatbot:create_kb_entry' %}" id="addEntryForm">
+                {% csrf_token %}
+
+                <div class="modal-form-group">
+                    <label for="new-question">Question:</label>
+                    <textarea name="question" id="new-question" required minlength="10" maxlength="1000"
+                              placeholder="Enter the question this entry answers..."></textarea>
+                    <p class="help-text">Minimum 10 characters. This is the question users might ask.</p>
+                </div>
+
+                <div class="modal-form-group">
+                    <label for="new-answer">Answer:</label>
+                    <textarea name="answer" id="new-answer" required minlength="10" maxlength="5000"
+                              placeholder="Enter the answer to the question..." style="min-height: 140px;"></textarea>
+                    <p class="help-text">Minimum 10 characters. This is the response the chatbot will provide.</p>
+                </div>
+
+                <div class="modal-form-group">
+                    <label for="new-category">Category:</label>
+                    <select name="category" id="new-category" required>
+                        <option value="">-- Select a category --</option>
+                        {% for cat in categories %}
+                        <option value="{{ cat }}">{{ cat }}</option>
+                        {% endfor %}
+                        <option value="__custom__">-- Enter custom category --</option>
+                    </select>
+                    <input type="text" name="custom_category" id="customCategoryInput"
+                           placeholder="Enter custom category name..."
+                           pattern="[a-zA-Z0-9_\- ]+"
+                           maxlength="100"
+                           style="display: none; margin-top: 8px;">
+                    <p class="help-text">Select an existing category or enter a new one.</p>
+                </div>
+
+                <div class="modal-form-group">
+                    <label for="new-keywords">Keywords:</label>
+                    <input type="text" name="keywords" id="new-keywords" required maxlength="1000"
+                           placeholder="e.g., account, login, password, reset">
+                    <p class="help-text">Comma-separated keywords for matching user queries.</p>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn-cancel" id="cancelAddEntry">Cancel</button>
+                    <button type="submit" class="btn-submit">Create Entry</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Modal open/close logic with no inline event handlers
+    (function() {
+        'use strict';
+
+        var modal = document.getElementById('addEntryModal');
+        var openBtn = document.getElementById('openAddEntryModal');
+        var closeBtn = document.getElementById('closeAddEntryModal');
+        var cancelBtn = document.getElementById('cancelAddEntry');
+        var categorySelect = document.getElementById('new-category');
+        var customCategoryInput = document.getElementById('customCategoryInput');
+        var form = document.getElementById('addEntryForm');
+
+        function openModal() {
+            modal.classList.add('active');
+        }
+
+        function closeModal() {
+            modal.classList.remove('active');
+        }
+
+        openBtn.addEventListener('click', openModal);
+        closeBtn.addEventListener('click', closeModal);
+        cancelBtn.addEventListener('click', closeModal);
+
+        // Close modal when clicking outside the content
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                closeModal();
+            }
+        });
+
+        // Close modal with Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && modal.classList.contains('active')) {
+                closeModal();
+            }
+        });
+
+        // Handle custom category toggle
+        categorySelect.addEventListener('change', function() {
+            if (this.value === '__custom__') {
+                customCategoryInput.style.display = 'block';
+                customCategoryInput.required = true;
+                customCategoryInput.focus();
+            } else {
+                customCategoryInput.style.display = 'none';
+                customCategoryInput.required = false;
+                customCategoryInput.value = '';
+            }
+        });
+
+        // On form submit, swap custom category value into the category field if needed
+        form.addEventListener('submit', function(e) {
+            if (categorySelect.value === '__custom__') {
+                var customVal = customCategoryInput.value.trim();
+                if (!customVal) {
+                    e.preventDefault();
+                    customCategoryInput.focus();
+                    return;
+                }
+                // Create a hidden input with the actual category value
+                var hiddenInput = document.createElement('input');
+                hiddenInput.type = 'hidden';
+                hiddenInput.name = 'category';
+                hiddenInput.value = customVal;
+                form.appendChild(hiddenInput);
+                // Disable the select so its __custom__ value is not submitted
+                categorySelect.disabled = true;
+            }
+        });
+    })();
+</script>
+{% endblock %}

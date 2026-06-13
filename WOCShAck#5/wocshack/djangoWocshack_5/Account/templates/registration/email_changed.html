@@ -1,0 +1,38 @@
+{% extends "base/base_auth.html" %}
+{% load static %}
+
+
+{% block title %}V.R.C - Email Changed{% endblock %}
+
+{% block auth_icon %}
+<svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+    <polyline points="22,6 12,13 2,6"/>
+</svg>
+{% endblock %}
+
+{% block auth_title %}Email Changed Successfully{% endblock %}
+
+{% block auth_subtitle %}
+<p class="auth-subtitle">Your email address has been updated.</p>
+{% endblock %}
+
+{% block auth_form %}
+<div class="auth-success" role="alert" style="margin-bottom: 1rem;">
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+        <polyline points="22 4 12 14.01 9 11.01"/>
+    </svg>
+    <span>An activation link has been sent to your new email address.</span>
+</div>
+<p style="color: var(--vrc-gray-600); margin-bottom: 1rem;">Please check your inbox to reactivate your account.</p>
+<p style="color: var(--vrc-gray-500); font-size: 0.875rem;">For security reasons, you have been logged out.</p>
+{% endblock %}
+
+{% block auth_links %}
+<div class="auth-links">
+    <p class="auth-link">
+        <a href="{% url 'login' %}">Return to Sign In</a>
+    </p>
+</div>
+{% endblock %}

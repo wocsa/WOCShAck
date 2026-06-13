@@ -1,0 +1,148 @@
+{% extends "base/base.html" %}
+{% load static %}
+
+{% block title %}VRC — Community & Engagement{% endblock %}
+
+{% block module_css %}
+<link rel="stylesheet" href="{% static 'community/css/community.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="hub-wrapper animate-fade-in-up">
+
+<nav class="vrc-breadcrumbs">
+  <a href="/">Home</a>
+  <span class="bc-sep">›</span>
+  <span class="bc-current">Community</span>
+</nav>
+
+  {# ── Hero ─────────────────────────────────────────────────────── #}
+  <div class="hub-hero">
+    <div class="hub-hero-left">
+      <h1 class="hub-title" style="background: var(--vrc-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
+        Community &amp; Engagement
+      </h1>
+      <p class="hub-tagline">Connect, compete, and grow with the V.R.C community.</p>
+    </div>
+
+    {% if user.is_authenticated %}
+    <div class="hub-user-snapshot">
+      {% if notif_count and notif_count > 0 %}
+      <span class="hub-snap-chip hub-snap-chip--notif">
+        🔔 {{ notif_count }} new
+      </span>
+      {% endif %}
+    </div>
+    {% else %}
+    <div class="hub-auth-prompt">
+      <p>Sign in to connect with others and participate in community activities.</p>
+      <a href="{% url 'login' %}" class="hub-btn hub-btn--primary">Sign In</a>
+    </div>
+    {% endif %}
+  </div>
+
+  {# ── Navigation grid ──────────────────────────────────────────── #}
+  <div class="hub-grid">
+
+    <a href="{% url 'community:activity_feed' %}" class="hub-card">
+      <div class="hub-card-icon">📰</div>
+      <div class="hub-card-body">
+        <h3 class="hub-card-title">Activity Feed</h3>
+        <p class="hub-card-desc">Latest activity from you and people you follow</p>
+      </div>
+      <span class="hub-card-arrow">→</span>
+    </a>
+
+    <a href="{% url 'community:friends_list' %}" class="hub-card">
+      <div class="hub-card-icon">👥</div>
+      <div class="hub-card-body">
+        <h3 class="hub-card-title">Friends</h3>
+        <p class="hub-card-desc">Manage your friends and send new requests</p>
+      </div>
+      <span class="hub-card-arrow">→</span>
+    </a>
+
+    <a href="{% url 'community:inbox' %}" class="hub-card">
+      <div class="hub-card-icon" style="position: relative;">💬
+        {% if unread_message_count and unread_message_count > 0 %}
+        <span class="hub-card-badge">{{ unread_message_count }}</span>
+        {% endif %}
+      </div>
+      <div class="hub-card-body">
+        <h3 class="hub-card-title">Messages</h3>
+        <p class="hub-card-desc">Private conversations with your friends</p>
+      </div>
+      <span class="hub-card-arrow">→</span>
+    </a>
+
+    <a href="{% url 'community:notifications_list' %}" class="hub-card">
+      <div class="hub-card-icon" style="position: relative;">🔔
+        {% if notif_count and notif_count > 0 %}
+        <span class="hub-card-badge">{{ notif_count }}</span>
+        {% endif %}
+      </div>
+      <div class="hub-card-body">
+        <h3 class="hub-card-title">Notifications</h3>
+        <p class="hub-card-desc">View alerts and system messages</p>
+      </div>
+      <span class="hub-card-arrow">→</span>
+    </a>
+
+    <a href="{% url 'community:blog_list' %}" class="hub-card">
+      <div class="hub-card-icon">📝</div>
+      <div class="hub-card-body">
+        <h3 class="hub-card-title">Blog &amp; News</h3>
+        <p class="hub-card-desc">Platform updates, tutorials, and community spotlights</p>
+      </div>
+      <span class="hub-card-arrow">→</span>
+    </a>
+
+    <a href="{% url 'community:tutorial_list' %}" class="hub-card">
+      <div class="hub-card-icon">📚</div>
+      <div class="hub-card-body">
+        <h3 class="hub-card-title">Tutorials</h3>
+        <p class="hub-card-desc">Step-by-step CSS skill guides</p>
+      </div>
+      <span class="hub-card-arrow">→</span>
+    </a>
+
+    <a href="{% url 'community:showcase_list' %}" class="hub-card">
+      <div class="hub-card-icon">🎨</div>
+      <div class="hub-card-body">
+        <h3 class="hub-card-title">Showcase</h3>
+        <p class="hub-card-desc">Discover and vote on community CSS creations</p>
+      </div>
+      <span class="hub-card-arrow">→</span>
+    </a>
+
+    <a href="{% url 'community:event_list' %}" class="hub-card">
+      <div class="hub-card-icon">📅</div>
+      <div class="hub-card-body">
+        <h3 class="hub-card-title">Events</h3>
+        <p class="hub-card-desc">Workshops, webinars, and meetups</p>
+      </div>
+      <span class="hub-card-arrow">→</span>
+    </a>
+
+    <a href="{% url 'community:add_friends' %}" class="hub-card">
+      <div class="hub-card-icon">🔍</div>
+      <div class="hub-card-body">
+        <h3 class="hub-card-title">Find Users</h3>
+        <p class="hub-card-desc">Search for members and discover new connections</p>
+      </div>
+      <span class="hub-card-arrow">→</span>
+    </a>
+
+    <a href="{% url 'community:friend_requests' %}" class="hub-card">
+      <div class="hub-card-icon">📬</div>
+      <div class="hub-card-body">
+        <h3 class="hub-card-title">Friend Requests</h3>
+        <p class="hub-card-desc">Review incoming and outgoing friend requests</p>
+      </div>
+      <span class="hub-card-arrow">→</span>
+    </a>
+
+  </div>
+
+</div>
+{% endblock %}

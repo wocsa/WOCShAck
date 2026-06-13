@@ -1,0 +1,165 @@
+{% extends "base/base.html" %}
+{% load static %}
+
+{% block title %}V.R.C – {{ target_user.username|escape }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'base/css/admin.css' %}">
+<style>
+  /* page-specific: two-column layout */
+  .admin-two-col { display: grid; grid-template-columns: 1fr 1fr; gap: var(--vrc-spacing-5); }
+  @media (max-width: 700px) { .admin-two-col { grid-template-columns: 1fr; } }
+  /* page-specific: card header/body */
+  .detail-card-header { display: flex; justify-content: space-between; align-items: center; padding: 14px 20px; border-bottom: 1px solid var(--vrc-gray-100); }
+  .detail-card-header h5 { font-size: var(--vrc-font-size-base); font-weight: 600; margin: 0; color: var(--vrc-gray-900); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .detail-card-body { padding: var(--vrc-spacing-4) var(--vrc-spacing-5); }
+  /* page-specific: key–value detail list */
+  .detail-list { display: grid; grid-template-columns: 140px 1fr; gap: 10px 16px; }
+  .detail-label { font-size: var(--vrc-font-size-sm); color: var(--vrc-gray-500); font-weight: 500; padding-top: 1px; }
+  .detail-value { font-size: var(--vrc-font-size-sm); color: var(--vrc-gray-800); word-break: break-all; }
+  /* page-specific: action section grouping */
+  .actions-section { margin-bottom: var(--vrc-spacing-4); }
+  .actions-section-title { font-size: var(--vrc-font-size-xs); font-weight: 700; color: var(--vrc-gray-500); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: var(--vrc-spacing-2); }
+  /* page-specific: full-width tonal action buttons (light bg, not solid) */
+  .action-btn { display: inline-flex; align-items: center; justify-content: center; width: 100%; padding: 10px 16px; border-radius: var(--vrc-radius-lg); font-size: var(--vrc-font-size-sm); font-weight: 600; text-decoration: none; border: none; cursor: pointer; transition: all var(--vrc-transition-normal); margin-bottom: var(--vrc-spacing-2); }
+  .action-btn--danger  { background: #fee2e2; color: #dc2626; border: 1px solid #fecaca; }
+  .action-btn--danger:hover:not(:disabled)  { background: #fecaca; }
+  .action-btn--success { background: #d1fae5; color: #059669; border: 1px solid #a7f3d0; }
+  .action-btn--success:hover:not(:disabled) { background: #a7f3d0; }
+  .action-btn--outline { background: #fff; color: var(--vrc-gray-700); border: 1px solid var(--vrc-gray-200); }
+  .action-btn--outline:hover:not(:disabled) { background: var(--vrc-gray-50); }
+  .action-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+  /* page-specific: back link */
+  .back-link { display: inline-flex; align-items: center; gap: 6px; font-size: var(--vrc-font-size-sm); color: var(--vrc-gray-600); text-decoration: none; margin-top: var(--vrc-spacing-2); }
+  .back-link:hover { color: var(--vrc-gray-900); }
+  .note-text { font-size: var(--vrc-font-size-xs); color: var(--vrc-gray-500); margin-top: var(--vrc-spacing-2); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="mod-page">
+
+  <nav class="vrc-breadcrumbs" style="margin-bottom:var(--vrc-spacing-5);">
+    <a href="{% url 'account_admin_dashboard' %}">Admin</a>
+    <span class="bc-sep">›</span>
+    <a href="{% url 'account_admin_user_list' %}">Users</a>
+    <span class="bc-sep">›</span>
+    <span class="bc-current">{{ target_user.username|escape }}</span>
+  </nav>
+
+  <div class="admin-two-col">
+
+    <div>
+      <div class="mod-table-card">
+        <div class="detail-card-header">
+          <h5>
+            {{ target_user.username|escape }}
+            {% if target_user.is_superuser %}<span class="mod-badge mod-badge--danger">Superuser</span>{% elif target_user.is_staff %}<span class="mod-badge mod-badge--info">Staff</span>{% endif %}
+            {% if target_user.is_active %}<span class="mod-badge mod-badge--success">Active</span>{% else %}<span class="mod-badge mod-badge--danger">Suspended</span>{% endif %}
+          </h5>
+        </div>
+        <div class="detail-card-body">
+          <div class="detail-list">
+            <span class="detail-label">Username</span><span class="detail-value">{{ target_user.username|escape }}</span>
+            <span class="detail-label">Email</span><span class="detail-value">{{ target_user.email|escape|default:"—" }}</span>
+            <span class="detail-label">First name</span><span class="detail-value">{{ target_user.first_name|escape|default:"—" }}</span>
+            <span class="detail-label">Last name</span><span class="detail-value">{{ target_user.last_name|escape|default:"—" }}</span>
+            <span class="detail-label">Active</span><span class="detail-value">{{ target_user.is_active|yesno:"Yes,No" }}</span>
+            <span class="detail-label">Staff</span><span class="detail-value">{{ target_user.is_staff|yesno:"Yes,No" }}</span>
+            <span class="detail-label">Superuser</span><span class="detail-value">{{ target_user.is_superuser|yesno:"Yes,No" }}</span>
+            <span class="detail-label">Date joined</span><span class="detail-value">{{ target_user.date_joined|date:"N j, Y, P" }}</span>
+            <span class="detail-label">Last login</span><span class="detail-value">{{ target_user.last_login|date:"N j, Y, P"|default:"Never" }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="mod-table-card">
+        <div class="detail-card-header"><h5>Profile Details</h5></div>
+        <div class="detail-card-body">
+          {% if profile %}
+          <div class="detail-list">
+            <span class="detail-label">Email verified</span>
+            <span class="detail-value">
+              {% if profile.is_activated %}<span class="mod-badge mod-badge--success">Verified</span>{% else %}<span class="mod-badge mod-badge--warning">Unverified</span>{% endif %}
+            </span>
+            <span class="detail-label">2FA (TOTP)</span><span class="detail-value">{{ profile.totp_key|yesno:"Enabled,Disabled" }}</span>
+            <span class="detail-label">Email 2FA</span><span class="detail-value">{{ profile.email_2fa_enabled|yesno:"Enabled,Disabled" }}</span>
+            <span class="detail-label">Banking ID</span><span class="detail-value">{{ profile.bid|default:"—" }}</span>
+            <span class="detail-label">Picture</span><span class="detail-value">{{ profile.picture_path|escape|default:"default.png" }}</span>
+            <span class="detail-label">Biography</span>
+            <span class="detail-value" style="max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+              {% if profile.biography %}{{ profile.biography|escape }}{% else %}<span style="color:var(--vrc-gray-400);">—</span>{% endif %}
+            </span>
+            <span class="detail-label">Bonus claimed</span><span class="detail-value">{{ profile.has_claimed_bonus|yesno:"Yes,No" }}</span>
+          </div>
+          {% else %}
+          <p style="color:var(--vrc-gray-500);font-size:var(--vrc-font-size-sm);margin:0;">No profile record found for this user.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="mod-table-card">
+        <div class="detail-card-header"><h5>Actions</h5></div>
+        <div class="detail-card-body">
+
+          <div class="actions-section">
+            <div class="actions-section-title">Account Status</div>
+            {% if target_user.is_active %}
+              {% if target_user == request.user %}
+              <button class="action-btn action-btn--danger" disabled title="You cannot suspend your own account">Suspend Account</button>
+              {% elif target_user.is_superuser %}
+              <button class="action-btn action-btn--danger" disabled title="Superuser accounts cannot be suspended">Suspend Account</button>
+              {% else %}
+              <form method="post" action="{% url 'account_admin_user_suspend' target_user.id %}"
+                    onsubmit="return confirm('Suspend {{ target_user.username|escapejs }}? They will be unable to log in.');">
+                {% csrf_token %}
+                <button type="submit" class="action-btn action-btn--danger">Suspend Account</button>
+              </form>
+              {% endif %}
+            {% else %}
+              <form method="post" action="{% url 'account_admin_user_unsuspend' target_user.id %}">
+                {% csrf_token %}
+                <button type="submit" class="action-btn action-btn--success">Unsuspend Account</button>
+              </form>
+            {% endif %}
+          </div>
+
+          {% if request.user.is_superuser %}
+          <div class="actions-section">
+            <div class="actions-section-title">Staff Role</div>
+            {% if target_user == request.user %}
+              <button class="action-btn action-btn--outline" disabled>Change own role</button>
+            {% elif target_user.is_superuser %}
+              <button class="action-btn action-btn--outline" disabled>Superuser (immutable)</button>
+            {% elif target_user.is_staff %}
+              <form method="post" action="{% url 'account_admin_user_demote' target_user.id %}"
+                    onsubmit="return confirm('Remove staff privileges from {{ target_user.username|escapejs }}?');">
+                {% csrf_token %}
+                <button type="submit" class="action-btn action-btn--outline">Demote from Staff</button>
+              </form>
+            {% else %}
+              <form method="post" action="{% url 'account_admin_user_promote' target_user.id %}"
+                    onsubmit="return confirm('Grant staff privileges to {{ target_user.username|escapejs }}?');">
+                {% csrf_token %}
+                <button type="submit" class="action-btn action-btn--outline">Promote to Staff</button>
+              </form>
+            {% endif %}
+          </div>
+          {% else %}
+          <p class="note-text">Staff promotion/demotion requires superuser privileges.</p>
+          {% endif %}
+
+        </div>
+      </div>
+
+      <a href="{% url 'account_admin_user_list' %}" class="back-link">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+        Back to User List
+      </a>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,203 @@
+{% extends "base/base_forum.html" %}
+{% load static %}
+
+
+{% block title %}Search Forum - V.R.C{% endblock %}
+
+{% block extra_css %}
+<style>
+    .search-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 30px;
+        border-radius: 16px;
+        margin-bottom: 20px;
+    }
+    .search-header h1 {
+        font-size: 2rem;
+        margin-bottom: 15px;
+    }
+
+    .search-form {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+    .search-input {
+        flex: 1;
+        min-width: 250px;
+        padding: 12px 18px;
+        border: none;
+        border-radius: 8px;
+        font-size: 1rem;
+    }
+    .search-input:focus {
+        outline: none;
+    }
+    .search-select {
+        padding: 12px 18px;
+        border: none;
+        border-radius: 8px;
+        background: rgba(255,255,255,0.9);
+        font-size: 1rem;
+        cursor: pointer;
+    }
+    .search-btn {
+        padding: 12px 30px;
+        background: rgba(0,0,0,0.2);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s ease;
+    }
+    .search-btn:hover {
+        background: rgba(0,0,0,0.3);
+    }
+
+    .search-results {
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    .results-header {
+        padding: 15px 20px;
+        background: #f8f9fa;
+        border-bottom: 1px solid #eee;
+    }
+    .results-header h2 {
+        font-size: 1.1rem;
+        color: #333;
+        margin: 0;
+    }
+
+    .result-item {
+        display: block;
+        padding: 15px 20px;
+        border-bottom: 1px solid #eee;
+        text-decoration: none;
+        color: inherit;
+        transition: background 0.2s ease;
+    }
+    .result-item:last-child {
+        border-bottom: none;
+    }
+    .result-item:hover {
+        background: #f8f9fa;
+    }
+    .result-title {
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 5px;
+    }
+    .result-type {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        margin-left: 10px;
+    }
+    .result-type.topic {
+        background: #e0e7ff;
+        color: #4338ca;
+    }
+    .result-type.post {
+        background: #fef3c7;
+        color: #92400e;
+    }
+    .result-excerpt {
+        font-size: 0.9rem;
+        color: #666;
+        line-height: 1.5;
+    }
+    .result-meta {
+        font-size: 0.85rem;
+        color: #888;
+        margin-top: 5px;
+    }
+
+    .no-results {
+        padding: 60px 20px;
+        text-align: center;
+        color: #666;
+    }
+    .no-results h3 {
+        margin-bottom: 10px;
+        color: #333;
+    }
+
+    .security-warning {
+        background: #fef3c7;
+        border: 1px solid #f59e0b;
+        color: #92400e;
+        padding: 15px 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        font-size: 0.9rem;
+    }
+    .security-warning strong {
+        display: block;
+        margin-bottom: 5px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="search-header">
+    <h1>Search Forum</h1>
+    <form method="get" class="search-form">
+        <input type="text" name="q" class="search-input"
+               value="{{ query }}" placeholder="Search for topics and posts..."
+               required>
+        <select name="type" class="search-select">
+            <option value="all" {% if search_type == 'all' %}selected{% endif %}>All</option>
+            <option value="topics" {% if search_type == 'topics' %}selected{% endif %}>Topics Only</option>
+            <option value="posts" {% if search_type == 'posts' %}selected{% endif %}>Posts Only</option>
+        </select>
+        <button type="submit" class="search-btn">Search</button>
+    </form>
+</div>
+
+<div class="search-results">
+    <div class="results-header">
+        <h2>
+            {% if query %}
+                Found {{ result_count }} result{{ result_count|pluralize }} for "{{ query }}"
+            {% else %}
+                Enter a search term above
+            {% endif %}
+        </h2>
+    </div>
+
+    {% if results %}
+        {% for result in results %}
+        <a href="{% if result.type == 'topic' %}{% url 'forum_topic' topic_id=result.id %}{% else %}{% url 'forum_topic' topic_id=result.topic_id %}#post-{{ result.id }}{% endif %}" class="result-item">
+            <div class="result-title">
+                {{ result.title }}
+                <span class="result-type {{ result.type }}">{{ result.type|title }}</span>
+            </div>
+            {% if result.excerpt %}
+            <div class="result-excerpt">{{ result.excerpt }}</div>
+            {% endif %}
+            {% if result.author %}
+            <div class="result-meta">by {{ result.author }}</div>
+            {% endif %}
+        </a>
+        {% endfor %}
+    {% elif query %}
+    <div class="no-results">
+        <h3>No results found</h3>
+        <p>Try a different search term or check your spelling.</p>
+    </div>
+    {% else %}
+    <div class="no-results">
+        <h3>Search the Forum</h3>
+        <p>Enter keywords above to find topics and posts.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

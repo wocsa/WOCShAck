@@ -1,0 +1,138 @@
+{% extends 'base/base.html' %}
+{% block title %}Admin — Review Payout — V.R.C{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dev-container { max-width: 800px; margin: 0 auto; padding: var(--vrc-spacing-xl); }
+    .back-link { display: inline-block; margin-bottom: var(--vrc-spacing-lg); color: var(--vrc-primary); text-decoration: none; font-size: var(--vrc-font-size-sm); }
+    .page-header { margin-bottom: var(--vrc-spacing-xl); }
+    .page-header h1 { font-size: var(--vrc-font-size-2xl); font-weight: var(--vrc-font-weight-bold); }
+    .section { background: var(--vrc-white); border-radius: var(--vrc-radius-lg); padding: var(--vrc-spacing-xl); box-shadow: var(--vrc-shadow-md); margin-bottom: var(--vrc-spacing-xl); }
+    .section h2 { font-size: var(--vrc-font-size-lg); font-weight: var(--vrc-font-weight-semibold); margin-bottom: var(--vrc-spacing-md); border-bottom: 1px solid var(--vrc-gray-200); padding-bottom: var(--vrc-spacing-sm); }
+    .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--vrc-spacing-md); }
+    .detail-item .detail-label { font-size: var(--vrc-font-size-xs); color: var(--vrc-gray-500); font-weight: var(--vrc-font-weight-medium); text-transform: uppercase; letter-spacing: 0.05em; }
+    .detail-item .detail-value { font-size: var(--vrc-font-size-base); margin-top: 2px; }
+    .amount-large { font-size: var(--vrc-font-size-2xl); font-weight: var(--vrc-font-weight-bold); color: var(--vrc-primary); }
+    .badge { padding: 3px 12px; border-radius: var(--vrc-radius-full); font-size: var(--vrc-font-size-sm); font-weight: var(--vrc-font-weight-medium); }
+    .badge-pending { background: var(--vrc-warning-light); color: var(--vrc-warning); }
+    .badge-processing { background: var(--vrc-info-light); color: var(--vrc-info); }
+    .badge-completed { background: var(--vrc-success-light); color: var(--vrc-success); }
+    .badge-failed { background: var(--vrc-error-light); color: var(--vrc-error); }
+    .balance-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--vrc-spacing-md); margin-bottom: var(--vrc-spacing-md); }
+    .balance-card { background: var(--vrc-gray-50); border-radius: var(--vrc-radius-md); padding: var(--vrc-spacing-md); text-align: center; }
+    .balance-card .b-label { font-size: var(--vrc-font-size-xs); color: var(--vrc-gray-500); }
+    .balance-card .b-value { font-size: var(--vrc-font-size-xl); font-weight: var(--vrc-font-weight-bold); margin-top: 2px; }
+    .action-row { display: flex; gap: var(--vrc-spacing-md); align-items: flex-start; flex-wrap: wrap; margin-top: var(--vrc-spacing-md); }
+    .btn-approve { padding: 10px 24px; background: var(--vrc-success); color: white; border: none; border-radius: var(--vrc-radius-md); font-size: var(--vrc-font-size-sm); cursor: pointer; font-weight: var(--vrc-font-weight-medium); }
+    .btn-approve:hover { opacity: 0.9; }
+    .reject-section { border: 1px solid var(--vrc-error-light); border-radius: var(--vrc-radius-md); padding: var(--vrc-spacing-md); flex: 1; min-width: 250px; }
+    .reject-section label { display: block; font-size: var(--vrc-font-size-sm); font-weight: var(--vrc-font-weight-medium); color: var(--vrc-gray-700); margin-bottom: 6px; }
+    .reject-section textarea { width: 100%; padding: 8px 12px; border: 1px solid var(--vrc-gray-300); border-radius: var(--vrc-radius-md); font-size: var(--vrc-font-size-sm); resize: vertical; min-height: 80px; }
+    .btn-reject { padding: 8px 20px; background: var(--vrc-error); color: white; border: none; border-radius: var(--vrc-radius-md); font-size: var(--vrc-font-size-sm); cursor: pointer; margin-top: var(--vrc-spacing-sm); }
+    .btn-reject:hover { opacity: 0.9; }
+    .already-processed { background: var(--vrc-gray-50); border-radius: var(--vrc-radius-md); padding: var(--vrc-spacing-md); color: var(--vrc-gray-500); font-size: var(--vrc-font-size-sm); }
+    .admin-notes { background: var(--vrc-error-light); border-radius: var(--vrc-radius-md); padding: var(--vrc-spacing-sm) var(--vrc-spacing-md); margin-top: var(--vrc-spacing-sm); font-size: var(--vrc-font-size-sm); color: var(--vrc-error); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dev-container">
+    <a href="{% url 'developer_admin_payout_list' %}" class="back-link">&larr; Back to Payout List</a>
+
+    <div class="page-header">
+        <h1>Review Payout</h1>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message|escape }}
+            <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
+        </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="section">
+        <h2>Payout Details</h2>
+        <div class="detail-grid">
+            <div class="detail-item">
+                <div class="detail-label">Developer</div>
+                <div class="detail-value"><strong>{{ payout.developer.username|escape }}</strong></div>
+            </div>
+            <div class="detail-item">
+                <div class="detail-label">Status</div>
+                <div class="detail-value"><span class="badge badge-{{ payout.status }}">{{ payout.get_status_display }}</span></div>
+            </div>
+            <div class="detail-item">
+                <div class="detail-label">Amount</div>
+                <div class="detail-value amount-large">{{ payout.amount }} NE</div>
+            </div>
+            <div class="detail-item">
+                <div class="detail-label">Requested At</div>
+                <div class="detail-value">{{ payout.requested_at|date:"M d, Y H:i" }}</div>
+            </div>
+            <div class="detail-item">
+                <div class="detail-label">Processed At</div>
+                <div class="detail-value">{% if payout.processed_at %}{{ payout.processed_at|date:"M d, Y H:i" }}{% else %}&mdash;{% endif %}</div>
+            </div>
+        </div>
+        {% if payout.admin_notes %}
+        <div class="admin-notes">
+            <strong>Admin Notes:</strong> {{ payout.admin_notes|escape }}
+        </div>
+        {% endif %}
+    </div>
+
+    {% if balance %}
+    <div class="section">
+        <h2>Developer Balance</h2>
+        <div class="balance-grid">
+            <div class="balance-card">
+                <div class="b-label">Available</div>
+                <div class="b-value" style="color: var(--vrc-success);">{{ balance.available }} NE</div>
+            </div>
+            <div class="balance-card">
+                <div class="b-label">Pending</div>
+                <div class="b-value" style="color: var(--vrc-warning);">{{ balance.pending }} NE</div>
+            </div>
+            <div class="balance-card">
+                <div class="b-label">Total Earned</div>
+                <div class="b-value">{{ balance.total_earned }} NE</div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="section">
+        <h2>Actions</h2>
+        {% if payout.status == 'pending' or payout.status == 'processing' %}
+        <div class="action-row">
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="approve">
+                <button type="submit" class="btn-approve" onclick="return confirm('Approve this payout and mark it as completed?')">
+                    ✓ Approve &amp; Complete
+                </button>
+            </form>
+
+            <div class="reject-section">
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="reject">
+                    <label for="id_rejection_reason">Rejection Reason</label>
+                    <textarea name="rejection_reason" id="id_rejection_reason" placeholder="Provide a reason for rejection (optional)…"></textarea>
+                    <button type="submit" class="btn-reject" onclick="return confirm('Reject this payout request?')">
+                        ✗ Reject Payout
+                    </button>
+                </form>
+            </div>
+        </div>
+        {% else %}
+        <div class="already-processed">
+            This payout has already been processed (status: <strong>{{ payout.get_status_display }}</strong>).
+            No further actions are available.
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,1006 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% load static %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>V.R.C - Banking Account</title>
+    <link rel="stylesheet" href="{% static 'css/account/account.css' %}">
+    <link rel="stylesheet" href="{% static 'css/account/tabs.css' %}">
+    <link rel="stylesheet" href="{% static 'css/account/cards.css' %}">
+    <link rel="icon" type="image/svg+xml" href="{% static 'img/favicon.svg' %}">
+    <link rel="stylesheet" href="{% static 'header/css/header.css' %}">
+    <style>
+        body { padding-top: 70px; }
+        /* Prevent header.css from making the banking card header fixed */
+        .account-container header { position: relative !important; top: auto !important; width: auto !important; background: none !important; backdrop-filter: none !important; border-bottom: none !important; box-shadow: none !important; padding: 0 !important; display: block !important; }
+        /* Transaction list */
+        .transactions-section { margin-top: 0; }
+        .tx-list { display: flex; flex-direction: column; gap: .75rem; }
+        .tx-item {
+            display: flex; align-items: center; gap: 1rem;
+            padding: 1rem 1.25rem; background: rgba(0,0,0,.02);
+            border: 1px solid rgba(0,0,0,.05); border-radius: 14px; transition: all .2s;
+        }
+        .tx-item:hover { background: rgba(102,126,234,.05); border-color: rgba(102,126,234,.15); }
+        .tx-icon {
+            width: 44px; height: 44px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.2rem; flex-shrink: 0;
+        }
+        .tx-icon.out     { background: rgba(239,68,68,.12); }
+        .tx-icon.in      { background: rgba(34,197,94,.12); }
+        .tx-icon.payment { background: rgba(59,130,246,.12); }
+        .tx-icon.refund  { background: rgba(168,85,247,.12); }
+        .tx-icon.deposit { background: rgba(251,146,60,.12); }
+        .tx-info { flex: 1; min-width: 0; }
+        .tx-info .tx-type { font-weight: 600; color: #333; font-size: .9rem; }
+        .tx-info .tx-meta { font-size: .8rem; color: #888; margin-top: .2rem; }
+        .tx-amount { font-size: 1rem; font-weight: 700; white-space: nowrap; }
+        .tx-amount.out  { color: #ef4444; }
+        .tx-amount.in   { color: #22c55e; }
+        .tx-amount.neutral { color: #667eea; }
+        .tx-empty { text-align: center; padding: 3rem; color: #aaa; }
+        .tx-empty .tx-empty-icon { font-size: 3rem; margin-bottom: 1rem; }
+        .receipt-btn {
+            padding: .22rem .6rem; font-size: .72rem; border-radius: 7px;
+            text-decoration: none; background: rgba(102,126,234,.1); color: #667eea;
+            border: 1px solid rgba(102,126,234,.25); white-space: nowrap;
+        }
+        .receipt-btn:hover { background: rgba(102,126,234,.2); }
+
+        /* Export buttons */
+        .export-btn {
+            display: inline-flex; align-items: center; gap: .4rem;
+            padding: .5rem 1rem; border-radius: 10px; font-size: .82rem; font-weight: 600;
+            text-decoration: none; transition: all .2s; border: none; cursor: pointer;
+        }
+        .export-btn.csv  { background: rgba(34,197,94,.12);  color: #16a34a; border: 1px solid rgba(34,197,94,.3); }
+        .export-btn.csv:hover  { background: rgba(34,197,94,.2); }
+        .export-btn.json { background: rgba(59,130,246,.12); color: #2563eb; border: 1px solid rgba(59,130,246,.3); }
+        .export-btn.json:hover { background: rgba(59,130,246,.2); }
+        .export-btn.xml  { background: rgba(234,88,12,.12);  color: #c2410c; border: 1px solid rgba(234,88,12,.3); }
+        .export-btn.xml:hover  { background: rgba(234,88,12,.2); }
+        .export-btn.pdf  { background: rgba(168,85,247,.12); color: #7c3aed; border: 1px solid rgba(168,85,247,.3); }
+        .export-btn.pdf:hover  { background: rgba(168,85,247,.2); }
+
+        /* Alert banners */
+        .bank-messages { margin-bottom: 1.5rem; }
+        .bank-alert {
+            padding: .9rem 1.2rem; border-radius: 12px; margin-bottom: .75rem;
+            font-size: .9rem; font-weight: 500; display: flex; align-items: center; gap: .6rem;
+        }
+        .bank-alert.success { background: rgba(34,197,94,.12);  color: #15803d; border: 1px solid rgba(34,197,94,.3); }
+        .bank-alert.error   { background: rgba(239,68,68,.12);  color: #dc2626; border: 1px solid rgba(239,68,68,.3); }
+        .bank-alert.info    { background: rgba(59,130,246,.12); color: #1d4ed8; border: 1px solid rgba(59,130,246,.3); }
+
+        /* Account number in balance card */
+        .balance-account-number {
+            position: relative; z-index: 1;
+            font-family: monospace; font-size: 1.1rem; letter-spacing: .15em;
+            color: rgba(255,255,255,.85); margin-bottom: .75rem;
+        }
+
+        /* Account number section */
+        .account-number-section {
+            background: rgba(102,126,234,.07); border: 1px solid rgba(102,126,234,.2);
+            border-radius: 14px; padding: 1.2rem 1.5rem; margin-bottom: 1.5rem;
+            display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+        }
+        .account-number-label { font-size: .8rem; color: #888; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }
+        .account-number-value { font-size: 1.05rem; font-weight: 700; color: #333; font-family: monospace; letter-spacing: .08em; }
+        .account-number-copy {
+            margin-left: auto; padding: .4rem .9rem; border-radius: 8px;
+            background: rgba(102,126,234,.12); color: #667eea;
+            border: 1px solid rgba(102,126,234,.25); font-size: .8rem; font-weight: 600; cursor: pointer;
+        }
+
+        /* Cards grid */
+        .cards-section { margin-top: 1.5rem; }
+        .cards-grid { display: flex; flex-direction: column; gap: 1rem; }
+        .card-row {
+            background: rgba(0,0,0,.02); border: 1px solid rgba(0,0,0,.07);
+            border-radius: 16px; padding: 1.2rem 1.5rem;
+            display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+        }
+        .card-row.frozen              { border-color: rgba(239,68,68,.2); background: rgba(239,68,68,.03); }
+        .card-row.cancelled           { opacity: .5; }
+        .card-row.pending_replacement { border-color: rgba(245,158,11,.25); background: rgba(245,158,11,.04); }
+        .card-row-icon {
+            width: 46px; height: 46px; border-radius: 12px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0;
+        }
+        .card-row-info { flex: 1; min-width: 0; }
+        .card-row-number { font-weight: 700; font-family: monospace; font-size: .95rem; color: #222; }
+        .card-row-meta   { font-size: .78rem; color: #888; margin-top: .2rem; }
+        .card-row-status {
+            padding: .3rem .75rem; border-radius: 20px; font-size: .75rem;
+            font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
+        }
+        .card-row-status.active              { background: rgba(34,197,94,.12);  color: #16a34a; }
+        .card-row-status.frozen              { background: rgba(239,68,68,.12);  color: #dc2626; }
+        .card-row-status.cancelled           { background: rgba(107,114,128,.12); color: #6b7280; }
+        .card-row-status.pending_replacement { background: rgba(245,158,11,.12); color: #d97706; }
+        .card-row-actions { display: flex; gap: .4rem; flex-wrap: wrap; }
+        .card-btn {
+            padding: .35rem .7rem; border-radius: 8px; font-size: .75rem;
+            font-weight: 600; border: none; cursor: pointer; transition: all .2s;
+        }
+        .card-btn-view    { background: rgba(102,126,234,.1); color: #667eea; border: 1px solid rgba(102,126,234,.3); }
+        .card-btn-view:hover    { background: rgba(102,126,234,.2); }
+        .card-btn-freeze  { background: rgba(239,68,68,.1);  color: #dc2626; border: 1px solid rgba(239,68,68,.3); }
+        .card-btn-freeze:hover  { background: rgba(239,68,68,.2); }
+        .card-btn-unfreeze{ background: rgba(34,197,94,.1);  color: #16a34a; border: 1px solid rgba(34,197,94,.3); }
+        .card-btn-unfreeze:hover{ background: rgba(34,197,94,.2); }
+        .card-btn-stmt    { background: rgba(168,85,247,.1); color: #7c3aed; border: 1px solid rgba(168,85,247,.3); }
+        .card-btn-stmt:hover    { background: rgba(168,85,247,.2); }
+        .generate-card-btn {
+            width: 100%; padding: .9rem; border-radius: 14px;
+            border: 2px dashed rgba(102,126,234,.3); background: transparent;
+            color: #667eea; font-size: .9rem; font-weight: 600; cursor: pointer; transition: all .2s;
+            display: flex; align-items: center; justify-content: center; gap: .5rem; margin-top: .75rem;
+        }
+        .generate-card-btn:hover { background: rgba(102,126,234,.07); border-color: rgba(102,126,234,.5); }
+
+        /* Statement dropdown */
+        .stmt-dropdown { position: relative; display: inline-block; }
+        .stmt-dropdown-menu {
+            display: none; position: absolute; right: 0; top: 110%; min-width: 150px;
+            background: #fff; border: 1px solid rgba(0,0,0,.1); border-radius: 10px;
+            box-shadow: 0 8px 24px rgba(0,0,0,.12); z-index: 50; overflow: hidden;
+        }
+        .stmt-dropdown:hover .stmt-dropdown-menu { display: block; }
+        .stmt-dropdown-menu a {
+            display: block; padding: .6rem 1rem; font-size: .82rem; color: #333;
+            text-decoration: none; transition: background .15s;
+        }
+        .stmt-dropdown-menu a:hover { background: rgba(102,126,234,.08); }
+
+        /* Beneficiary quick-select */
+        .beneficiary-section { margin-bottom: 1.5rem; }
+        .beneficiary-section h3 { font-size: .88rem; font-weight: 700; color: #555; margin-bottom: .75rem; }
+        .beneficiary-list { display: flex; flex-direction: column; gap: .45rem; }
+        .beneficiary-row {
+            display: flex; align-items: center; gap: .75rem;
+            padding: .6rem .9rem; background: rgba(0,0,0,.02);
+            border: 1px solid rgba(0,0,0,.06); border-radius: 10px;
+            cursor: pointer; transition: all .2s;
+        }
+        .beneficiary-row:hover { background: rgba(102,126,234,.07); border-color: rgba(102,126,234,.2); }
+        .beneficiary-avatar {
+            width: 30px; height: 30px; border-radius: 50%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            display: flex; align-items: center; justify-content: center;
+            color: #fff; font-size: .75rem; font-weight: 700; flex-shrink: 0;
+        }
+        .beneficiary-label  { font-size: .83rem; font-weight: 600; color: #333; }
+        .beneficiary-number { font-size: .73rem; color: #aaa; font-family: monospace; }
+        .beneficiary-use    { margin-left: auto; font-size: .73rem; color: #667eea; font-weight: 600; }
+        .beneficiary-manage-link {
+            font-size: .77rem; color: #667eea; text-decoration: none;
+            display: block; text-align: right; margin-top: .4rem; font-weight: 600;
+        }
+        .save-beneficiary-row {
+            display: none; align-items: center; gap: .5rem; flex-wrap: wrap; margin-bottom: .75rem;
+        }
+        .save-beneficiary-row label { font-size: .8rem; color: #888; flex-shrink: 0; }
+        .save-beneficiary-row input {
+            flex: 1; min-width: 120px; padding: .38rem .7rem;
+            border: 1.5px solid #e1e5e9; border-radius: 8px; font-size: .82rem; outline: none;
+        }
+        .save-beneficiary-row input:focus { border-color: #667eea; }
+        .save-beneficiary-btn {
+            padding: .38rem .8rem; background: rgba(102,126,234,.12); color: #667eea;
+            border: 1px solid rgba(102,126,234,.3); border-radius: 8px;
+            font-size: .78rem; font-weight: 600; cursor: pointer;
+        }
+
+        /* Toast */
+        #toast {
+            position: fixed; bottom: 2rem; right: 2rem;
+            padding: 1rem 1.5rem; border-radius: 14px; font-weight: 600; font-size: .9rem;
+            z-index: 9999; opacity: 0; transform: translateY(1rem); transition: all .3s; pointer-events: none;
+        }
+        #toast.show { opacity: 1; transform: translateY(0); }
+        #toast.success { background: #22c55e; color: #fff; }
+        #toast.error   { background: #ef4444; color: #fff; }
+        #toast.info    { background: #667eea; color: #fff; }
+
+        /* Generic modal */
+        .bank-modal {
+            display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5);
+            z-index: 500; align-items: center; justify-content: center;
+        }
+        .bank-modal.open { display: flex; }
+        .bank-modal-inner {
+            background: #fff; border-radius: 20px; padding: 2rem;
+            max-width: 420px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,.2);
+            max-height: 90vh; overflow-y: auto;
+        }
+        .bank-modal-inner h3 { margin-bottom: 1.25rem; font-size: 1.1rem; color: #333; }
+        .modal-field { margin-bottom: 1rem; }
+        .modal-field label { display: block; font-size: .82rem; font-weight: 600; color: #555; margin-bottom: .35rem; }
+        .modal-field input,
+        .modal-field select {
+            width: 100%; padding: .7rem; border: 1.5px solid #e1e5e9;
+            border-radius: 10px; font-size: .9rem; outline: none; box-sizing: border-box;
+        }
+        .modal-field input:focus,
+        .modal-field select:focus { border-color: #667eea; }
+        .modal-field small { font-size: .74rem; color: #aaa; margin-top: .2rem; display: block; }
+        .modal-actions { display: flex; gap: .75rem; margin-top: 1.25rem; flex-wrap: wrap; }
+        .modal-btn-primary {
+            flex: 1; padding: .75rem; background: linear-gradient(135deg, #667eea, #764ba2);
+            color: #fff; border: none; border-radius: 10px; font-weight: 600; cursor: pointer;
+        }
+        .modal-btn-secondary {
+            flex: 1; padding: .75rem; background: #f5f5f5; color: #555;
+            border: none; border-radius: 10px; font-weight: 600; cursor: pointer;
+        }
+        .modal-btn-danger {
+            flex: 1; padding: .75rem; background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: #fff; border: none; border-radius: 10px; font-weight: 600; cursor: pointer;
+        }
+        .modal-error {
+            background: rgba(239,68,68,.1); color: #dc2626;
+            border: 1px solid rgba(239,68,68,.25); border-radius: 8px;
+            padding: .6rem .9rem; font-size: .82rem; margin-bottom: .75rem; display: none;
+        }
+        .modal-section-label { font-size: .82rem; font-weight: 700; color: #555; margin-bottom: .5rem; }
+        .modal-divider { border: none; border-top: 1px solid #eee; margin: 1rem 0; }
+    </style>
+</head>
+<body>
+    {% if user.is_authenticated %}
+        {% include 'header/html/header_account.html' %}
+    {% else %}
+        {% include 'header/html/header.html' %}
+    {% endif %}
+    <div id="toast"></div>
+
+    <!-- Generate Card Modal -->
+    <div id="generateCardModal" class="bank-modal">
+        <div class="bank-modal-inner">
+            <h3>Generate New Card</h3>
+            <div class="modal-field">
+                <label>Card Type</label>
+                <select id="newCardType">
+                    <option value="virtual">Virtual</option>
+                    <option value="physical">Physical</option>
+                </select>
+            </div>
+            <div class="modal-actions">
+                <button class="modal-btn-primary"   onclick="submitGenerateCard()">Generate</button>
+                <button class="modal-btn-secondary" onclick="closeModal('generateCardModal')">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Replace Card Modal -->
+    <div id="replaceCardModal" class="bank-modal">
+        <div class="bank-modal-inner">
+            <h3>Replace Card</h3>
+            <p style="font-size:.84rem;color:#666;margin-bottom:1rem;">
+                A new card will be issued and the old card marked as pending replacement.
+            </p>
+            <div class="modal-field">
+                <label>Reason</label>
+                <select id="replaceReason">
+                    <option value="lost">Lost</option>
+                    <option value="stolen">Stolen</option>
+                    <option value="damaged">Damaged</option>
+                    <option value="expired">Expired</option>
+                    <option value="other">Other</option>
+                </select>
+            </div>
+            <div id="replaceCardError" class="modal-error"></div>
+            <div class="modal-actions">
+                <button class="modal-btn-danger"    onclick="submitReplaceCard()">Replace Card</button>
+                <button class="modal-btn-secondary" onclick="closeModal('replaceCardModal')">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card Settings Modal -->
+    <!-- Change PIN Modal -->
+    <div id="changePinModal" class="bank-modal">
+        <div class="bank-modal-inner">
+            <h3>Change Banking PIN</h3>
+            <div class="modal-field">
+                <label>Account Password</label>
+                <input type="password" id="cpPassword" placeholder="Your login password" autocomplete="current-password">
+            </div>
+            <div class="modal-field">
+                <label>Current PIN</label>
+                <input type="password" id="cpCurrent"  placeholder="6-digit current PIN" maxlength="6" inputmode="numeric">
+            </div>
+            <div class="modal-field">
+                <label>New PIN</label>
+                <input type="password" id="cpNew"      placeholder="6-digit new PIN" maxlength="6" inputmode="numeric">
+                <small>Must be exactly 6 digits.</small>
+            </div>
+            <div class="modal-field">
+                <label>Confirm New PIN</label>
+                <input type="password" id="cpConfirm"  placeholder="Repeat new PIN" maxlength="6" inputmode="numeric">
+            </div>
+            <div id="changePinError" class="modal-error"></div>
+            <div class="modal-actions">
+                <button class="modal-btn-primary"   onclick="submitChangePin()">Change PIN</button>
+                <button class="modal-btn-secondary" onclick="closeModal('changePinModal')">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    {% if has_bank_account == False %}
+    <!-- Claim Welcome Bonus -->
+    <div class="account-container" style="max-width:600px;margin:3rem auto;text-align:center;">
+        <div style="font-size:4rem;margin-bottom:1rem;">&#x1F3E6;</div>
+        <h1 style="font-size:2rem;margin-bottom:0.5rem;">Welcome to V.R.C Banking</h1>
+        <p style="color:#666;margin-bottom:2rem;font-size:1.05rem;">
+            You don't have a bank account yet. Claim your welcome bonus to get started!
+        </p>
+        <a href="/banking/" style=
+            padding: 1rem 2.5rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 14px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(102,126,234,0.4);
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        >
+            Go to Banking Homepage to Claim Bonus
+        </a>
+        {% if messages %}
+        <div style="margin-top:1.5rem;">
+            {% for message in messages %}
+            <div class="bank-alert {{ message.tags }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+    {% else %}
+    <!-- Dashboard Shell -->
+    <div class="account-container">
+        <header>
+            <h1>V.R.C Banking</h1>
+            <div class="tabs">
+                <button class="tab active" data-tab="balance">
+                    <span class="tab-icon">&#x1F4B0;</span>Balance
+                </button>
+                <button class="tab" data-tab="transfer">
+                    <span class="tab-icon">&#x1F4B8;</span>Transfer
+                </button>
+                <button class="tab" data-tab="transactions">
+                    <span class="tab-icon">&#x1F4CB;</span>History
+                </button>
+                <button class="tab" data-tab="settings">
+                    <span class="tab-icon">&#x2699;&#xFE0F;</span>Settings
+                </button>
+                <button class="tab" data-tab="logout" onclick="window.location.href='/banking/logout/'">
+                    <span class="tab-icon">&#x1F6AA;</span>Logout
+                </button>
+            </div>
+        </header>
+
+        <main>
+            {% csrf_token %}
+
+            {% if messages %}
+            <div class="bank-messages">
+                {% for message in messages %}
+                <div class="bank-alert {% if message.tags == 'success' %}success{% elif message.tags == 'error' %}error{% else %}info{% endif %}">
+                    <span>{% if message.tags == 'success' %}&#x2713;{% elif message.tags == 'error' %}&#x26A0;{% else %}&#x2139;{% endif %}</span>
+                    {{ message }}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- BALANCE TAB -->
+            <section class="tab-content active" id="balance">
+                <div class="balance-card">
+                    <h2>Available Balance</h2>
+                    <p class="balance">
+                        {% if balance is not None %}{{ balance|floatformat:2 }} NE{% else %}-- NE{% endif %}
+                    </p>
+                    {% if account_number %}
+                    <div class="balance-account-number">
+                        {{ account_number|escape }}
+                    </div>
+                    {% endif %}
+                    <div class="balance-trend">
+                        <span class="trend-indicator positive">&#x2197;</span>
+                        <span class="trend-text">Virtual currency account</span>
+                    </div>
+                </div>
+
+                {% if account_number %}
+                <div class="account-number-section">
+                    <div>
+                        <div class="account-number-label">Account Number</div>
+                        <div class="account-number-value" id="accountNumberDisplay">
+                            **** **** **** {{ account_number|stringformat:"s"|slice:"-4:" }}
+                        </div>
+                        <div style="font-size:.74rem;color:#aaa;margin-top:.25rem;">Share this number to receive transfers</div>
+                    </div>
+                    <button class="account-number-copy" id="toggleAccNumBtn" onclick="toggleAccountNumber()">&#x1F441; Show</button>
+                    <button class="account-number-copy" style="margin-left:0;" onclick="copyAccountNumber()">&#x1F4CB; Copy</button>
+                </div>
+                {% endif %}
+
+                <!-- Cards -->
+                <div class="cards-section">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+                        <h2 style="margin-bottom:0;">My Cards</h2>
+                        <span style="font-size:.8rem;color:#aaa;">{{ all_cards|length }}/5 cards</span>
+                    </div>
+
+                    <div class="cards-grid" id="cardsGrid">
+                        {% for card in all_cards %}
+                        <div class="card-row {{ card.status }}" id="card-row-{{ card.id }}">
+                            <div class="card-row-icon">&#x1F4B3;</div>
+                            <div class="card-row-info">
+                                <div class="card-row-number" data-full="{{ card.payment_number }}">
+                                    **** **** **** {{ card.payment_number|slice:"-4:" }}
+                                </div>
+                                <div class="card-row-meta">
+                                    {{ card.card_type|title }} card &bull; {{ card.created_at|date:"M j, Y" }}
+                                </div>
+                            </div>
+                            <span class="card-row-status {{ card.status }}">{{ card.get_status_display }}</span>
+                            <div class="card-row-actions">
+                                <button class="card-btn card-btn-view" title="Show/hide number"
+                                        onclick="toggleCardRowNumber(this, '{{ card.payment_number }}')">&#x1F441;</button>
+                                {% if card.status != 'cancelled' %}
+                                <button class="card-btn {% if card.status == 'frozen' %}card-btn-unfreeze{% else %}card-btn-freeze{% endif %}"
+                                        id="freeze-btn-{{ card.id }}"
+                                        onclick="toggleCardStatus({{ card.id }}, this)">
+                                    {% if card.status == 'frozen' %}&#x1F513; Unfreeze{% else %}&#x1F512; Freeze{% endif %}
+                                </button>
+                                {% endif %}
+                                <div class="stmt-dropdown">
+                                    <button class="card-btn card-btn-stmt">&#x1F4C4; Stmt &#x25BE;</button>
+                                    <div class="stmt-dropdown-menu">
+                                        <a href="/banking/card/{{ card.id }}/statement/?period=monthly">Monthly</a>
+                                        <a href="/banking/card/{{ card.id }}/statement/?period=quarterly">Quarterly</a>
+                                        <a href="/banking/card/{{ card.id }}/statement/?period=annual">Annual</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div style="text-align:center;padding:2rem;color:#aaa;font-size:.9rem;">
+                            No cards found. Generate your first card below.
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    {% if all_cards|length < 5 %}
+                    <button class="generate-card-btn" onclick="openModal('generateCardModal')">
+                        &#x2795; Generate New Card
+                    </button>
+                    {% endif %}
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="quick-actions" style="margin-top:1.5rem;">
+                    <h2>Quick Actions</h2>
+                    <div class="action-grid">
+                        <button class="action-btn" onclick="switchTab('transactions')">
+                            <span class="action-icon">&#x1F4C4;</span>View Statement
+                        </button>
+                        <button class="action-btn" onclick="switchTab('transfer')">
+                            <span class="action-icon">&#x1F4B8;</span>Send Money
+                        </button>
+                        <button class="action-btn" onclick="window.location.href='/banking/beneficiaries/'">
+                            <span class="action-icon">&#x1F465;</span>Beneficiaries
+                        </button>
+                        <button class="action-btn" onclick="openModal('changePinModal')">
+                            <span class="action-icon">&#x1F511;</span>Change PIN
+                        </button>
+                        <button class="action-btn" onclick="window.location.href='/banking/export/csv/'">
+                            <span class="action-icon">&#x1F4CA;</span>Export CSV
+                        </button>
+                        <button class="action-btn" onclick="window.location.href='/banking/statement/?period=monthly'">
+                            <span class="action-icon">&#x1F4D1;</span>Monthly PDF
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TRANSFER TAB -->
+            <section class="tab-content" id="transfer">
+                <div class="transfer-form">
+                    <h2>Send Money</h2>
+
+                    <!-- Beneficiary quick-select -->
+                    {% if beneficiaries %}
+                    <div class="beneficiary-section">
+                        <h3>&#x1F465; Saved Beneficiaries — click to fill</h3>
+                        <div class="beneficiary-list">
+                            {% for b in beneficiaries %}
+                            <div class="beneficiary-row"
+                                 onclick="selectBeneficiary('{{ b.account_number }}', '{{ b.label|escapejs }}')">
+                                <div class="beneficiary-avatar">{{ b.label|slice:":1"|upper }}</div>
+                                <div style="flex:1;min-width:0;">
+                                    <div class="beneficiary-label">{{ b.label }}</div>
+                                    <div class="beneficiary-number">{{ b.masked_number }}</div>
+                                </div>
+                                <span class="beneficiary-use">Use &#x2192;</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <a href="/banking/beneficiaries/" class="beneficiary-manage-link">
+                            Manage beneficiaries &#x2192;
+                        </a>
+                    </div>
+                    {% else %}
+                    <div style="margin-bottom:1.25rem;">
+                        <a href="/banking/beneficiaries/"
+                           style="font-size:.82rem;color:#667eea;font-weight:600;text-decoration:none;">
+                            + Add beneficiaries for quick transfers
+                        </a>
+                    </div>
+                    {% endif %}
+
+                    <!-- Transfer form -->
+                    <form class="form" method="POST" action="/banking/dashboard/" id="transferForm">
+                        {% csrf_token %}
+                        <input type="hidden" name="form_type" value="transfer_form">
+
+                        <div class="form-group">
+                            <label for="recipient">Recipient Account Number</label>
+                            <input type="text" id="recipient" name="recipient"
+                                   placeholder="Enter 16-digit account number"
+                                   maxlength="16" pattern="[0-9]{16}" required autocomplete="off">
+                            <small style="color:#888;font-size:.78rem;margin-top:.2rem;">
+                                Enter a 16-digit number or click a beneficiary above.
+                            </small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="amount">Amount</label>
+                            <div class="amount-input">
+                                <span class="currency">NE</span>
+                                <input type="number" id="amount" name="amount"
+                                       placeholder="0.00" step="0.01" min="0.01" required>
+                            </div>
+                            {% if balance is not None %}
+                            <small style="color:#888;font-size:.78rem;margin-top:.2rem;">
+                                Available: {{ balance|floatformat:2 }} NE
+                            </small>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-group">
+                            <label for="note">Note (Optional)</label>
+                            <input type="text" id="note" name="note"
+                                   placeholder="What's this transfer for?" maxlength="500">
+                        </div>
+
+                        <!-- Optional: save as beneficiary -->
+                        <div class="save-beneficiary-row" id="saveBeneficiaryRow">
+                            <label>Save as:</label>
+                            <input type="text" id="beneficiaryLabel"
+                                   placeholder="Label (e.g. Alice)" maxlength="100">
+                            <button type="button" class="save-beneficiary-btn" onclick="saveAsBeneficiary()">
+                                Save
+                            </button>
+                        </div>
+                        <div style="margin-bottom:.9rem;">
+                            <button type="button" onclick="toggleSaveBeneficiary()"
+                                    style="font-size:.78rem;color:#667eea;background:none;border:none;cursor:pointer;padding:0;">
+                                Save recipient as beneficiary
+                            </button>
+                        </div>
+
+                        <button type="submit" class="submit-btn" id="transferSubmitBtn">
+                            <span>Send Money</span>
+                            <span class="btn-icon">&#x2192;</span>
+                        </button>
+                    </form>
+                </div>
+            </section>
+
+            <!-- TRANSACTION HISTORY TAB -->
+            <section class="tab-content" id="transactions">
+                <div class="transactions-section">
+                    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem;margin-bottom:1.5rem;">
+                        <h2 style="margin-bottom:0;">Transaction History</h2>
+                        <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
+                            <a href="/banking/export/csv/"  class="export-btn csv">&#x1F4CA; CSV</a>
+                            <a href="/banking/export/json/" class="export-btn json">{} JSON</a>
+                            <a href="/banking/export/xml/"  class="export-btn xml">&#x1F5C2; XML</a>
+                            <a href="/banking/statement/?period=monthly" class="export-btn pdf">&#x1F4D1; PDF</a>
+                        </div>
+                    </div>
+
+                    {% if local_transactions %}
+                        <div class="tx-list">
+                            {% for tx in local_transactions %}
+                            <div class="tx-item">
+                                <div class="tx-icon
+                                    {% if tx.transaction_type == 'transfer_out' %}out
+                                    {% elif tx.transaction_type == 'transfer_in' %}in
+                                    {% elif tx.transaction_type == 'payment' %}payment
+                                    {% elif tx.transaction_type == 'refund' %}refund
+                                    {% else %}deposit{% endif %}">
+                                    {% if tx.transaction_type == 'transfer_out' %}&#x2B06;
+                                    {% elif tx.transaction_type == 'transfer_in' %}&#x2B07;
+                                    {% elif tx.transaction_type == 'payment' %}&#x1F6D2;
+                                    {% elif tx.transaction_type == 'refund' %}&#x1F504;
+                                    {% else %}&#x1F4E5;{% endif %}
+                                </div>
+                                <div class="tx-info">
+                                    <div class="tx-type">{{ tx.get_transaction_type_display }}</div>
+                                    <div class="tx-meta">
+                                        {% if tx.counterpart_payment_number %}
+                                            {% if tx.transaction_type == 'transfer_out' %}To:{% else %}From:{% endif %}
+                                            **** {{ tx.counterpart_payment_number|slice:"-4:" }}
+                                        {% endif %}
+                                        {% if tx.note %} &bull; {{ tx.note }}{% endif %}
+                                        &bull; {{ tx.created_at|date:"M j, Y H:i" }}
+                                        &bull; <span style="{% if tx.status == 'completed' %}color:#16a34a{% elif tx.status == 'failed' %}color:#dc2626{% else %}color:#d97706{% endif %}">{{ tx.get_status_display }}</span>
+                                    </div>
+                                </div>
+                                <div style="display:flex;flex-direction:column;align-items:flex-end;gap:.3rem;flex-shrink:0;">
+                                    <div class="tx-amount {% if tx.transaction_type == 'transfer_out' or tx.transaction_type == 'payment' %}out{% elif tx.transaction_type == 'transfer_in' or tx.transaction_type == 'refund' or tx.transaction_type == 'deposit' %}in{% else %}neutral{% endif %}">
+                                        {% if tx.transaction_type == 'transfer_out' or tx.transaction_type == 'payment' %}-{% else %}+{% endif %}{{ tx.amount|floatformat:2 }} NE
+                                    </div>
+                                    {% if tx.status == 'completed' %}
+                                    <a href="/banking/transactions/{{ tx.id }}/receipt/"
+                                       class="receipt-btn" title="Download PDF receipt">
+                                        &#x1F4C4; Receipt
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <div style="margin-top:1rem;text-align:center;">
+                            <a href="/banking/transactions/"
+                               style="color:#667eea;font-size:.85rem;font-weight:600;text-decoration:none;">
+                                View full history &#x2192;
+                            </a>
+                        </div>
+                    {% else %}
+                        <div class="tx-empty">
+                            <div class="tx-empty-icon">&#x1F4C5;</div>
+                            <p style="font-weight:600;color:#555;">No transactions yet</p>
+                            <p style="font-size:.85rem;margin-top:.5rem;">
+                                Your transaction history will appear here after your first transfer.
+                            </p>
+                        </div>
+                    {% endif %}
+                </div>
+            </section>
+
+            <!-- SETTINGS TAB -->
+            <section class="tab-content" id="settings">
+                <div class="settings-grid">
+                    <div class="setting-card">
+                        <h3>Account Security</h3>
+                        <p>Manage your password and 2FA settings</p>
+                        <button class="setting-btn" onclick="window.location.href='/account/settings/'">Configure</button>
+                    </div>
+                    <div class="setting-card">
+                        <h3>Change Banking PIN</h3>
+                        <p>Update your 6-digit PIN with password and current PIN verification</p>
+                        <button class="setting-btn" onclick="openModal('changePinModal')">Change PIN</button>
+                    </div>
+                    <div class="setting-card">
+                        <h3>Beneficiaries</h3>
+                        <p>Save and manage frequent transfer recipients for quick access</p>
+                        <button class="setting-btn" onclick="window.location.href='/banking/beneficiaries/'">Manage</button>
+                    </div>
+                    <div class="setting-card">
+                        <h3>Transaction History</h3>
+                        <p>View, search and filter your full transaction history</p>
+                        <button class="setting-btn" onclick="window.location.href='/banking/transactions/'">View All</button>
+                    </div>
+                    <div class="setting-card">
+                        <h3>Export Statement</h3>
+                        <p>Download your transactions in CSV, JSON, XML, or PDF format</p>
+                        <div style="display:flex;gap:.4rem;flex-wrap:wrap;margin-top:.75rem;">
+                            <a href="/banking/export/csv/"  class="export-btn csv"  style="font-size:.76rem;padding:.38rem .7rem;">CSV</a>
+                            <a href="/banking/export/json/" class="export-btn json" style="font-size:.76rem;padding:.38rem .7rem;">JSON</a>
+                            <a href="/banking/export/xml/"  class="export-btn xml"  style="font-size:.76rem;padding:.38rem .7rem;">XML</a>
+                            <a href="/banking/statement/?period=monthly"   class="export-btn pdf" style="font-size:.76rem;padding:.38rem .7rem;">Monthly PDF</a>
+                            <a href="/banking/statement/?period=quarterly" class="export-btn pdf" style="font-size:.76rem;padding:.38rem .7rem;">Quarterly PDF</a>
+                            <a href="/banking/statement/?period=annual"    class="export-btn pdf" style="font-size:.76rem;padding:.38rem .7rem;">Annual PDF</a>
+                        </div>
+                    </div>
+                    <div class="setting-card">
+                        <h3>Card Management</h3>
+                        <p>Freeze, set spending limits, transaction alerts, and replace cards</p>
+                        <button class="setting-btn" onclick="switchTab('balance')">Manage Cards</button>
+                    </div>
+                    <div class="setting-card">
+                        <h3>Banking Session</h3>
+                        <p>Your current banking session. Log out securely when done.</p>
+                        <button class="setting-btn" style="background:linear-gradient(135deg,#ef4444,#dc2626);"
+                                onclick="window.location.href='/banking/logout/'">Logout</button>
+                    </div>
+                    <div class="setting-card">
+                        <h3>Main Dashboard</h3>
+                        <p>Return to the main V.R.C platform</p>
+                        <button class="setting-btn" onclick="window.location.href='/'">Go Home</button>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+    /* ── CSRF ── */
+    function getCsrf() {
+        var el = document.querySelector('[name=csrfmiddlewaretoken]');
+        return el ? el.value : '';
+    }
+
+    /* ── Toast ── */
+    function showToast(msg, type) {
+        var t = document.getElementById('toast');
+        t.textContent = msg;
+        t.className = 'show ' + (type || 'success');
+        setTimeout(function() { t.className = ''; }, 3500);
+    }
+
+    /* ── Tabs ── */
+    var tabs = document.querySelectorAll('.tab');
+    var tabContents = document.querySelectorAll('.tab-content');
+    function switchTab(id) {
+        tabs.forEach(function(t) { t.classList.remove('active'); });
+        tabContents.forEach(function(c) { c.classList.remove('active'); });
+        var tgt = document.querySelector('.tab[data-tab="' + id + '"]');
+        var cnt = document.getElementById(id);
+        if (tgt) tgt.classList.add('active');
+        if (cnt) cnt.classList.add('active');
+    }
+    tabs.forEach(function(tab) {
+        tab.addEventListener('click', function() {
+            if (tab.dataset.tab === 'logout') return;
+            switchTab(tab.dataset.tab);
+        });
+    });
+
+    /* ── Modals ── */
+    function openModal(id)  { document.getElementById(id).classList.add('open'); }
+    function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+    document.querySelectorAll('.bank-modal').forEach(function(m) {
+        m.addEventListener('click', function(e) { if (e.target === m) m.classList.remove('open'); });
+    });
+
+    /* ── Account number show/copy ── */
+    var accountNumber = "{{ account_number }}";
+    var accountNumberVisible = false;
+    function toggleAccountNumber() {
+        var el  = document.getElementById('accountNumberDisplay');
+        var btn = document.getElementById('toggleAccNumBtn');
+        if (!el) return;
+        if (accountNumberVisible) {
+            el.textContent  = accountNumber ? '**** **** **** ' + accountNumber.slice(-4) : '-- --';
+            if (btn) btn.textContent = '\uD83D\uDC41 Show';
+            accountNumberVisible = false;
+        } else {
+            el.textContent  = accountNumber || '-- --';
+            if (btn) btn.textContent = '\uD83D\uDC41 Hide';
+            accountNumberVisible = true;
+        }
+    }
+    function copyAccountNumber() {
+        if (!accountNumber) return;
+        navigator.clipboard.writeText(accountNumber)
+            .then(function() { showToast('Account number copied!', 'success'); });
+    }
+
+    /* ── Per-card number toggle ── */
+    function toggleCardRowNumber(btn, fullNum) {
+        var numEl = btn.closest('.card-row').querySelector('.card-row-number');
+        if (!numEl) return;
+        if (numEl.dataset.showing === '1') {
+            numEl.textContent = '**** **** **** ' + fullNum.slice(-4);
+            numEl.dataset.showing = '0';
+        } else {
+            numEl.textContent = fullNum;
+            numEl.dataset.showing = '1';
+        }
+    }
+
+    /* ── Freeze / unfreeze card ── */
+    function toggleCardStatus(cardId, btn) {
+        fetch('/banking/card/' + cardId + '/toggle-status/', {
+            method: 'POST',
+            headers: { 'X-CSRFToken': getCsrf(), 'Content-Type': 'application/x-www-form-urlencoded' },
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.success) {
+                var row   = document.getElementById('card-row-' + cardId);
+                var badge = row.querySelector('.card-row-status');
+                var ns    = data.new_status;
+                row.classList.remove('active', 'frozen');
+                row.classList.add(ns);
+                if (badge) {
+                    badge.className = 'card-row-status ' + ns;
+                    badge.textContent = ns.charAt(0).toUpperCase() + ns.slice(1);
+                }
+                if (ns === 'frozen') {
+                    btn.className = btn.className.replace('card-btn-freeze', 'card-btn-unfreeze');
+                    btn.textContent = '\uD83D\uDD13 Unfreeze';
+                } else {
+                    btn.className = btn.className.replace('card-btn-unfreeze', 'card-btn-freeze');
+                    btn.textContent = '\uD83D\uDD12 Freeze';
+                }
+                showToast(data.message, 'success');
+            } else {
+                showToast(data.message || 'Operation failed.', 'error');
+            }
+        })
+        .catch(function() { showToast('Network error.', 'error'); });
+    }
+
+    /* ── Generate card ── */
+    function submitGenerateCard() {
+        var cardType = document.getElementById('newCardType').value;
+        fetch('/banking/card/generate/', {
+            method: 'POST',
+            headers: { 'X-CSRFToken': getCsrf(), 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: 'card_type=' + encodeURIComponent(cardType),
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            closeModal('generateCardModal');
+            if (data.success) {
+                showToast(data.message, 'success');
+                setTimeout(function() { location.reload(); }, 1200);
+            } else {
+                showToast(data.message || 'Failed to generate card.', 'error');
+            }
+        })
+        .catch(function() { showToast('Network error.', 'error'); });
+    }
+
+    /* ── Card settings ── */
+    var activeCardId = null;
+
+    /* ── Replace card ── */
+    function submitReplaceCard() {
+        if (!activeCardId) return;
+        var reason = document.getElementById('replaceReason').value;
+        fetch('/banking/card/' + activeCardId + '/replace/', {
+            method: 'POST',
+            headers: { 'X-CSRFToken': getCsrf(), 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: 'reason=' + encodeURIComponent(reason),
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.success) {
+                closeModal('replaceCardModal');
+                showToast(data.message, 'success');
+                setTimeout(function() { location.reload(); }, 1400);
+            } else {
+                var el = document.getElementById('replaceCardError');
+                el.textContent = data.message;
+                el.style.display = 'block';
+            }
+        })
+        .catch(function() { showToast('Network error.', 'error'); });
+    }
+
+    /* ── Change PIN ── */
+    function submitChangePin() {
+        var password   = document.getElementById('cpPassword').value;
+        var currentPin = document.getElementById('cpCurrent').value;
+        var newPin     = document.getElementById('cpNew').value;
+        var confirm    = document.getElementById('cpConfirm').value;
+        var errEl      = document.getElementById('changePinError');
+        errEl.style.display = 'none';
+
+        if (!password || !currentPin || !newPin || !confirm) {
+            errEl.textContent = 'All fields are required.';
+            errEl.style.display = 'block'; return;
+        }
+        if (newPin !== confirm) {
+            errEl.textContent = 'New PIN and confirmation do not match.';
+            errEl.style.display = 'block'; return;
+        }
+        if (!/^\d{6}$/.test(newPin)) {
+            errEl.textContent = 'New PIN must be exactly 6 digits.';
+            errEl.style.display = 'block'; return;
+        }
+
+        fetch('/banking/change-pin/', {
+            method: 'POST',
+            headers: { 'X-CSRFToken': getCsrf(), 'Content-Type': 'application/json' },
+            body: JSON.stringify({ password: password, current_pin: currentPin, new_pin: newPin }),
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.success) {
+                closeModal('changePinModal');
+                showToast(data.message, 'success');
+                setTimeout(function() { window.location.href = '/banking/verification/'; }, 2000);
+            } else {
+                errEl.textContent = data.message;
+                errEl.style.display = 'block';
+            }
+        })
+        .catch(function() { showToast('Network error.', 'error'); });
+    }
+
+    /* ── Beneficiary quick-select ── */
+    function selectBeneficiary(accountNum, label) {
+        document.getElementById('recipient').value = accountNum;
+        var form = document.getElementById('transferForm');
+        if (form) form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        showToast('Selected: ' + label, 'info');
+    }
+
+    /* ── Save as beneficiary ── */
+    function toggleSaveBeneficiary() {
+        var row = document.getElementById('saveBeneficiaryRow');
+        row.style.display = (row.style.display === 'none' || row.style.display === '') ? 'flex' : 'none';
+    }
+
+    function saveAsBeneficiary() {
+        var account = document.getElementById('recipient').value.trim();
+        var label   = document.getElementById('beneficiaryLabel').value.trim();
+        if (!account || account.length !== 16) {
+            showToast('Enter a valid 16-digit account number first.', 'error'); return;
+        }
+        if (!label) {
+            showToast('Please enter a label for this beneficiary.', 'error'); return;
+        }
+        fetch('/banking/beneficiaries/add/', {
+            method: 'POST',
+            headers: { 'X-CSRFToken': getCsrf(), 'Content-Type': 'application/json' },
+            body: JSON.stringify({ account_number: account, label: label }),
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.success) {
+                showToast(data.message, 'success');
+                document.getElementById('saveBeneficiaryRow').style.display = 'none';
+                document.getElementById('beneficiaryLabel').value = '';
+                setTimeout(function() { location.reload(); }, 1400);
+            } else {
+                showToast(data.message || 'Could not save beneficiary.', 'error');
+            }
+        })
+        .catch(function() { showToast('Network error.', 'error'); });
+    }
+
+    /* ── Transfer double-submit guard ── */
+    var transferForm = document.getElementById('transferForm');
+    if (transferForm) {
+        transferForm.addEventListener('submit', function() {
+            var btn = document.getElementById('transferSubmitBtn');
+            if (btn) {
+                btn.disabled = true;
+                var sp = btn.querySelector('span');
+                if (sp) sp.textContent = 'Sending...';
+            }
+        });
+    }
+    </script>
+
+{% endif %}
+
+<script src="{% static 'header/js/hamburger_menu.js' %}"></script>
+{% if user.is_authenticated %}
+<script src="{% static 'header/js/user_hamburger_menu.js' %}"></script>
+{% endif %}
+
+{% comment %}
+Floating chat widget
+{% endcomment %}
+{% include 'chat-bubble/chat_widget.html' %}
+</body>
+</html>

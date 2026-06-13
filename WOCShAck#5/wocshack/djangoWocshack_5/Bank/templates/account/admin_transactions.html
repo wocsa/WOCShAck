@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% load static %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>V.R.C - Admin: Transactions</title>
+    <link rel="stylesheet" href="{% static 'css/account/account.css' %}">
+    <link rel="icon" type="image/svg+xml" href="{% static 'img/favicon.svg' %}">
+    <link rel="stylesheet" href="{% static 'header/css/header.css' %}">
+    <style>
+        body { padding-top: 70px; }
+        .admin-container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+            position: relative;
+            z-index: 1;
+        }
+        .nav-back {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            margin-bottom: 2rem;
+        }
+        .nav-back:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+            color: white;
+            text-decoration: none;
+        }
+        .filter-bar {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .filter-bar select, .filter-bar input {
+            padding: 0.5rem 0.75rem;
+            border: 1px solid rgba(102,126,234,0.2);
+            border-radius: 8px;
+            font-size: 0.85rem;
+            background: white;
+            color: #333;
+        }
+        .filter-bar button {
+            padding: 0.5rem 1rem;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
+        .filter-bar button:hover { background: #5a6fd6; }
+        .filter-bar a.clear {
+            padding: 0.5rem 0.75rem;
+            color: #888;
+            text-decoration: none;
+            font-size: 0.85rem;
+        }
+        .admin-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            background: rgba(255,255,255,0.9);
+            border: 1px solid rgba(102,126,234,0.1);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(102,126,234,0.1);
+        }
+        .admin-table th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 0.85rem 1rem;
+            text-align: left;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+        .admin-table td {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            font-size: 0.9rem;
+            color: #444;
+        }
+        .admin-table tr:last-child td { border-bottom: none; }
+        .admin-table tr:hover td { background: rgba(102,126,234,0.03); }
+        .badge {
+            display: inline-block;
+            padding: 0.2rem 0.6rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .badge-completed { background: rgba(16,185,129,0.12); color: #10b981; }
+        .badge-pending { background: rgba(245,158,11,0.12); color: #f59e0b; }
+        .badge-failed { background: rgba(239,68,68,0.12); color: #ef4444; }
+        .badge-transfer_out { background: rgba(239,68,68,0.08); color: #dc2626; }
+        .badge-transfer_in { background: rgba(34,197,94,0.08); color: #16a34a; }
+        .badge-payment { background: rgba(59,130,246,0.08); color: #2563eb; }
+        .badge-refund { background: rgba(168,85,247,0.08); color: #9333ea; }
+        .badge-deposit { background: rgba(251,146,60,0.08); color: #ea580c; }
+        .amount-out { color: #ef4444; font-weight: 600; }
+        .amount-in { color: #22c55e; font-weight: 600; }
+        .amount-neutral { color: #667eea; font-weight: 600; }
+        .summary-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        .summary-bar .count {
+            font-size: 0.9rem;
+            color: #666;
+        }
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-top: 1.5rem;
+            list-style: none;
+            padding: 0;
+        }
+        .pagination a, .pagination span {
+            display: inline-block;
+            padding: 0.4rem 0.85rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        .pagination a {
+            background: rgba(102,126,234,0.1);
+            color: #667eea;
+            border: 1px solid rgba(102,126,234,0.2);
+        }
+        .pagination a:hover { background: rgba(102,126,234,0.2); }
+        .pagination .current {
+            background: #667eea;
+            color: white;
+        }
+        .card-number { font-family: monospace; letter-spacing: 0.05em; font-size: 0.8rem; }
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #aaa;
+        }
+        .empty-state .icon { font-size: 3rem; margin-bottom: 1rem; }
+    </style>
+</head>
+<body>
+    {% if user.is_authenticated %}
+        {% include 'header/html/header_account.html' %}
+    {% else %}
+        {% include 'header/html/header.html' %}
+    {% endif %}
+
+    <div class="admin-container">
+        <a href="{% url 'banking_admin' %}" class="nav-back">← Back to Admin</a>
+
+        <h1 style="color: #333; margin-bottom: 0.5rem;">Transactions Log</h1>
+        <p style="color: #666; margin-bottom: 1.5rem;">Complete audit trail of all banking transactions.</p>
+
+        <form method="get" class="filter-bar">
+            <select name="type">
+                <option value="">All Types</option>
+                <option value="transfer_out" {% if type_filter == 'transfer_out' %}selected{% endif %}>Transfer Out</option>
+                <option value="transfer_in" {% if type_filter == 'transfer_in' %}selected{% endif %}>Transfer In</option>
+                <option value="payment" {% if type_filter == 'payment' %}selected{% endif %}>Payment</option>
+                <option value="refund" {% if type_filter == 'refund' %}selected{% endif %}>Refund</option>
+                <option value="deposit" {% if type_filter == 'deposit' %}selected{% endif %}>Deposit</option>
+            </select>
+            <select name="status">
+                <option value="">All Statuses</option>
+                <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>Completed</option>
+                <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
+                <option value="failed" {% if status_filter == 'failed' %}selected{% endif %}>Failed</option>
+            </select>
+            <input type="text" name="q" value="{{ search_q|escape }}" placeholder="Search user, note, or account…">
+            <button type="submit">Filter</button>
+            {% if type_filter or status_filter or search_q %}
+                <a href="{% url 'banking_admin_transactions' %}" class="clear">Clear</a>
+            {% endif %}
+        </form>
+
+        <div class="summary-bar">
+            <span class="count">{{ total_transactions }} transaction{{ total_transactions|pluralize }} found</span>
+        </div>
+
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>User</th>
+                    <th>Type</th>
+                    <th>Amount</th>
+                    <th>Counterpart</th>
+                    <th>Note</th>
+                    <th>Status</th>
+                    <th>Card</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for tx in page_obj %}
+                <tr>
+                    <td><strong>{{ tx.user.username|escape }}</strong></td>
+                    <td><span class="badge badge-{{ tx.transaction_type }}">{{ tx.get_transaction_type_display }}</span></td>
+                    <td class="{% if tx.transaction_type == 'transfer_out' or tx.transaction_type == 'payment' %}amount-out{% elif tx.transaction_type == 'transfer_in' or tx.transaction_type == 'deposit' or tx.transaction_type == 'refund' %}amount-in{% else %}amount-neutral{% endif %}">
+                        {% if tx.transaction_type == 'transfer_out' or tx.transaction_type == 'payment' %}-{% elif tx.transaction_type == 'transfer_in' or tx.transaction_type == 'deposit' or tx.transaction_type == 'refund' %}+{% endif %}{{ tx.amount }} NE
+                    </td>
+                    <td class="card-number">{{ tx.counterpart_payment_number|default:"—" }}</td>
+                    <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ tx.note|escape|default:"—" }}</td>
+                    <td><span class="badge badge-{{ tx.status }}">{{ tx.get_status_display }}</span></td>
+                    <td>
+                        {% if tx.card %}
+                            <span class="card-number">{{ tx.card.masked_number }}</span>
+                        {% else %}
+                            <span style="color: #ccc;">—</span>
+                        {% endif %}
+                    </td>
+                    <td style="font-size: 0.8rem; color: #888; white-space: nowrap;">{{ tx.created_at|date:"M d, Y H:i" }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8">
+                        <div class="empty-state">
+                            <div class="icon">📊</div>
+                            <p>No transactions found matching your criteria.</p>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        {% if page_obj.paginator.num_pages > 1 %}
+        <div class="pagination">
+            {% if page_obj.has_previous %}
+                <a href="?page={{ page_obj.previous_page_number }}&type={{ type_filter }}&status={{ status_filter }}&q={{ search_q|urlencode }}">← Prev</a>
+            {% endif %}
+            {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                    <span class="current">{{ num }}</span>
+                {% elif num > page_obj.number|add:"-3" and num < page_obj.number|add:"3" %}
+                    <a href="?page={{ num }}&type={{ type_filter }}&status={{ status_filter }}&q={{ search_q|urlencode }}">{{ num }}</a>
+                {% endif %}
+            {% endfor %}
+            {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}&type={{ type_filter }}&status={{ status_filter }}&q={{ search_q|urlencode }}">Next →</a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+
+    <script src="{% static 'header/js/hamburger_menu.js' %}"></script>
+    <script src="{% static 'header/js/user_hamburger_menu.js' %}"></script>
+</body>
+</html>

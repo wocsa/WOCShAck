@@ -1,0 +1,21 @@
+/* ============================================
+   V.R.C — is_user_blocked partial CSS
+   ============================================ */
+
+
+
+/* ── Block Status Warning ── */
+.block-status-warning {
+  display: block;
+  font-size: var(--vrc-font-size-sm);
+  font-weight: var(--vrc-font-weight-medium);
+  color: #991b1b !important;
+  background: var(--vrc-error-light);
+  border: 1px solid #fecaca;
+  border-left: 3px solid var(--vrc-error);
+  border-radius: var(--vrc-radius-md);
+  padding: var(--vrc-spacing-md) var(--vrc-spacing-lg);
+  line-height: var(--vrc-line-height-normal);
+  max-width: 60vw;
+  margin: var(--vrc-spacing-lg) auto;
+}
