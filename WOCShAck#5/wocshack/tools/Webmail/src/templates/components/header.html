@@ -1,0 +1,21 @@
+<header class="main-header">
+    <nav class="d-flex justify-content-between align-items-center p-3">
+        <div>
+            {% if username %}
+                <h1>Welcome, {{ username }}!</h1>
+            {% else %}
+                <h1>Welcome to TrackBox!</h1>
+                <p><em>Your E-mails and Your Life, Tracked 24/7</em></p>
+            {% endif %}
+        </div>
+        <ul class="main-ul list-unstyled d-flex m-0">
+            <li><button class="button" onclick="window.location.href='/'">Home</button></li>
+            {% if username %}
+                <li><button class="btn btn-danger" onclick="window.location.href='/client/disconnect'">Disconnect</button></li>
+            {% else %}
+                <li><button class="button" onclick="window.location.href='/signup'">Sign Up</button></li>
+                <li><button class="button" onclick="window.location.href='/connect'">Connect</button></li>
+            {% endif %}
+        </ul>
+    </nav>
+</header>

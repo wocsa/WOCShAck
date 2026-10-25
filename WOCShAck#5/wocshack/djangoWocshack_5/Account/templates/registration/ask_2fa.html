@@ -1,0 +1,116 @@
+{% extends "base/base_auth.html" %}
+{% load static %}
+
+
+{% block title %}V.R.C - Enable 2FA{% endblock %}
+
+{% block auth_icon %}
+<svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+    <line x1="12" y1="15" x2="12" y2="17"/>
+</svg>
+{% endblock %}
+
+{% block auth_title %}Set Up Two-Factor Authentication{% endblock %}
+
+{% block auth_subtitle %}
+<p class="auth-subtitle">Scan the QR code below with your authenticator app (like Google Authenticator or Authy) to enable 2FA.</p>
+{% endblock %}
+
+{% block auth_form %}
+<form action="" method="POST" class="auth-form">
+    {% csrf_token %}
+
+    <div class="auth-qr-container">
+        <img src="data:image/png;base64,{{img_str}}" alt="QR Code for 2FA Setup" width="200" height="200"/>
+    </div>
+
+    {% block error %}{% endblock %}
+
+    <div class="auth-form-group">
+        <label for="code" class="auth-label">Verification Code</label>
+        <div class="auth-input-wrapper">
+            <span class="auth-input-icon">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                    <circle cx="12" cy="16" r="1"/>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                </svg>
+            </span>
+            <input type="text"
+                   id="code"
+                   name="code"
+                   class="auth-input auth-2fa-input"
+                   placeholder="000000"
+                   required
+                   maxlength="6"
+                   pattern="[0-9]{6}"
+                   inputmode="numeric"
+                   autocomplete="one-time-code"
+                   autofocus>
+        </div>
+        <p class="auth-help-text">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="16" x2="12" y2="12"/>
+                <line x1="12" y1="8" x2="12.01" y2="8"/>
+            </svg>
+            Enter the 6-digit code shown in your authenticator app
+        </p>
+    </div>
+
+    <button type="submit" class="auth-btn" id="submitBtn">
+        <span>Verify &amp; Enable 2FA</span>
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+            <polyline points="22 4 12 14.01 9 11.01"/>
+        </svg>
+    </button>
+</form>
+{% endblock %}
+
+{% block auth_links %}
+<div class="auth-links">
+    <p class="auth-link">
+        <a href="/account/ask-2fa/no">Maybe Later</a>
+    </p>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .auth-qr-container {
+        background: white;
+        border-radius: var(--vrc-radius-xl);
+        padding: var(--vrc-spacing-lg);
+        margin: 0 auto var(--vrc-spacing-xl);
+        display: block;
+        width: fit-content;
+        box-shadow: var(--vrc-shadow-md);
+        border: 1px solid var(--vrc-gray-200);
+    }
+
+    .auth-qr-container img {
+        display: block;
+        border-radius: var(--vrc-radius-md);
+    }
+
+    .auth-2fa-input {
+        text-align: center;
+        font-size: 1.5rem;
+        font-weight: 600;
+        letter-spacing: 0.5rem;
+        padding-left: 3rem !important;
+    }
+
+    .auth-help-text {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-top: 0.75rem;
+        font-size: 0.8125rem;
+        color: var(--vrc-gray-500);
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,45 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Content Action History{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'base/css/admin.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="mod-page">
+  <h1 class="mod-page-title">Content Action History</h1>
+
+  <div class="mod-card">
+    <div class="mod-card-body">
+      {% if page_obj.object_list %}
+        <table class="mod-table">
+          <thead>
+            <tr>
+              <th>Action</th>
+              <th>Staff</th>
+              <th>Reason</th>
+              <th>Date</th>
+              <th>Reversed</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for action in page_obj.object_list %}
+              <tr>
+                <td>{{ action.get_action_type_display }}</td>
+                <td>{{ action.actor.username }}</td>
+                <td>{{ action.reason|truncatechars:100|escape }}</td>
+                <td>{{ action.created_at|date:"M j, Y H:i" }}</td>
+                <td>{{ action.is_reversed|yesno:"Yes,No" }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <div class="empty-state">No content actions found.</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

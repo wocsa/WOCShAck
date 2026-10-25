@@ -1,0 +1,272 @@
+{% extends "base/base_forum.html" %}
+{% load static %}
+
+
+{% block title %}Deleted {{ content.content_type|title }} - V.R.C Forum{% endblock %}
+
+{% block extra_css %}
+<style>
+    .page-header {
+        background: linear-gradient(135deg, #64748b 0%, #475569 100%);
+        color: white;
+        padding: 30px;
+        border-radius: 16px;
+        margin-bottom: 30px;
+    }
+    .page-header h1 {
+        font-size: 1.5rem;
+        margin-bottom: 10px;
+    }
+    .header-badges {
+        display: flex;
+        gap: 10px;
+    }
+    .header-badge {
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 500;
+        background: rgba(255,255,255,0.2);
+    }
+
+    .content-grid {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 25px;
+    }
+    @media (max-width: 900px) {
+        .content-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .card {
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        margin-bottom: 20px;
+    }
+    .card-header {
+        padding: 15px 20px;
+        background: #f8f9fa;
+        border-bottom: 1px solid #eee;
+        font-weight: 600;
+    }
+    .card-body {
+        padding: 20px;
+    }
+
+    .detail-row {
+        display: flex;
+        margin-bottom: 15px;
+    }
+    .detail-row:last-child {
+        margin-bottom: 0;
+    }
+    .detail-label {
+        width: 140px;
+        font-weight: 500;
+        color: #666;
+        flex-shrink: 0;
+    }
+    .detail-value {
+        flex: 1;
+        color: #333;
+    }
+
+    .content-preview {
+        background: #f8f9fa;
+        border: 1px solid #eee;
+        border-radius: 8px;
+        padding: 20px;
+        max-height: 400px;
+        overflow-y: auto;
+    }
+    .content-preview.rendered {
+        line-height: 1.7;
+    }
+    .content-preview.raw {
+        font-family: monospace;
+        font-size: 0.9rem;
+        white-space: pre-wrap;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 10px;
+        margin-top: 20px;
+    }
+    .action-btn {
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        border: none;
+        transition: all 0.2s ease;
+        text-decoration: none;
+    }
+    .action-btn.success {
+        background: #10b981;
+        color: white;
+    }
+    .action-btn.secondary {
+        background: #f3f4f6;
+        color: #374151;
+    }
+    .action-btn:hover {
+        transform: translateY(-2px);
+    }
+
+    .status-badge {
+        display: inline-block;
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+    .status-recoverable {
+        background: #d1fae5;
+        color: #059669;
+    }
+    .status-recovered {
+        background: #e0e7ff;
+        color: #4f46e5;
+    }
+    .status-permanent {
+        background: #fee2e2;
+        color: #dc2626;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>
+        Deleted {{ content.content_type|title }}:
+        {% if content.title %}{{ content.title }}{% else %}#{{ content.original_id|slice:":8" }}{% endif %}
+    </h1>
+    <div class="header-badges">
+        <span class="header-badge">{{ content.content_type|title }}</span>
+        <span class="header-badge">{{ content.get_deletion_reason_display }}</span>
+    </div>
+</div>
+
+<div class="content-grid">
+    <div class="main-content">
+        <div class="card">
+            <div class="card-header">Content Preview</div>
+            <div class="card-body">
+                {% if content.content_html %}
+                <div class="content-preview rendered">
+                    {{ content.content_html|safe }}
+                </div>
+                {% else %}
+                <div class="content-preview raw">
+                    {{ content.content }}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">Raw Content</div>
+            <div class="card-body">
+                <div class="content-preview raw">{{ content.content }}</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="sidebar">
+        <div class="card">
+            <div class="card-header">Status</div>
+            <div class="card-body">
+                <div style="text-align: center; margin-bottom: 20px;">
+                    {% if content.recovered %}
+                    <span class="status-badge status-recovered">Recovered</span>
+                    {% elif content.is_recoverable %}
+                    <span class="status-badge status-recoverable">Recoverable</span>
+                    {% else %}
+                    <span class="status-badge status-permanent">Permanent</span>
+                    {% endif %}
+                </div>
+
+                {% if content.is_recoverable and not content.recovered %}
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="recover">
+                    <button type="submit" class="action-btn success" style="width: 100%;" onclick="return confirm('Mark this content as recovered?')">
+                        Recover Content
+                    </button>
+                </form>
+                {% endif %}
+
+                {% if content.recovered %}
+                <div class="detail-row">
+                    <div class="detail-label">Recovered by:</div>
+                    <div class="detail-value">{{ content.recovered_by.username }}</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Recovered at:</div>
+                    <div class="detail-value">{{ content.recovered_at|date:"M d, Y H:i" }}</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">Deletion Info</div>
+            <div class="card-body">
+                <div class="detail-row">
+                    <div class="detail-label">Deleted by:</div>
+                    <div class="detail-value">{{ content.deleted_by_username }}</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Deleted at:</div>
+                    <div class="detail-value">{{ content.created_at|date:"M d, Y H:i" }}</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Reason:</div>
+                    <div class="detail-value">{{ content.get_deletion_reason_display }}</div>
+                </div>
+                {% if content.deletion_notes %}
+                <div class="detail-row">
+                    <div class="detail-label">Notes:</div>
+                    <div class="detail-value">{{ content.deletion_notes }}</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">Original Info</div>
+            <div class="card-body">
+                <div class="detail-row">
+                    <div class="detail-label">Author:</div>
+                    <div class="detail-value">{{ content.original_author_username }}</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Created:</div>
+                    <div class="detail-value">{{ content.original_created_at|date:"M d, Y H:i" }}</div>
+                </div>
+                {% if content.category_name %}
+                <div class="detail-row">
+                    <div class="detail-label">Category:</div>
+                    <div class="detail-value">{{ content.category_name }}</div>
+                </div>
+                {% endif %}
+                {% if content.topic_title %}
+                <div class="detail-row">
+                    <div class="detail-label">Topic:</div>
+                    <div class="detail-value">{{ content.topic_title }}</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <a href="{% url 'forum_deleted_content' %}" class="action-btn secondary" style="display: block; text-align: center;">
+            Back to List
+        </a>
+    </div>
+</div>
+{% endblock %}

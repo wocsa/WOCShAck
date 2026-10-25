@@ -1,0 +1,105 @@
+{% extends "base/base.html" %}
+{% load static %}
+
+{% block title %}VRC — Feed Settings{% endblock %}
+
+{% block module_css %}
+<link rel="stylesheet" href="{% static 'community/css/feed.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="main-container">
+<nav class="vrc-breadcrumbs">
+  <a href="{% url 'community:index' %}">Community</a>
+  <span class="bc-sep">›</span>
+  <a href="{% url 'community:activity_feed' %}">Activity Feed</a>
+  <span class="bc-sep">›</span>
+  <span class="bc-current">Preferences</span>
+</nav>
+<div class="feed-wrapper">
+
+  <div class="feed-header">
+    <div>
+      <h1 class="feed-title">Feed Settings</h1>
+      <p class="feed-subtitle">Customize what appears in your activity feed.</p>
+    </div>
+    <a href="{% url 'community:activity_feed' %}" class="feed-btn feed-btn--ghost">← Back</a>
+  </div>
+
+  <form method="post" class="feed-prefs-form">
+    {% csrf_token %}
+
+    <div class="feed-prefs-list">
+      <label class="feed-pref-row">
+        <div class="feed-pref-info">
+          <span class="feed-pref-icon">🤝</span>
+          <div><strong>Friends &amp; Followers</strong><p>Show when someone adds you as a friend or follows you.</p></div>
+        </div>
+        <input type="checkbox" name="show_friends" class="feed-toggle" {% if prefs.show_friends %}checked{% endif %}>
+      </label>
+      <label class="feed-pref-row">
+        <div class="feed-pref-info">
+          <span class="feed-pref-icon">📝</span>
+          <div><strong>Blog Posts</strong><p>Show when someone publishes a new article.</p></div>
+        </div>
+        <input type="checkbox" name="show_blog_posts" class="feed-toggle" {% if prefs.show_blog_posts %}checked{% endif %}>
+      </label>
+      <label class="feed-pref-row">
+        <div class="feed-pref-info">
+          <span class="feed-pref-icon">💬</span>
+          <div><strong>Forum Topics</strong><p>Show when someone starts a new forum discussion.</p></div>
+        </div>
+        <input type="checkbox" name="show_forum_posts" class="feed-toggle" {% if prefs.show_forum_posts %}checked{% endif %}>
+      </label>
+      <label class="feed-pref-row">
+        <div class="feed-pref-info">
+          <span class="feed-pref-icon">🎨</span>
+          <div><strong>Showcases</strong><p>Show when someone submits a new CSS showcase.</p></div>
+        </div>
+        <input type="checkbox" name="show_showcases" class="feed-toggle" {% if prefs.show_showcases %}checked{% endif %}>
+      </label>
+      <label class="feed-pref-row">
+        <div class="feed-pref-info">
+          <span class="feed-pref-icon">📚</span>
+          <div><strong>Tutorials</strong><p>Show when someone publishes a new tutorial.</p></div>
+        </div>
+        <input type="checkbox" name="show_tutorials" class="feed-toggle" {% if prefs.show_tutorials %}checked{% endif %}>
+      </label>
+      <label class="feed-pref-row">
+        <div class="feed-pref-info">
+          <span class="feed-pref-icon">🛒</span>
+          <div><strong>Marketplace Listings</strong><p>Show when someone publishes a CSS item to the marketplace.</p></div>
+        </div>
+        <input type="checkbox" name="show_css" class="feed-toggle" {% if prefs.show_css %}checked{% endif %}>
+      </label>
+      <label class="feed-pref-row">
+        <div class="feed-pref-info">
+          <span class="feed-pref-icon">⭐</span>
+          <div><strong>Reviews</strong><p>Show when someone posts a review.</p></div>
+        </div>
+        <input type="checkbox" name="show_reviews" class="feed-toggle" {% if prefs.show_reviews %}checked{% endif %}>
+      </label>
+      <label class="feed-pref-row">
+        <div class="feed-pref-info">
+          <span class="feed-pref-icon">📅</span>
+          <div><strong>Events</strong><p>Show when someone registers for an event.</p></div>
+        </div>
+        <input type="checkbox" name="show_events" class="feed-toggle" {% if prefs.show_events %}checked{% endif %}>
+      </label>
+    </div>
+
+    <div class="feed-visibility-row">
+      <label for="vis-select"><strong>Default Visibility</strong></label>
+      <select name="default_visibility" id="vis-select" class="feed-select">
+        <option value="public" {% if prefs.default_visibility == 'public' %}selected{% endif %}>Public</option>
+        <option value="followers" {% if prefs.default_visibility == 'followers' %}selected{% endif %}>Followers only</option>
+        <option value="private" {% if prefs.default_visibility == 'private' %}selected{% endif %}>Private</option>
+      </select>
+    </div>
+
+    <button type="submit" class="feed-btn feed-btn--primary">Save</button>
+  </form>
+
+</div>
+</div>
+{% endblock %}

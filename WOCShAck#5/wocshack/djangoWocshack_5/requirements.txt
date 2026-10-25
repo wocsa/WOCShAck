@@ -1,0 +1,12 @@
+regex
+django
+pillow
+pyotp
+qrcode
+sockets
+markdown
+requests
+selenium
+reportlab
+bleach
+python-decouple

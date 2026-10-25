@@ -1,0 +1,66 @@
+{% extends 'base/base.html' %}
+{% block title %}My Listings - V.R.C{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dev-container { max-width: 1000px; margin: 0 auto; padding: var(--vrc-spacing-xl); }
+    .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--vrc-spacing-xl); }
+    .page-header h1 { font-size: var(--vrc-font-size-2xl); font-weight: var(--vrc-font-weight-bold); }
+    .listings-table { width: 100%; background: var(--vrc-white); border-radius: var(--vrc-radius-lg); box-shadow: var(--vrc-shadow-md); overflow: hidden; }
+    .listings-table th { background: var(--vrc-gray-50); padding: 12px 16px; text-align: left; font-size: var(--vrc-font-size-sm); color: var(--vrc-gray-500); font-weight: var(--vrc-font-weight-medium); border-bottom: 1px solid var(--vrc-gray-200); }
+    .listings-table td { padding: 12px 16px; border-bottom: 1px solid var(--vrc-gray-100); font-size: var(--vrc-font-size-sm); }
+    .listings-table tr:last-child td { border-bottom: none; }
+    .listings-table a { color: var(--vrc-primary); text-decoration: none; font-weight: var(--vrc-font-weight-medium); }
+    .badge { display: inline-block; padding: 2px 10px; border-radius: var(--vrc-radius-full); font-size: var(--vrc-font-size-xs); font-weight: var(--vrc-font-weight-medium); }
+    .badge-draft { background: var(--vrc-gray-200); color: var(--vrc-gray-600); }
+    .badge-review { background: var(--vrc-info-light); color: var(--vrc-info); }
+    .badge-pending { background: var(--vrc-warning-light); color: var(--vrc-warning); }
+    .badge-published { background: var(--vrc-success-light); color: var(--vrc-success); }
+    .badge-rejected { background: var(--vrc-error-light); color: var(--vrc-error); }
+    .action-links { display: flex; gap: 8px; }
+    .btn-sm-danger { color: var(--vrc-error); font-size: var(--vrc-font-size-xs); background: none; border: none; cursor: pointer; }
+    .back-link { display: inline-block; margin-bottom: var(--vrc-spacing-lg); color: var(--vrc-primary); text-decoration: none; font-size: var(--vrc-font-size-sm); }
+    .empty-state { text-align: center; padding: var(--vrc-spacing-2xl); color: var(--vrc-gray-500); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dev-container">
+    <a href="{% url 'developer_dashboard' %}" class="back-link">&larr; Back to Dashboard</a>
+    <div class="page-header">
+        <h1>My Listings</h1>
+    </div>
+
+    {% if listings %}
+    <table class="listings-table">
+        <thead>
+            <tr><th>Title</th><th>Status</th><th>Visibility</th><th>Published</th><th>Actions</th></tr>
+        </thead>
+        <tbody>
+            {% for listing in listings %}
+            <tr>
+                <td><a href="{% url 'developer_edit_listing' listing_id=listing.id %}">{{ listing.title }}</a></td>
+                <td><span class="badge badge-{{ listing.status }}">{{ listing.get_status_display }}</span></td>
+                <td>{{ listing.get_visibility_display }}</td>
+                <td>{{ listing.published_at|date:"M d, Y"|default:"-" }}</td>
+                <td>
+                    <div class="action-links">
+                        <a href="{% url 'developer_edit_listing' listing_id=listing.id %}" style="font-size: var(--vrc-font-size-xs);">Edit</a>
+                        <a href="{% url 'developer_set_pricing' listing_id=listing.id %}" style="font-size: var(--vrc-font-size-xs);">Pricing</a>
+                        <form method="post" action="{% url 'developer_delete_listing' listing_id=listing.id %}" style="display:inline;" onsubmit="return confirm('Delete this listing?');">
+                            {% csrf_token %}
+                            <button type="submit" class="btn-sm-danger">Delete</button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">
+        <p>No listings yet. Publish a project to create your first listing!</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

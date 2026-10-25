@@ -1,0 +1,43 @@
+{% extends "base/base.html" %}
+{% load static %}
+{% block title %}VRC - Community Engagement - Friend Requests{% endblock %}
+{% block module_css %}
+<link rel="stylesheet" href="{% static 'community/css/community.css' %}">
+<link rel="stylesheet" href="{% static 'community/css/friend_requests.css' %}">
+{% endblock %}
+{% block content %}
+<nav class="vrc-breadcrumbs" style="padding: 0.75rem 1.5rem 0;">
+  <a href="{% url 'community:index' %}">Community</a>
+  <span class="bc-sep">›</span>
+  <span class="bc-current">Friend Requests</span>
+</nav>
+
+<div class="friend-requests-nav">
+    <a class="btn-nav return-button" href="{% url 'community:friends_list' %}">
+      Back
+    </a>
+    <a class="btn-nav" href="{% url 'community:add_friends' %}">
+      🔍 Search for Friends
+    </a>
+</div>
+
+<div class="friend-requests-container">
+    <div class="friend-requests-title-div">
+  <h2 class="friend-requests-title">My Friend Requests</h2>
+    </div>
+<div class="section-container">
+  <div class="friend-requests-section">
+    <h3 class="friend-requests-section-title">Sent Requests</h3>
+    <div class="friend-requests-section-scroll-box">
+        {% include "community/social/partials/friend_requests_sent.html" %}
+    </div>
+  </div>
+
+  <div class="friend-requests-section">
+    <h3 class="friend-requests-section-title">Received Requests</h3>
+    <div class="friend-requests-section-scroll-box">
+        {% include "community/social/partials/friend_requests_received.html" %}
+    </div>
+  </div>
+
+{% endblock %}

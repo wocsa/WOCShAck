@@ -1,0 +1,25 @@
+{% extends "base/base.html" %}
+{% load static %}
+
+{# Used for shop, cart, payment pages - includes shop-specific headers with cart button #}
+
+{% block body_class %}vrc-body shop-page{% endblock %}
+
+{% block header %}
+{# Shop pages use special headers with cart button #}
+{% if user.is_authenticated %}
+    {% include 'header/html/header_shop_account.html' %}
+{% else %}
+    {% include 'header/html/header_shop_L_R.html' %}
+{% endif %}
+{% endblock %}
+
+{% block module_css %}
+<link rel="stylesheet" href="{% static 'css/shop.css' %}">
+{% endblock %}
+
+{% block content_wrapper_class %}shop-container{% endblock %}
+
+{% block content %}
+<p>Welcome to the V.R.C CSS Marketplace</p>
+{% endblock %}

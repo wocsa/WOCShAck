@@ -1,0 +1,257 @@
+{% extends "base/base_shop.html" %}
+{% load static %}
+
+
+{% block title %}V.R.C - Cart{% endblock %}
+
+{% block module_css %}
+<link rel="stylesheet" href="{% static 'css/cart.css' %}">
+{% endblock %}
+
+{% block content_wrapper_class %}{% endblock %}
+
+{% block content %}
+<div class="cart-page-wrapper">
+    <div class="cart-container">
+        <h1 class="cart-title">Your Shopping Cart</h1>
+
+
+        {% if cart_items %}
+        <div class="cart-content">
+            <table class="cart_table">
+                <thead>
+                    <tr>
+                        <th>CSS Name</th>
+                        <th>Author</th>
+                        <th>Price</th>
+                        <th>Total</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in cart_items %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'product_detail' item.css.id %}" class="product-link">
+                                {{ item.css.name }}
+                            </a>
+                        </td>
+                        <td><a href="{% url 'seller_by_css' item.css.id %}" class="author-link">{{ item.css.author }}</a></td>
+                        <td>{{ item.css.price }} Neuros</td>
+                        <td>{{ item.total_price }} Neuros</td>
+                        <td>
+                            <a href="{% url 'remove_from_cart' item.css.id %}" class="remove-link">Remove</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <!-- Coupon Section -->
+            <div class="coupon-section">
+                <h3>Discount Code</h3>
+                {% if applied_coupon %}
+                <div class="coupon-applied">
+                    <span class="coupon-badge">{{ applied_coupon.code }}</span>
+                    <form method="post" action="{% url 'remove_coupon' %}" class="coupon-remove-form">
+                        {% csrf_token %}
+                        <button type="submit" class="coupon-remove-btn">Remove</button>
+                    </form>
+                </div>
+                {% else %}
+                <form method="post" action="{% url 'apply_coupon' %}" class="coupon-form">
+                    {% csrf_token %}
+                    <input type="text" name="coupon_code" placeholder="Enter coupon code" class="coupon-input" maxlength="50">
+                    <button type="submit" class="coupon-apply-btn">Apply</button>
+                </form>
+                {% endif %}
+            </div>
+
+            <div class="cart-summary">
+                <div class="cart-totals">
+                    <div class="subtotal-row">
+                        <span>Subtotal:</span>
+                        <span>{{ total }} Neuros</span>
+                    </div>
+                    {% if discount_amount %}
+                    <div class="discount-row">
+                        <span>Discount:</span>
+                        <span class="discount-amount">-{{ discount_amount }} Neuros</span>
+                    </div>
+                    {% endif %}
+                    <div class="total-row">
+                        <span>Total:</span>
+                        <span class="final-total">{{ final_total }} Neuros</span>
+                    </div>
+                </div>
+                <div class="cart-actions">
+                    <button onclick="window.location.href='{% url 'payment' %}'" class="cart-btn cart-btn-primary" id="pay_button">
+                        Proceed to Payment
+                    </button>
+                    <a href="{% url 'shop' %}" class="cart-btn cart-btn-secondary">Continue Shopping</a>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="cart-empty">
+            <svg class="empty-cart-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+            </svg>
+            <p>Your cart is empty.</p>
+            <a href="{% url 'shop' %}" class="cart-btn cart-btn-primary">Browse the CSS marketplace</a>
+            {% if user.is_authenticated %}
+            <a href="{% url 'wishlist' %}" class="cart-btn cart-btn-secondary">View Wishlist</a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+
+    /* Product Link */
+    .product-link {
+        color: #667eea;
+        text-decoration: none;
+        font-weight: 600;
+    }
+    .product-link:hover {
+        text-decoration: underline;
+    }
+
+    /* Author Link */
+    .author-link {
+        color: #667eea;
+        text-decoration: none;
+    }
+    .author-link:hover {
+        text-decoration: underline;
+        color: #764ba2;
+    }
+
+    /* Coupon Section */
+    .coupon-section {
+        background: rgba(102, 126, 234, 0.05);
+        border-radius: 12px;
+        padding: 1.25rem;
+        margin-top: 1rem;
+    }
+    .coupon-section h3 {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #333;
+        margin: 0 0 1rem 0;
+    }
+    .coupon-form {
+        display: flex;
+        gap: 0.75rem;
+    }
+    .coupon-input {
+        flex: 1;
+        padding: 0.75rem 1rem;
+        border: 1px solid rgba(102, 126, 234, 0.2);
+        border-radius: 8px;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+    }
+    .coupon-input:focus {
+        outline: none;
+        border-color: #667eea;
+    }
+    .coupon-apply-btn {
+        padding: 0.75rem 1.5rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    .coupon-apply-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+    .coupon-applied {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+    .coupon-badge {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 0.85rem;
+    }
+    .coupon-remove-form {
+        margin-left: auto;
+    }
+    .coupon-remove-btn {
+        background: transparent;
+        border: 1px solid rgba(231, 76, 60, 0.3);
+        color: #e74c3c;
+        padding: 0.4rem 0.8rem;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 0.85rem;
+        transition: all 0.2s ease;
+    }
+    .coupon-remove-btn:hover {
+        background: rgba(231, 76, 60, 0.1);
+    }
+
+    /* Cart Totals */
+    .cart-totals {
+        background: rgba(102, 126, 234, 0.05);
+        border-radius: 10px;
+        padding: 1rem 1.5rem;
+        margin-bottom: 1rem;
+    }
+    .subtotal-row, .discount-row, .total-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.5rem 0;
+    }
+    .discount-row {
+        color: #27ae60;
+    }
+    .discount-amount {
+        font-weight: 600;
+    }
+    .total-row {
+        border-top: 1px solid rgba(102, 126, 234, 0.1);
+        margin-top: 0.5rem;
+        padding-top: 1rem;
+        font-size: 1.2rem;
+        font-weight: 600;
+    }
+    .final-total {
+        color: #667eea;
+    }
+
+    /* Empty Cart */
+    .cart-empty {
+        text-align: center;
+        padding: 3rem 2rem;
+    }
+    .empty-cart-icon {
+        width: 80px;
+        height: 80px;
+        color: #ccc;
+        margin-bottom: 1rem;
+    }
+    .cart-empty p {
+        font-size: 1.1rem;
+        color: #666;
+        margin: 0 0 1.5rem 0;
+    }
+    .cart-empty .cart-btn {
+        margin: 0.5rem;
+    }
+</style>
+{% endblock %}

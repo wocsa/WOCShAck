@@ -1,0 +1,90 @@
+{% extends "base/base.html" %}
+
+{% block title %}404 — Page Not Found | V.R.C{% endblock %}
+
+{% block meta_description %}The page you are looking for could not be found.{% endblock %}
+
+{% block content %}
+<div class="error-404-container">
+    <div class="error-404-code">404</div>
+    <h1 class="error-404-title">Page Not Found</h1>
+    <p class="error-404-message">
+        The page you are looking for doesn't exist or has been moved.
+    </p>
+    <div class="error-404-actions">
+        <a href="/" class="error-404-btn error-404-btn-primary">Back to Home</a>
+        {% if user.is_authenticated %}
+        <a href="/account/" class="error-404-btn error-404-btn-secondary">My Account</a>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .error-404-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 50vh;
+        text-align: center;
+        padding: 2rem;
+    }
+
+    .error-404-code {
+        font-size: 8rem;
+        font-weight: 800;
+        background: var(--vrc-gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        line-height: 1;
+        margin-bottom: 0.5rem;
+    }
+
+    .error-404-title {
+        font-size: var(--vrc-font-size-2xl, 1.5rem);
+        color: var(--vrc-gray-800);
+        margin-bottom: 0.75rem;
+    }
+
+    .error-404-message {
+        font-size: var(--vrc-font-size-md, 1rem);
+        color: var(--vrc-gray-500);
+        max-width: 28rem;
+        margin-bottom: 2rem;
+    }
+
+    .error-404-actions {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .error-404-btn {
+        display: inline-block;
+        padding: 0.625rem 1.5rem;
+        border-radius: var(--vrc-radius-md, 0.5rem);
+        font-weight: 600;
+        font-size: var(--vrc-font-size-sm, 0.875rem);
+        text-decoration: none;
+        transition: opacity 0.2s ease;
+    }
+
+    .error-404-btn:hover {
+        opacity: 0.9;
+    }
+
+    .error-404-btn-primary {
+        background: var(--vrc-gradient);
+        color: var(--vrc-white);
+    }
+
+    .error-404-btn-secondary {
+        background: var(--vrc-gray-100);
+        color: var(--vrc-gray-700);
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,111 @@
+{% extends "base/base.html" %}
+{% load static %}
+
+{% block title %}Community Moderation — Dashboard{% endblock %}
+
+{% block module_css %}
+<link rel="stylesheet" href="{% static 'base/css/admin.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="mod-page">
+
+  {# ── Hero ───────────────────────────────────────────────────────────── #}
+  <div class="mod-hero">
+    <div>
+      <h1 class="mod-hero-title">🛡️ Community Moderation</h1>
+      <p class="mod-hero-subtitle">Staff-only overview of community content and activity.</p>
+    </div>
+  </div>
+
+  {# ── Stats ──────────────────────────────────────────────────────────── #}
+  <div class="mod-stats">
+
+    <div class="mod-stat-card">
+      <div class="mod-stat-accent mod-stat-accent--info"></div>
+      <div class="mod-stat-body">
+        <div class="mod-stat-icon mod-stat-icon--info">📝</div>
+        <div class="mod-stat-info">
+          <div class="mod-stat-label">Total Blog Posts</div>
+          <div class="mod-stat-value">{{ total_blog_posts }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mod-stat-card">
+      <div class="mod-stat-accent mod-stat-accent--danger"></div>
+      <div class="mod-stat-body">
+        <div class="mod-stat-icon mod-stat-icon--danger">🚨</div>
+        <div class="mod-stat-info">
+          <div class="mod-stat-label">Open Reports</div>
+          <div class="mod-stat-value">{{ open_reports }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mod-stat-card">
+      <div class="mod-stat-accent mod-stat-accent--warning"></div>
+      <div class="mod-stat-body">
+        <div class="mod-stat-icon mod-stat-icon--warning">🎨</div>
+        <div class="mod-stat-info">
+          <div class="mod-stat-label">Total Showcases</div>
+          <div class="mod-stat-value">{{ total_showcases }}</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  {# ── Quick Links ────────────────────────────────────────────────────── #}
+  <div class="mod-links-grid">
+
+    <div class="mod-link-card">
+      <div class="mod-link-card-header">📝 Blog Posts</div>
+      <div class="mod-link-card-body">
+        <p>Review, filter, and delete blog posts.</p>
+        <a href="{% url 'community:admin_blog_list' %}" class="mod-btn mod-btn--primary mod-btn--sm">Manage Blogs</a>
+      </div>
+    </div>
+
+    <div class="mod-link-card">
+      <div class="mod-link-card-header">📚 Tutorials</div>
+      <div class="mod-link-card-body">
+        <p>Review and delete community tutorials.</p>
+        <a href="{% url 'community:admin_tutorial_list' %}" class="mod-btn mod-btn--primary mod-btn--sm">Manage Tutorials</a>
+      </div>
+    </div>
+
+    <div class="mod-link-card">
+      <div class="mod-link-card-header">
+        🎨 Showcase
+        {% if pending_showcases %}<span class="mod-badge mod-badge--warning">{{ pending_showcases }} pending</span>{% endif %}
+      </div>
+      <div class="mod-link-card-body">
+        <p>Feature, approve, or remove showcase items.</p>
+        <a href="{% url 'community:admin_showcase_list' %}" class="mod-btn mod-btn--primary mod-btn--sm">Manage Showcase</a>
+      </div>
+    </div>
+
+    <div class="mod-link-card">
+      <div class="mod-link-card-header">
+        🚨 Message Reports
+        {% if open_reports %}<span class="mod-badge mod-badge--danger">{{ open_reports }}</span>{% endif %}
+      </div>
+      <div class="mod-link-card-body">
+        <p>Resolve flagged message reports.</p>
+        <a href="{% url 'community:admin_message_reports' %}" class="mod-btn mod-btn--danger mod-btn--sm">View Reports</a>
+      </div>
+    </div>
+
+    <div class="mod-link-card">
+      <div class="mod-link-card-header">📅 Events</div>
+      <div class="mod-link-card-body">
+        <p>Review and cancel community events.</p>
+        <a href="{% url 'community:admin_event_list' %}" class="mod-btn mod-btn--primary mod-btn--sm">Manage Events</a>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+{% endblock %}

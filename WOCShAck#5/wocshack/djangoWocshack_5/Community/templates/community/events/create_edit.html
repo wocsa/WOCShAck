@@ -1,0 +1,163 @@
+{% extends "base/base.html" %}
+{% load static %}
+
+{% block title %}VRC — {{ action }} Event{% endblock %}
+
+{% block module_css %}
+<link rel="stylesheet" href="{% static 'community/css/content.css' %}">
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.css">
+<style>
+    /* SimpleMDE overrides */
+    .CodeMirror {
+        border: 1px solid #ddd !important;
+        border-radius: 8px !important;
+    }
+    .editor-toolbar {
+        border: 1px solid #ddd !important;
+        border-bottom: none !important;
+        border-radius: 8px 8px 0 0 !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="main-container">
+<nav class="vrc-breadcrumbs">
+  <a href="{% url 'community:index' %}">Community</a>
+  <span class="bc-sep">›</span>
+  <a href="{% url 'community:event_list' %}">Events</a>
+  <span class="bc-sep">›</span>
+  <span class="bc-current">{{ action }} Event</span>
+</nav>
+<div class="form-wrapper">
+
+  <div class="form-header">
+    <h1 class="form-title">{{ action }} Event</h1>
+    <a href="{% url 'community:event_list' %}" class="content-btn">← Back</a>
+  </div>
+
+  <form method="post" class="content-form">
+    {% csrf_token %}
+
+    <div class="form-group">
+      <label class="form-label">Title *</label>
+      <input type="text" name="title" class="form-input" required maxlength="255"
+        value="{{ event.title|default:'' }}">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Description * <span class="form-hint">(Markdown supported)</span></label>
+      <textarea name="description" id="id_description" class="form-textarea" rows="10" required>{{ event.description|default:'' }}</textarea>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Event Type</label>
+        <select name="event_type" class="form-select">
+          {% for val, label in event_types %}
+          <option value="{{ val }}" {% if event and event.event_type == val %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Format</label>
+        <select name="format" class="form-select">
+          {% for val, label in formats %}
+          <option value="{{ val }}" {% if event and event.format == val %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Start Date & Time *</label>
+        <input type="datetime-local" name="start_datetime" class="form-input" required
+          {% if event %}value="{{ event.start_datetime|date:'Y-m-d\TH:i' }}"{% endif %}>
+      </div>
+      <div class="form-group">
+        <label class="form-label">End Date & Time *</label>
+        <input type="datetime-local" name="end_datetime" class="form-input" required
+          {% if event %}value="{{ event.end_datetime|date:'Y-m-d\TH:i' }}"{% endif %}>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Timezone</label>
+        <input type="text" name="timezone" class="form-input" maxlength="50"
+          value="{{ event.timezone|default:'UTC' }}" placeholder="UTC">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Capacity <span class="form-hint">(leave blank for unlimited)</span></label>
+        <input type="number" name="capacity" class="form-input" min="1"
+          {% if event and event.capacity %}value="{{ event.capacity }}"{% endif %}>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Meeting Link <span class="form-hint">(for online / hybrid events)</span></label>
+      <input type="url" name="meeting_link" class="form-input"
+        value="{{ event.meeting_link|default:'' }}" placeholder="https://...">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Status</label>
+      <select name="status" class="form-select">
+        {% for val, label in statuses %}
+        <option value="{{ val }}" {% if event and event.status == val %}selected{% elif not event and val == 'draft' %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="form-actions">
+      <button type="submit" class="content-btn content-btn--primary">{{ action }} Event</button>
+      <a href="{% url 'community:event_list' %}" class="content-btn">Cancel</a>
+    </div>
+  </form>
+
+</div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.js"></script>
+<script>
+// Initialize SimpleMDE editor for event description
+var descTextarea = document.getElementById('id_description');
+if (descTextarea) {
+    var simplemde = new SimpleMDE({
+        element: descTextarea,
+        spellChecker: false,
+        autosave: {
+            enabled: false
+        },
+        placeholder: 'Write your event description here. Markdown is supported.',
+        toolbar: [
+            'bold', 'italic', 'heading', '|',
+            'quote', 'unordered-list', 'ordered-list', '|',
+            'link', 'image', 'code', '|',
+            'preview', 'side-by-side', 'fullscreen', '|',
+            'guide'
+        ],
+        status: ['lines', 'words'],
+        renderingConfig: {
+            singleLineBreaks: false,
+            codeSyntaxHighlighting: false,
+        },
+    });
+    descTextarea.removeAttribute('required');
+
+    // Sync SimpleMDE content to textarea before form submit
+    var eventForm = descTextarea.closest('form');
+    if (eventForm) {
+        eventForm.addEventListener('submit', function() {
+            simplemde.codemirror.save();
+        });
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,114 @@
+{% extends "base/base.html" %}
+{% load static %}
+
+{% block title %}Mod — Blog Posts{% endblock %}
+
+{% block module_css %}
+<link rel="stylesheet" href="{% static 'base/css/admin.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="mod-page">
+
+  <div class="mod-section-header">
+    <div>
+      <h1 class="mod-section-title">📝 Blog Posts</h1>
+    </div>
+    <div style="display:flex;gap:0.5rem;">
+      <a href="{% url 'community:category_list' %}" class="mod-btn mod-btn--ghost mod-btn--sm">Manage Categories</a>
+      <a href="{% url 'community:admin_dashboard' %}" class="mod-btn mod-btn--ghost mod-btn--sm">← Dashboard</a>
+    </div>
+  </div>
+
+  {# Filter form #}
+  <form method="get">
+    <div class="mod-filter-bar">
+      <input type="text" name="search" value="{{ search|escape }}" placeholder="Search title or author…"
+             class="mod-filter-input">
+      <select name="published" class="mod-filter-select">
+        <option value="all"  {% if published == "all"  %}selected{% endif %}>All statuses</option>
+        <option value="yes"  {% if published == "yes"  %}selected{% endif %}>Published</option>
+        <option value="no"   {% if published == "no"   %}selected{% endif %}>Unpublished</option>
+      </select>
+      <button type="submit" class="mod-btn mod-btn--primary mod-btn--sm">Filter</button>
+      {% if search or published != "all" %}
+      <a href="{% url 'community:admin_blog_list' %}" class="mod-btn mod-btn--ghost mod-btn--sm">Clear</a>
+      {% endif %}
+    </div>
+  </form>
+
+  <div class="mod-table-card">
+    <div class="mod-table-scroll">
+      <table class="mod-table">
+        <thead>
+          <tr>
+            <th>Title</th>
+            <th>Author</th>
+            <th>Status</th>
+            <th>Category</th>
+            <th>Created</th>
+            <th class="text-center">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for post in page_obj %}
+          <tr>
+            <td>
+              <a href="{% url 'community:blog_detail' post.slug %}" target="_blank"
+                 class="mod-table-link">{{ post.title|escape }}</a>
+            </td>
+            <td>{{ post.author.username|escape|default:"—" }}</td>
+            <td>
+              {% if post.status == "published" %}
+                <span class="mod-badge mod-badge--success">Published</span>
+              {% elif post.status == "draft" %}
+                <span class="mod-badge mod-badge--gray">Draft</span>
+              {% else %}
+                <span class="mod-badge mod-badge--warning">{{ post.get_status_display|escape }}</span>
+              {% endif %}
+            </td>
+            <td>{{ post.category.name|escape|default:"—" }}</td>
+            <td style="white-space:nowrap;">{{ post.created_at|date:"Y-m-d" }}</td>
+            <td class="text-center">
+              <div class="mod-actions">
+                <form method="post" action="{% url 'community:admin_blog_delete' post.slug %}"
+                      onsubmit="return confirm('Delete &quot;{{ post.title|escapejs }}&quot;? This cannot be undone.');">
+                  {% csrf_token %}
+                  <button type="submit" class="mod-btn mod-btn--danger mod-btn--sm">Delete</button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="6" class="mod-table-empty">No blog posts found.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  {# Pagination #}
+  {% if page_obj.has_other_pages %}
+  <div class="mod-pagination">
+    {% if page_obj.has_previous %}
+    <a href="?search={{ search|urlencode }}&published={{ published }}&page={{ page_obj.previous_page_number }}"
+       class="mod-page-btn">«</a>
+    {% else %}
+    <span class="mod-page-btn mod-page-btn--disabled">«</span>
+    {% endif %}
+
+    <span class="mod-page-btn mod-page-btn--active">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+
+    {% if page_obj.has_next %}
+    <a href="?search={{ search|urlencode }}&published={{ published }}&page={{ page_obj.next_page_number }}"
+       class="mod-page-btn">»</a>
+    {% else %}
+    <span class="mod-page-btn mod-page-btn--disabled">»</span>
+    {% endif %}
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

@@ -1,0 +1,110 @@
+{% extends "base/base.html" %}
+{% load static %}
+
+
+{% block title %}Score Response - Chatbot Moderation{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'base/css/admin.css' %}">
+<style>
+  /* page-specific: card header/body (inside mod-table-card) */
+  .card-header { padding: 15px 20px; background: #f8f9fa; border-bottom: 1px solid #eee; font-weight: 600; }
+  .card-body { padding: 20px; }
+  /* page-specific: conversation message boxes */
+  .message-box { background: #f8f9fa; border: 1px solid #eee; border-radius: 8px; padding: 15px; line-height: 1.6; margin-bottom: 15px; }
+  .message-box.user-msg { border-left: 4px solid #6366f1; }
+  .message-box.bot-msg  { border-left: 4px solid #10b981; }
+  .message-label { font-weight: 600; color: #555; margin-bottom: 8px; font-size: 0.9rem; }
+  /* page-specific: score form two-column grid + form fields */
+  .score-form .form-group { margin-bottom: 20px; }
+  .score-form label { display: block; margin-bottom: 8px; font-weight: 500; color: #555; }
+  .score-form select, .score-form textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 0.95rem; box-sizing: border-box; }
+  .score-form textarea { min-height: 80px; resize: vertical; }
+  .score-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+  @media (max-width: 768px) { .score-grid { grid-template-columns: 1fr; } }
+  /* page-specific: action buttons row */
+  .action-buttons { display: flex; gap: 10px; }
+  .btn-primary   { background: #6366f1; color: white; padding: 10px 24px; border: none; border-radius: 8px; cursor: pointer; font-weight: 500; font-size: 0.95rem; }
+  .btn-secondary { background: #6b7280; color: white; padding: 10px 24px; border: none; border-radius: 8px; cursor: pointer; font-weight: 500; font-size: 0.95rem; text-decoration: none; display: inline-block; }
+  .btn-primary:hover, .btn-secondary:hover { opacity: 0.9; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Score Response Quality</h1>
+    <a href="{% url 'chatbot:admin_dashboard' %}" class="back-link">&larr; Back to Dashboard</a>
+</div>
+
+<div class="card">
+    <div class="card-header">Conversation</div>
+    <div class="card-body">
+        <div class="message-label">User asked:</div>
+        <div class="message-box user-msg">{{ chat_message.message }}</div>
+        <div class="message-label">Bot responded:</div>
+        <div class="message-box bot-msg">{{ chat_message.response }}</div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">{% if existing_score %}Update{% else %}Submit{% endif %} Quality Score</div>
+    <div class="card-body">
+        <form method="post" action="{% url 'chatbot:score_response' message_id=chat_message.id %}" class="score-form">
+            {% csrf_token %}
+
+            <div class="score-grid">
+                <div class="form-group">
+                    <label for="accuracy_score">Accuracy (1-5):</label>
+                    <select name="accuracy_score" id="accuracy_score" required>
+                        <option value="1" {% if existing_score.accuracy_score == 1 %}selected{% endif %}>1 - Very Poor</option>
+                        <option value="2" {% if existing_score.accuracy_score == 2 %}selected{% endif %}>2 - Poor</option>
+                        <option value="3" {% if existing_score.accuracy_score == 3 or not existing_score %}selected{% endif %}>3 - Acceptable</option>
+                        <option value="4" {% if existing_score.accuracy_score == 4 %}selected{% endif %}>4 - Good</option>
+                        <option value="5" {% if existing_score.accuracy_score == 5 %}selected{% endif %}>5 - Excellent</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="helpfulness_score">Helpfulness (1-5):</label>
+                    <select name="helpfulness_score" id="helpfulness_score" required>
+                        <option value="1" {% if existing_score.helpfulness_score == 1 %}selected{% endif %}>1 - Very Poor</option>
+                        <option value="2" {% if existing_score.helpfulness_score == 2 %}selected{% endif %}>2 - Poor</option>
+                        <option value="3" {% if existing_score.helpfulness_score == 3 or not existing_score %}selected{% endif %}>3 - Acceptable</option>
+                        <option value="4" {% if existing_score.helpfulness_score == 4 %}selected{% endif %}>4 - Good</option>
+                        <option value="5" {% if existing_score.helpfulness_score == 5 %}selected{% endif %}>5 - Excellent</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="tone_score">Tone (1-5):</label>
+                    <select name="tone_score" id="tone_score" required>
+                        <option value="1" {% if existing_score.tone_score == 1 %}selected{% endif %}>1 - Very Poor</option>
+                        <option value="2" {% if existing_score.tone_score == 2 %}selected{% endif %}>2 - Poor</option>
+                        <option value="3" {% if existing_score.tone_score == 3 or not existing_score %}selected{% endif %}>3 - Acceptable</option>
+                        <option value="4" {% if existing_score.tone_score == 4 %}selected{% endif %}>4 - Good</option>
+                        <option value="5" {% if existing_score.tone_score == 5 %}selected{% endif %}>5 - Excellent</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="overall_score">Overall (1-5):</label>
+                    <select name="overall_score" id="overall_score" required>
+                        <option value="1" {% if existing_score.overall_score == 1 %}selected{% endif %}>1 - Very Poor</option>
+                        <option value="2" {% if existing_score.overall_score == 2 %}selected{% endif %}>2 - Poor</option>
+                        <option value="3" {% if existing_score.overall_score == 3 or not existing_score %}selected{% endif %}>3 - Acceptable</option>
+                        <option value="4" {% if existing_score.overall_score == 4 %}selected{% endif %}>4 - Good</option>
+                        <option value="5" {% if existing_score.overall_score == 5 %}selected{% endif %}>5 - Excellent</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="notes">Notes (optional):</label>
+                <textarea name="notes" id="notes" maxlength="1000" placeholder="Additional quality notes...">{% if existing_score %}{{ existing_score.notes }}{% endif %}</textarea>
+            </div>
+
+            <div class="action-buttons">
+                <button type="submit" class="btn btn-primary">{% if existing_score %}Update Score{% else %}Submit Score{% endif %}</button>
+                <a href="{% url 'chatbot:admin_dashboard' %}" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

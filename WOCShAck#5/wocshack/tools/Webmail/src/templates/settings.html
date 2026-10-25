@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TrackBox: Settings</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style_client.css') }}">
+</head>
+
+<body>
+    <!-- Header -->
+    {% include "components/navbar.html" %}
+    <div class="container-fluid p-0" style="flex: 1">
+        <div class="d-flex">
+            <!-- Sidebar -->
+            <nav class="sidebar pt-4">
+                <div class="text-center mb-4 px-3">
+                    <div class="glass-panel py-2"
+                        style="background: rgba(88, 166, 255, 0.1); border-color: rgba(88, 166, 255, 0.3);">
+                        <h6 class="m-0" style="color: #58a6ff;">{{ emails | length }} <span
+                                style="color: #8b949e; font-weight: 400;">Emails Monitored</span></h6>
+                    </div>
+                </div>
+                <ul class="nav flex-column px-2">
+                    <li class="nav-item">
+                        <a class="nav-link d-flex align-items-center" href="/client" style="color: #8b949e;">
+                            <span class="me-2">📥</span> Inbox
+                        </a>
+                    </li>
+                    <li class="nav-item mt-2">
+                        <a class="nav-link active d-flex align-items-center" href="/settings"
+                            style="background: rgba(88, 166, 255, 0.15); color: #fff !important; font-weight: 500;">
+                            <span class="me-2">⚙️</span> Settings
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+            <!-- Main Content -->
+            <main class="w-100 px-4 mt-4" style="margin-left: 250px;">
+                <h2 class="h4 mb-4" style="color: #e6edf3;">Account Settings</h2>
+                {% block error %}
+                {% if error_message %}
+                <div class="alert text-white"
+                    style="background: rgba(220, 53, 69, 0.15); border: 1px solid rgba(220, 53, 69, 0.3);">{{
+                    error_message }}</div>
+                {% endif %}
+                {% endblock %}
+
+                <div class="row">
+                    <div class="col-lg-8">
+                        <!-- Password Form -->
+                        <div class="card mb-4">
+                            <div class="card-header pb-0"
+                                style="background: transparent; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                                <h5 style="color: #e6edf3;"><span class="me-2">🔒</span> Change Password</h5>
+                            </div>
+                            <div class="card-body pt-4">
+                                <form action="/client/settings/change_password" method="POST">
+                                    <div class="mb-4">
+                                        <label for="password" class="form-label" style="color: #8b949e;">Current
+                                            Password</label>
+                                        <input type="password" class="form-control mb-3" id="password" name="password"
+                                            required
+                                            style="background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); color: #fff;">
+
+                                        <label for="new_password" class="form-label" style="color: #8b949e;">New
+                                            Password</label>
+                                        <input type="password" class="form-control mb-3" name="new_password"
+                                            minlength="8" required
+                                            style="background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); color: #fff;">
+
+                                        <label for="confirm_new_password" class="form-label"
+                                            style="color: #8b949e;">Confirm New Password</label>
+                                        <input type="password" class="form-control" name="confirm_new_password"
+                                            minlength="8" required
+                                            style="background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); color: #fff;">
+                                    </div>
+                                    <button type="submit" class="btn btn-primary px-4"
+                                        style="background: linear-gradient(135deg, #58a6ff, #3b82f6); border: none; border-radius: 8px;">Update
+                                        Security</button>
+                                </form>
+                                <script>
+                                    const form = document.querySelector('form[action="/client/settings/change_password"]');
+                                    form.addEventListener('submit', function (event) {
+                                        const newPassword = form.querySelector('input[name="new_password"]').value;
+                                        const confirmNewPassword = form.querySelector('input[name="confirm_new_password"]').value;
+                                        if (newPassword.length < 8) {
+                                            alert('New password must be at least 8 characters long.');
+                                            event.preventDefault();
+                                        } else if (newPassword !== confirmNewPassword) {
+                                            alert('New passwords do not match.');
+                                            event.preventDefault();
+                                        }
+                                    });
+                                </script>
+                            </div>
+                        </div>
+
+                        <!-- Delete Account Form -->
+                        <div class="card" style="border: 1px solid rgba(248, 81, 73, 0.3) !important;">
+                            <div class="card-header pb-0"
+                                style="background: transparent; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                                <h5 style="color: #f85149;"><span class="me-2">⚠️</span> Danger Zone</h5>
+                            </div>
+                            <div class="card-body pt-4">
+                                <p class="text-danger mb-4" style="color: #fca5a5 !important;">Warning: Breaking the
+                                    connection is permanent. All tracked data will be lost (to you).</p>
+                                <form action="/client/settings/delete_account" method="POST">
+                                    <div class="mb-3">
+                                        <label for="delete_confirmation_password" class="form-label"
+                                            style="color: #8b949e;">Confirm your identity (Password)</label>
+                                        <input type="password" class="form-control" id="delete_confirmation_password"
+                                            name="password" required
+                                            style="background: rgba(0,0,0,0.2); border: 1px solid rgba(248,81,73,0.3); color: #fff;">
+                                    </div>
+                                    <button type="submit" class="btn btn-danger px-4"
+                                        style="background: linear-gradient(135deg, #f85149, #b91c1c); border: none; border-radius: 8px;">Delete
+                                        My Account</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+    <footer class="text-center py-3">
+        <p class="mb-0 small" style="color: #8b949e;">TrackBox &copy; 2024 - We See Everything</p>
+    </footer>
+</body>
+
+</html>

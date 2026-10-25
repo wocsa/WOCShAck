@@ -1,0 +1,534 @@
+{% extends "base/base_forum.html" %}
+{% load static %}
+
+
+{% block title %}Report #{{ report.id|slice:":8" }} - V.R.C Forum{% endblock %}
+
+{% block extra_css %}
+<style>
+    .page-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 30px;
+        border-radius: 16px;
+        margin-bottom: 30px;
+    }
+    .page-header h1 {
+        font-size: 1.5rem;
+        margin-bottom: 10px;
+    }
+    .header-badges {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+    .header-badge {
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 500;
+    }
+    .badge-type {
+        background: rgba(255,255,255,0.2);
+    }
+    .badge-status {
+        background: rgba(255,255,255,0.3);
+    }
+    .badge-priority {
+        background: #ef4444;
+    }
+
+    .content-grid {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 25px;
+    }
+    @media (max-width: 900px) {
+        .content-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .card {
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        margin-bottom: 20px;
+    }
+    .card-header {
+        padding: 15px 20px;
+        background: #f8f9fa;
+        border-bottom: 1px solid #eee;
+        font-weight: 600;
+    }
+    .card-body {
+        padding: 20px;
+    }
+
+    .detail-row {
+        display: flex;
+        margin-bottom: 15px;
+    }
+    .detail-row:last-child {
+        margin-bottom: 0;
+    }
+    .detail-label {
+        width: 120px;
+        font-weight: 500;
+        color: #666;
+        flex-shrink: 0;
+    }
+    .detail-value {
+        flex: 1;
+        color: #333;
+    }
+
+    .content-snapshot {
+        background: #f8f9fa;
+        border: 1px solid #eee;
+        border-radius: 8px;
+        padding: 15px;
+        max-height: 300px;
+        overflow-y: auto;
+        font-family: monospace;
+        font-size: 0.9rem;
+        white-space: pre-wrap;
+    }
+
+    .action-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+    .action-btn {
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        border: none;
+        transition: all 0.2s ease;
+    }
+    .action-btn.primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+    .action-btn.success {
+        background: #10b981;
+        color: white;
+    }
+    .action-btn.danger {
+        background: #ef4444;
+        color: white;
+    }
+    .action-btn.warning {
+        background: #f59e0b;
+        color: white;
+    }
+    .action-btn.secondary {
+        background: #f3f4f6;
+        color: #374151;
+    }
+    .action-btn:hover {
+        transform: translateY(-2px);
+    }
+
+    .resolution-form {
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 1px solid #eee;
+    }
+    .form-group {
+        margin-bottom: 15px;
+    }
+    .form-group label {
+        display: block;
+        font-weight: 500;
+        margin-bottom: 5px;
+        color: #333;
+    }
+    .form-group textarea {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        font-size: 1rem;
+        min-height: 100px;
+        resize: vertical;
+    }
+    .form-group textarea:focus {
+        outline: none;
+        border-color: #667eea;
+    }
+
+    .checkbox-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+    .checkbox-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .checkbox-item input {
+        width: 18px;
+        height: 18px;
+    }
+
+    .user-card {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        padding: 15px;
+        background: #f8f9fa;
+        border-radius: 8px;
+        text-decoration: none;
+        color: inherit;
+        margin-bottom: 15px;
+    }
+    .user-card:hover {
+        background: #f3f4f6;
+    }
+    .user-avatar {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: #667eea;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 1.2rem;
+    }
+    .user-info h4 {
+        margin-bottom: 3px;
+    }
+    .user-info p {
+        font-size: 0.85rem;
+        color: #666;
+        margin: 0;
+    }
+
+    .related-item {
+        display: block;
+        padding: 12px 15px;
+        background: #f8f9fa;
+        border-radius: 8px;
+        text-decoration: none;
+        color: inherit;
+        margin-bottom: 10px;
+    }
+    .related-item:hover {
+        background: #f3f4f6;
+    }
+    .related-type {
+        font-size: 0.75rem;
+        color: #888;
+        text-transform: uppercase;
+    }
+    .related-date {
+        font-size: 0.85rem;
+        color: #666;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Report #{{ report.id|slice:":8" }}</h1>
+    <div class="header-badges">
+        <span class="header-badge badge-type">{{ report.get_report_type_display }}</span>
+        <span class="header-badge badge-status">{{ report.get_status_display }}</span>
+        <span class="header-badge badge-priority">Priority {{ report.priority }}</span>
+    </div>
+</div>
+
+<div class="content-grid">
+    <div class="main-content">
+        <div class="card">
+            <div class="card-header">Report Details</div>
+            <div class="card-body">
+                <div class="detail-row">
+                    <div class="detail-label">Reporter:</div>
+                    <div class="detail-value">
+                        {% if report.reporter %}
+                        <a href="{% url 'forum_user_profile' username=report.reporter.username %}">{{ report.reporter.username }}</a>
+                        {% else %}
+                        Anonymous
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Submitted:</div>
+                    <div class="detail-value">{{ report.created_at|date:"M d, Y H:i" }} ({{ report.created_at|timesince }} ago)</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Reported Item:</div>
+                    <div class="detail-value">
+                        {% if report.reported_post %}
+                        <a href="{% url 'forum_topic' topic_id=report.reported_post.topic.id %}#post-{{ report.reported_post.id }}"
+                           class="action-btn primary"
+                           style="display: inline-flex; align-items: center; gap: 8px; text-decoration: none;"
+                           target="_blank">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="20" height="20">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                            </svg>
+                            View Reported Post in Topic
+                        </a>
+                        <div style="margin-top: 8px; font-size: 0.9rem; color: #666;">
+                            Post in topic: <strong>{{ report.reported_post.topic.title }}</strong>
+                        </div>
+                        {% elif report.reported_topic %}
+                        <a href="{% url 'forum_topic' topic_id=report.reported_topic.id %}"
+                           class="action-btn primary"
+                           style="display: inline-flex; align-items: center; gap: 8px; text-decoration: none;"
+                           target="_blank">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="20" height="20">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
+                            </svg>
+                            View Reported Topic
+                        </a>
+                        <div style="margin-top: 8px; font-size: 0.9rem; color: #666;">
+                            Topic title: <strong>{{ report.reported_topic.title }}</strong>
+                        </div>
+                        {% elif report.reported_user %}
+                        <a href="{% url 'forum_user_profile' username=report.reported_user.username %}"
+                           class="action-btn primary"
+                           style="display: inline-flex; align-items: center; gap: 8px; text-decoration: none;"
+                           target="_blank">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="20" height="20">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            </svg>
+                            View User Profile
+                        </a>
+                        <div style="margin-top: 8px; font-size: 0.9rem; color: #666;">
+                            User: <strong>{{ report.reported_user.username }}</strong>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Description:</div>
+                    <div class="detail-value">{{ report.description }}</div>
+                </div>
+                {% if report.content_snapshot %}
+                <div class="detail-row">
+                    <div class="detail-label">Content:</div>
+                    <div class="detail-value">
+                        <div class="content-snapshot">{{ report.content_snapshot }}</div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if report.status == 'pending' or report.status == 'under_review' %}
+        <div class="card">
+            <div class="card-header">Take Action</div>
+            <div class="card-body">
+                <div class="action-buttons">
+                    {% if report.status == 'pending' %}
+                    <form method="post" style="display: inline;">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="assign">
+                        <button type="submit" class="action-btn primary">Assign to Me</button>
+                    </form>
+                    {% endif %}
+
+                    {% if report.reported_user %}
+                    <a href="{% url 'forum_user_admin' username=report.reported_user.username %}" class="action-btn secondary">
+                        View User Moderation
+                    </a>
+                    <a href="{% url 'forum_issue_warning' username=report.reported_user.username %}" class="action-btn warning">
+                        Issue Warning
+                    </a>
+                    <a href="{% url 'forum_mute_user' username=report.reported_user.username %}" class="action-btn danger">
+                        Mute User
+                    </a>
+                    {% endif %}
+                </div>
+
+                <div class="resolution-form">
+                    <form method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="resolve">
+
+                        <div class="form-group">
+                            <label>Actions Taken</label>
+                            <div class="checkbox-group">
+                                <label class="checkbox-item">
+                                    <input type="checkbox" name="action_warning">
+                                    Warning Issued
+                                </label>
+                                <label class="checkbox-item">
+                                    <input type="checkbox" name="action_hidden">
+                                    Content Hidden
+                                </label>
+                                <label class="checkbox-item">
+                                    <input type="checkbox" name="action_deleted">
+                                    Content Deleted
+                                </label>
+                                <label class="checkbox-item">
+                                    <input type="checkbox" name="action_muted">
+                                    User Muted
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="resolution_notes">Resolution Notes</label>
+                            <textarea name="resolution_notes" id="resolution_notes" placeholder="Describe the actions taken and reasoning..."></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Report Validity</label>
+                            <div class="checkbox-group">
+                                <label class="checkbox-item">
+                                    <input type="radio" name="report_valid" value="true" checked>
+                                    Valid Report - Action Taken
+                                </label>
+                                <label class="checkbox-item">
+                                    <input type="radio" name="report_valid" value="false">
+                                    Invalid/Dismissed
+                                </label>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="action-btn success">Resolve Report</button>
+                    </form>
+
+                    <form method="post" style="margin-top: 15px;">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="escalate">
+                        <div class="form-group">
+                            <label for="escalation_notes">Escalation Notes (Optional)</label>
+                            <textarea name="escalation_notes" id="escalation_notes" placeholder="Reason for escalation..." style="min-height: 60px;"></textarea>
+                        </div>
+                        <button type="submit" class="action-btn warning">Escalate Report</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="card">
+            <div class="card-header">Resolution</div>
+            <div class="card-body">
+                <div class="detail-row">
+                    <div class="detail-label">Resolved By:</div>
+                    <div class="detail-value">{{ report.resolved_by.username }}</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Resolved At:</div>
+                    <div class="detail-value">{{ report.resolved_at|date:"M d, Y H:i" }}</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Valid:</div>
+                    <div class="detail-value">{% if report.report_valid %}Yes{% else %}No{% endif %}</div>
+                </div>
+                {% if report.resolution_notes %}
+                <div class="detail-row">
+                    <div class="detail-label">Notes:</div>
+                    <div class="detail-value">{{ report.resolution_notes }}</div>
+                </div>
+                {% endif %}
+                <div class="detail-row">
+                    <div class="detail-label">Actions:</div>
+                    <div class="detail-value">
+                        {% if report.action_warning_issued %}Warning Issued {% endif %}
+                        {% if report.action_content_hidden %}Content Hidden {% endif %}
+                        {% if report.action_content_deleted %}Content Deleted {% endif %}
+                        {% if report.action_user_muted %}User Muted {% endif %}
+                        {% if not report.action_warning_issued and not report.action_content_hidden and not report.action_content_deleted and not report.action_user_muted %}
+                        No actions taken
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="sidebar">
+        {% if report.reported_user %}
+        <div class="card">
+            <div class="card-header">Reported User</div>
+            <div class="card-body">
+                <a href="{% url 'forum_user_admin' username=report.reported_user.username %}" class="user-card">
+                    <div class="user-avatar">{{ report.reported_user.username|slice:":1"|upper }}</div>
+                    <div class="user-info">
+                        <h4>{{ report.reported_user.username }}</h4>
+                        <p>View moderation profile</p>
+                    </div>
+                </a>
+                {% if user_history %}
+                <div class="detail-row">
+                    <div class="detail-label">Warnings:</div>
+                    <div class="detail-value">{{ user_history.warnings }} active</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Status:</div>
+                    <div class="detail-value">{% if user_history.muted %}Muted{% else %}Active{% endif %}</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Reports:</div>
+                    <div class="detail-value">{{ user_history.total_reports }} total</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% if report.assigned_to %}
+        <div class="card">
+            <div class="card-header">Assigned To</div>
+            <div class="card-body">
+                <div class="user-card">
+                    <div class="user-avatar">{{ report.assigned_to.username|slice:":1"|upper }}</div>
+                    <div class="user-info">
+                        <h4>{{ report.assigned_to.username }}</h4>
+                        <p>Moderator</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if related_reports %}
+        <div class="card">
+            <div class="card-header">Related Reports</div>
+            <div class="card-body">
+                {% for related in related_reports %}
+                <a href="{% url 'forum_report_detail' report_id=related.id %}" class="related-item">
+                    <div class="related-type">{{ related.get_report_type_display }}</div>
+                    <div>{{ related.get_status_display }}</div>
+                    <div class="related-date">{{ related.created_at|timesince }} ago</div>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="card">
+            <div class="card-header">Quick Links</div>
+            <div class="card-body">
+                {% if report.reported_post %}
+                <a href="{% url 'forum_topic' topic_id=report.reported_post.topic.id %}#post-{{ report.reported_post.id }}" class="related-item">
+                    View Original Post
+                </a>
+                {% endif %}
+                {% if report.reported_topic %}
+                <a href="{% url 'forum_topic' topic_id=report.reported_topic.id %}" class="related-item">
+                    View Original Topic
+                </a>
+                {% endif %}
+                <a href="{% url 'forum_report_queue' %}" class="related-item">
+                    Back to Queue
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

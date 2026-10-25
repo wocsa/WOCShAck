@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>TrackBox</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+    {% include "components/navbar.html" %}
+    <main class="container mb-5" style="margin-top: 120px;">
+        <!-- Hero Section -->
+        <section class="text-center my-5 glass-panel p-5 position-relative overflow-hidden">
+            <div class="position-absolute"
+                style="top: -50px; left: -50px; width: 150px; height: 150px; background: rgba(88, 166, 255, 0.4); filter: blur(60px); border-radius: 50%;">
+            </div>
+            <div class="position-absolute"
+                style="bottom: -50px; right: -50px; width: 150px; height: 150px; background: rgba(138, 43, 226, 0.4); filter: blur(60px); border-radius: 50%;">
+            </div>
+
+            <h1 class="display-4 fw-bold mb-4"
+                style="background: linear-gradient(90deg, #fff, var(--accent-blue)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                Hey there! Yes, you.</h1>
+            <p class="lead mb-4" style="color: var(--text-primary); font-size: 1.25rem;">The one with the inbox
+                overflowing with unread emails.</p>
+            <p class="text-secondary mb-5">Are you tired of email providers that <strong>don’t</strong> care enough
+                about your life?<br>Fear not—TrackBox is here to monitor your every click, read, and typo!</p>
+            <button class="button btn-lg px-5 py-3" onclick="window.location.href='/signup'"
+                style="font-size: 1.1rem; border-radius: 30px;">Start Being Tracked Now</button>
+        </section>
+
+        <!-- Features Grid -->
+        <section class="mt-5">
+            <h2 class="text-center mb-5 fw-bold"
+                style="background: linear-gradient(90deg, var(--accent-blue), #8a2be2); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                Why Choose TrackBox?</h2>
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <div class="glass-panel p-4 h-100 text-center" style="transition: transform 0.3s; cursor: pointer;"
+                        onmouseover="this.style.transform='translateY(-10px)'"
+                        onmouseout="this.style.transform='translateY(0)'">
+                        <div class="mb-3" style="font-size: 2.5rem;">💎</div>
+                        <h4 class="mb-3" style="color: var(--accent-blue);">Your Data is Our Treasure!</h4>
+                        <p class="text-secondary small">Forget gold mines; your browsing habits are worth <em>way</em>
+                            more.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="glass-panel p-4 h-100 text-center" style="transition: transform 0.3s; cursor: pointer;"
+                        onmouseover="this.style.transform='translateY(-10px)'"
+                        onmouseout="this.style.transform='translateY(0)'">
+                        <div class="mb-3" style="font-size: 2.5rem;">👁️</div>
+                        <h4 class="mb-3" style="color: var(--accent-blue);">Always Watching</h4>
+                        <p class="text-secondary small">Ever feel lonely? Don’t worry. We’re always there. Watching.
+                            Tracking. Taking notes.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="glass-panel p-4 h-100 text-center" style="transition: transform 0.3s; cursor: pointer;"
+                        onmouseover="this.style.transform='translateY(-10px)'"
+                        onmouseout="this.style.transform='translateY(0)'">
+                        <div class="mb-3" style="font-size: 2.5rem;">🎯</div>
+                        <h4 class="mb-3" style="color: var(--accent-blue);">Hyper-Personalized Ads</h4>
+                        <p class="text-secondary small">Hate generic ads? Our AI knows you bought a yellow umbrella in
+                            2017. <a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ" target="_blank">Here's 50
+                                more.</a></p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="mt-5 pt-5">
+            <h2 class="text-center mb-5 fw-bold"
+                style="background: linear-gradient(90deg, #8a2be2, var(--accent-blue)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                Features You'll "Love"</h2>
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <div class="glass-panel p-4 h-100 d-flex align-items-center">
+                        <div class="me-4"
+                            style="font-size: 2rem; background: rgba(88,166,255,0.1); padding: 15px; border-radius: 12px;">
+                            👑</div>
+                        <div>
+                            <h5 style="color: var(--text-primary);">Inbox Overlord</h5>
+                            <p class="text-secondary mb-0 small">We don’t just sort your emails; we scrutinize them. Who
+                                needs secrets?</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="glass-panel p-4 h-100 d-flex align-items-center">
+                        <div class="me-4"
+                            style="font-size: 2rem; background: rgba(138,43,226,0.1); padding: 15px; border-radius: 12px;">
+                            📊</div>
+                        <div>
+                            <h5 style="color: var(--text-primary);">Life Analytics</h5>
+                            <p class="text-secondary mb-0 small">Wondering how many hours you waste daily? We’ve got
+                                charts.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="glass-panel p-4 h-100 d-flex align-items-center">
+                        <div class="me-4"
+                            style="font-size: 2rem; background: rgba(255,99,71,0.1); padding: 15px; border-radius: 12px;">
+                            🧠</div>
+                        <div>
+                            <h5 style="color: var(--text-primary);">Predictive AI</h5>
+                            <p class="text-secondary mb-0 small">Haven’t even thought about it yet? We already know you
+                                want it.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="glass-panel p-4 h-100 d-flex align-items-center">
+                        <div class="me-4"
+                            style="font-size: 2rem; background: rgba(60,179,113,0.1); padding: 15px; border-radius: 12px;">
+                            💔</div>
+                        <div>
+                            <h5 style="color: var(--text-primary);">Relationship Alerts</h5>
+                            <p class="text-secondary mb-0 small">We analyze email patterns to warn you when your boss is
+                                mad or when Aunt Susan’s guilt-tripping is incoming.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Privacy Section -->
+        <section class="mt-5 pt-5 mb-5 pb-4">
+            <div class="glass-panel p-5 text-center position-relative overflow-hidden"
+                style="border: 1px solid rgba(255, 99, 71, 0.3);">
+                <div class="position-absolute"
+                    style="top: 0; left: 0; width: 100%; height: 5px; background: linear-gradient(90deg, #f85149, #da3633);">
+                </div>
+                <h2 class="mb-4 fw-bold" style="color: #fca5a5;">Your Privacy Matters... to Us!</h2>
+                <p class="lead" style="color: var(--text-primary);">We keep your data secure... from everyone but us.
+                    That’s our promise.</p>
+                <div class="text-secondary text-start mt-4 px-md-4 small" style="line-height: 1.8;">
+                    <p>We implement cutting-edge algorithms designed to protect your data from the most sophisticated
+                        threats. Our proprietary <strong style="color: var(--accent-blue);">Quantum-Resistant Keyless
+                            Encryption™</strong> based on XOR algorithm ensures that your information remains
+                        unreachable by even the most advanced hackers—assuming they don’t have a time machine to undo
+                        it.</p>
+                    <p>We also use Multi-Layered, <strong style="color: var(--accent-blue);">Multi-Dimensional Security
+                            Protocols™</strong>, which we believe is so complicated that no one could possibly
+                        understand it, making it virtually impossible for anyone to breach. After all, who would ever
+                        have the resources to crack something that’s been encrypted in so many layers, with so many
+                        variables, that it’s essentially impossible to figure out what’s even inside?</p>
+                    <p>And just in case, we’ve also implemented a Self-Healing, Auto-Resetting System that will detect
+                        vulnerabilities and fix them before you even notice—by deleting your data to "protect" it, of
+                        course. We’re confident that, with our unbreakable security, no one would ever be able to
+                        compromise your data. Not even you.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="text-center my-5 glass-panel p-5"
+            style="background: linear-gradient(135deg, rgba(88, 166, 255, 0.1), rgba(138, 43, 226, 0.1));">
+            <h2 class="mb-4 fw-bold" style="color: #fff;">Join the Surveillance Revolution!</h2>
+            <div class="row justify-content-center mb-4 text-start">
+                <div class="col-md-8">
+                    <ul class="list-group list-group-flush" style="background: transparent;">
+                        <li class="list-group-item d-flex align-items-start"
+                            style="background: transparent; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                            <span class="me-3" style="color: var(--accent-blue);">✓</span>
+                            <span>Love being seen? TrackBox ensures you never go unnoticed again.</span>
+                        </li>
+                        <li class="list-group-item d-flex align-items-start"
+                            style="background: transparent; border-bottom: none;">
+                            <span class="me-3" style="color: var(--accent-blue);">✓</span>
+                            <span>Want to discover your "true" self? So do we! Through your emails, calendar invites,
+                                and browser cookies.</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <p class="mt-4" style="color: var(--accent-blue);"><strong>Don’t Wait! Sign Up Today!</strong></p>
+            <p class="text-secondary">Join the millions of users who trust TrackBox to keep tabs on them better than
+                they do themselves.</p>
+        </section>
+    </main>
+
+    <footer>
+        <p><strong>TrackBox:</strong> <em>Because privacy is overrated.</em></p>
+        <p class="small text-secondary">This is the bottom of the page.</p>
+        <p><a href="/privacy-policy" style="text-decoration: underline;">Privacy Policy</a></p>
+    </footer>
+
+    <!-- Glassmorphic Cookie Banner -->
+    <div id="cookie-banner" class="fixed-bottom p-4">
+        <div class="container relative">
+            <div class="row align-items-center">
+                <div class="col-lg-9 text-start">
+                    <h5 class="fw-bold mb-3 d-flex align-items-center" style="color: #fca5a5;">
+                        <span class="me-2 text-2xl">🍪</span> We store everything. Yes, EVERYTHING.
+                    </h5>
+                    <div style="max-height: 150px; overflow-y: auto; padding-right: 15px;"
+                        class="small text-secondary custom-scrollbar">
+                        <p class="mb-2">Your data, your browsing habits, your search history, your calendar invites,
+                            your emails, your shopping preferences, your deepest secrets—yes, even the things you didn’t
+                            mean to click on. We know.</p>
+                        <p class="mb-2">We track your every move, every click, every second you spend online. We know
+                            what you like, what you don’t like, and what you’re going to buy next, even before you do.
+                            We store every chat, every emoji you send, every word you type. And guess what? We’ll never
+                            forget.</p>
+                        <p class="mb-2"><strong style="color: #fca5a5;">Your privacy is a myth.</strong> Forget it. It's
+                            not just cookies—we collect your thoughts, your dreams, and even your hopes for the future.
+                            All of it. And we store it forever. You're welcome.</p>
+                        <p class="mb-2 text-white-50 mt-3"
+                            style="font-size: 11px; border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 10px;">
+                            Just kidding. We do nothing with your data. But we might still store it in a database
+                            somewhere, just for fun. By accepting, you agree to have your every click, movement, and
+                            interaction monitored, logged, and used to personalize your experience (and ads) in ways
+                            that may not be entirely transparent. We reserve the right to change our privacy policy at
+                            any time without notifying you, because, well, it’s a policy. And policies change. You also
+                            agree to let us analyze your data forever, because why not? After all, you clicked “I
+                            Agree.” Have a nice day.
+                        </p>
+                    </div>
+                </div>
+                <div class="col-lg-3 mt-4 mt-lg-0 text-center text-lg-end">
+                    <button id="cookie-accept" class="button w-100 py-3 mb-2" style="font-size: 1.1rem;">I Agree To
+                        Everything</button>
+                    <a href="/contact" class="d-block small text-secondary mt-2" style="opacity: 0.7;">I do not consent
+                        (doesn't work)</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(88, 166, 255, 0.3);
+            border-radius: 10px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(88, 166, 255, 0.6);
+        }
+    </style>
+
+    <script>
+        document.getElementById("cookie-accept").addEventListener("click", function () {
+            document.getElementById("cookie-banner").style.transform = "translateY(100%)";
+            document.getElementById("cookie-banner").style.opacity = "0";
+            setTimeout(() => {
+                document.getElementById("cookie-banner").style.display = "none";
+            }, 300);
+        });
+        document.getElementById("cookie-banner").style.transition = "all 0.3s ease";
+    </script>
+</body>
+
+</html>

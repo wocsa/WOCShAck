@@ -1,0 +1,25 @@
+{% extends "base/base.html" %}
+{% load static %}
+
+
+{% block title %}V.R.C - Advertisement{% endblock %}
+
+<!-- Ad buyers click banners; scanners click everything. Only one of those behaviors is invited. -->
+
+{% block module_css %}
+<link rel="stylesheet" href="{% static 'css/advertisement.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="card animate-fade-in-up" style="max-width: 800px; margin: 2rem auto; text-align: center;">
+    <h1 style="background: var(--vrc-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 1.5rem;">
+        Advertisement Center
+    </h1>
+    <p style="color: var(--vrc-gray-600);">
+        Welcome to the V.R.C Advertisement Center. This module is under development.
+    </p>
+    <div style="margin-top: 2rem;">
+        <a href="/" class="btn btn-primary">Return to Home</a>
+    </div>
+</div>
+{% endblock %}

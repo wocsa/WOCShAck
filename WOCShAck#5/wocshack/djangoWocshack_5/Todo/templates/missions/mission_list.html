@@ -1,0 +1,222 @@
+{% extends "base/base.html" %}
+{% load static %}
+
+
+{% block title %}V.R.C - Mission Board{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/missions.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="mission-board animate-fade-in-up">
+
+    <!-- Header -->
+    <div class="mission-board-header">
+        <h1 class="mission-board-title">Mission Board</h1>
+        <div class="mission-board-actions">
+            <a href="{% url 'mission_api_export' %}?format=json" class="btn btn-ghost btn-sm" title="Export JSON">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Export
+            </a>
+            <a href="{% url 'mission_create' %}" class="btn btn-primary btn-sm" id="btn-create-mission">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                New Mission
+            </a>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="mission-filters">
+        <form method="get" action="{% url 'mission_list' %}" id="filter-form">
+            <div class="filter-row">
+                <div class="filter-group">
+                    <label for="filter-search">Search</label>
+                    <input type="text" id="filter-search" name="search" value="{{ current_search }}" placeholder="Search missions…">
+                </div>
+                <div class="filter-group">
+                    <label for="filter-status">Status</label>
+                    <select id="filter-status" name="status">
+                        <option value="">All Statuses</option>
+                        {% for value, label in status_choices %}
+                        <option value="{{ value }}" {% if current_status == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="filter-priority">Priority</label>
+                    <select id="filter-priority" name="priority">
+                        <option value="">All Priorities</option>
+                        {% for value, label in priority_choices %}
+                        <option value="{{ value }}" {% if current_priority == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="filter-category">Category</label>
+                    <select id="filter-category" name="category">
+                        <option value="">All Categories</option>
+                        {% for cat in categories %}
+                        <option value="{{ cat }}" {% if current_category == cat %}selected{% endif %}>{{ cat }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="filter-sort">Sort By</label>
+                    <select id="filter-sort" name="sort">
+                        <option value="created_at" {% if current_sort == 'created_at' %}selected{% endif %}>Created</option>
+                        <option value="due_date" {% if current_sort == 'due_date' %}selected{% endif %}>Due Date</option>
+                        <option value="priority" {% if current_sort == 'priority' %}selected{% endif %}>Priority</option>
+                        <option value="title" {% if current_sort == 'title' %}selected{% endif %}>Title</option>
+                        <option value="status" {% if current_sort == 'status' %}selected{% endif %}>Status</option>
+                    </select>
+                </div>
+                <input type="hidden" name="order" value="{{ current_order }}">
+                <div class="filter-actions">
+                    <button type="submit" class="btn btn-secondary btn-sm">Filter</button>
+                    <a href="{% url 'mission_list' %}" class="btn btn-ghost btn-sm">Reset</a>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Mission List -->
+    {% if page_obj.object_list %}
+    <div class="mission-grid">
+        {% for mission in page_obj %}
+        <div class="mission-card priority-{{ mission.priority }} status-{{ mission.status }} {% if mission.is_overdue %}is-overdue{% endif %} animate-fade-in-up"
+             style="animation-delay: {{ forloop.counter0 }}00ms;" id="mission-card-{{ mission.id }}">
+
+            <!-- Status toggle button -->
+            <button class="mission-toggle status-{{ mission.status }}"
+                    onclick="toggleMissionStatus({{ mission.id }})"
+                    title="Toggle status ({{ mission.get_status_display }})"
+                    id="mission-toggle-{{ mission.id }}">
+                {% if mission.status == 'completed' %}
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                {% elif mission.status == 'in_progress' %}
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                {% elif mission.status == 'cancelled' %}
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                {% else %}
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>
+                {% endif %}
+            </button>
+
+            <!-- Mission content -->
+            <div class="mission-content">
+                <a href="{% url 'mission_detail' mission.id %}" class="mission-title-link">{{ mission.title }}</a>
+                <div class="mission-meta">
+                    <span class="badge badge-priority-{{ mission.priority }}">{{ mission.get_priority_display }}</span>
+                    <span class="badge badge-status-{{ mission.status }}">{{ mission.get_status_display }}</span>
+                    {% if mission.category %}
+                    <span class="badge badge-category">{{ mission.category }}</span>
+                    {% endif %}
+                    {% if mission.is_staff_shared %}
+                    <span class="badge badge-shared">Shared</span>
+                    {% endif %}
+                    {% if mission.due_date %}
+                    <span class="mission-meta-item {% if mission.is_overdue %}overdue-text{% endif %}">
+                        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                        {% if mission.is_overdue %}Overdue: {% endif %}{{ mission.due_date|date:"M d, Y H:i" }}
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="mission-card-actions">
+                <a href="{% url 'mission_update' mission.id %}" class="btn btn-ghost btn-sm" title="Edit">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                </a>
+                {% if mission.user == request.user %}
+                <form method="post" action="{% url 'mission_delete' mission.id %}" style="display: inline;" onsubmit="return confirm('Delete this mission?')">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-ghost btn-sm" title="Delete" style="color: var(--vrc-error);">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if page_obj.has_other_pages %}
+    <div class="pagination">
+        {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}&status={{ current_status }}&priority={{ current_priority }}&category={{ current_category }}&search={{ current_search }}&sort={{ current_sort }}&order={{ current_order }}">&laquo; Prev</a>
+        {% endif %}
+
+        {% for num in page_obj.paginator.page_range %}
+            {% if page_obj.number == num %}
+            <span class="current">{{ num }}</span>
+            {% elif num > page_obj.number|add:"-3" and num < page_obj.number|add:"3" %}
+            <a href="?page={{ num }}&status={{ current_status }}&priority={{ current_priority }}&category={{ current_category }}&search={{ current_search }}&sort={{ current_sort }}&order={{ current_order }}">{{ num }}</a>
+            {% endif %}
+        {% endfor %}
+
+        {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}&status={{ current_status }}&priority={{ current_priority }}&category={{ current_category }}&search={{ current_search }}&sort={{ current_sort }}&order={{ current_order }}">Next &raquo;</a>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    {% else %}
+    <!-- Empty state -->
+    <div class="mission-empty">
+        <div class="mission-empty-icon">
+            <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="white" stroke-width="1.5"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+        </div>
+        <h3>No Missions Yet</h3>
+        <p>Create your first mission to get started with the Mission Board.</p>
+        <a href="{% url 'mission_create' %}" class="btn btn-primary">Create Mission</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleMissionStatus(missionId) {
+    const card = document.getElementById('mission-card-' + missionId);
+    const toggle = document.getElementById('mission-toggle-' + missionId);
+
+    fetch('/todos/missions/' + missionId + '/toggle/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            alert(data.error);
+            return;
+        }
+        // Refresh the page to reflect changes cleanly
+        window.location.reload();
+    })
+    .catch(err => {
+        console.error('Toggle failed:', err);
+    });
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+{% endblock %}

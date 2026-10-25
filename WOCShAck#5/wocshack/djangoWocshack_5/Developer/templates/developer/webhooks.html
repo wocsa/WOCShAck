@@ -1,0 +1,89 @@
+{% extends 'base/base.html' %}
+{% block title %}Webhooks - V.R.C{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dev-container { max-width: 1000px; margin: 0 auto; padding: var(--vrc-spacing-xl); }
+    .page-header h1 { font-size: var(--vrc-font-size-2xl); font-weight: var(--vrc-font-weight-bold); margin-bottom: var(--vrc-spacing-xl); }
+    .section { background: var(--vrc-white); border-radius: var(--vrc-radius-lg); padding: var(--vrc-spacing-xl); box-shadow: var(--vrc-shadow-md); margin-bottom: var(--vrc-spacing-xl); }
+    .section h2 { font-size: var(--vrc-font-size-lg); font-weight: var(--vrc-font-weight-semibold); margin-bottom: var(--vrc-spacing-md); }
+    .form-group { margin-bottom: var(--vrc-spacing-md); }
+    .form-group label { display: block; font-size: var(--vrc-font-size-sm); font-weight: var(--vrc-font-weight-medium); color: var(--vrc-gray-700); margin-bottom: 4px; }
+    .form-group input { width: 100%; padding: 8px 12px; border: 1px solid var(--vrc-gray-300); border-radius: var(--vrc-radius-md); font-size: var(--vrc-font-size-sm); box-sizing: border-box; }
+    .form-group input:focus { outline: none; border-color: var(--vrc-primary); }
+    .checkbox-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; }
+    .checkbox-label { display: flex; align-items: center; gap: 6px; font-size: var(--vrc-font-size-sm); color: var(--vrc-gray-700); }
+    .btn-primary { padding: 8px 20px; background: var(--vrc-gradient); color: white; border: none; border-radius: var(--vrc-radius-md); cursor: pointer; font-size: var(--vrc-font-size-sm); }
+    .webhook-item { display: flex; justify-content: space-between; align-items: center; padding: var(--vrc-spacing-md); border: 1px solid var(--vrc-gray-200); border-radius: var(--vrc-radius-md); margin-bottom: var(--vrc-spacing-sm); }
+    .webhook-url { font-family: monospace; font-size: var(--vrc-font-size-sm); word-break: break-all; }
+    .webhook-meta { font-size: var(--vrc-font-size-xs); color: var(--vrc-gray-500); margin-top: 4px; }
+    .webhook-actions { display: flex; gap: 8px; flex-shrink: 0; }
+    .webhook-actions a { font-size: var(--vrc-font-size-xs); color: var(--vrc-primary); text-decoration: none; }
+    .btn-sm-danger { color: var(--vrc-error); font-size: var(--vrc-font-size-xs); background: none; border: none; cursor: pointer; }
+    .btn-sm { font-size: var(--vrc-font-size-xs); background: none; border: none; cursor: pointer; color: var(--vrc-info); }
+    .badge-active { background: var(--vrc-success-light); color: var(--vrc-success); padding: 2px 8px; border-radius: var(--vrc-radius-full); font-size: var(--vrc-font-size-xs); }
+    .badge-inactive { background: var(--vrc-gray-200); color: var(--vrc-gray-600); padding: 2px 8px; border-radius: var(--vrc-radius-full); font-size: var(--vrc-font-size-xs); }
+    .back-link { display: inline-block; margin-bottom: var(--vrc-spacing-lg); color: var(--vrc-primary); text-decoration: none; font-size: var(--vrc-font-size-sm); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dev-container">
+    <a href="{% url 'developer_dashboard' %}" class="back-link">&larr; Back to Dashboard</a>
+    <div class="page-header">
+        <h1>Webhooks</h1>
+    </div>
+
+    <div class="section">
+        <h2>Create Webhook</h2>
+        <form method="post" action="{% url 'developer_create_webhook' %}">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="url">Endpoint URL</label>
+                <input type="url" id="url" name="url" required placeholder="https://your-server.com/webhook">
+            </div>
+            <div class="form-group">
+                <label>Events</label>
+                <div class="checkbox-grid">
+                    {% for event in event_choices %}
+                    <label class="checkbox-label"><input type="checkbox" name="events" value="{{ event }}"> {{ event }}</label>
+                    {% endfor %}
+                </div>
+            </div>
+            <button type="submit" class="btn-primary">Create Webhook</button>
+        </form>
+    </div>
+
+    <div class="section">
+        <h2>Your Webhooks</h2>
+        {% for wh in webhooks %}
+        <div class="webhook-item">
+            <div>
+                <div class="webhook-url">{{ wh.url }}
+                    {% if wh.is_active %}<span class="badge-active">Active</span>{% else %}<span class="badge-inactive">Inactive</span>{% endif %}
+                </div>
+                <div class="webhook-meta">
+                    Events: {{ wh.events|join:", " }} |
+                    Failures: {{ wh.failure_count }}
+                    {% if wh.last_triggered_at %} | Last triggered: {{ wh.last_triggered_at|date:"M d H:i" }}{% endif %}
+                </div>
+            </div>
+            <div class="webhook-actions">
+                <a href="{% url 'developer_edit_webhook' webhook_id=wh.id %}">Edit</a>
+                <a href="{% url 'developer_webhook_logs' webhook_id=wh.id %}">Logs</a>
+                <form method="post" action="{% url 'developer_test_webhook' webhook_id=wh.id %}" style="display:inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-sm">Test</button>
+                </form>
+                <form method="post" action="{% url 'developer_delete_webhook' webhook_id=wh.id %}" style="display:inline;" onsubmit="return confirm('Delete this webhook?');">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-sm-danger">Delete</button>
+                </form>
+            </div>
+        </div>
+        {% empty %}
+        <p style="color: var(--vrc-gray-500);">No webhooks configured.</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,211 @@
+{% extends "base/base.html" %}
+{% load static %}
+
+{% block title %}V.R.C - Banking{% endblock %}
+
+{% block body_class %}vrc-body bank-landing{% endblock %}
+
+<!-- Financial systems appreciate humans, audit trails, and consent; indiscriminate scanning earns only paperwork. -->
+
+{% block module_css %}
+<link rel="stylesheet" href="{% static 'css/index.css' %}">
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .claim-banner {
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.9) 0%, rgba(118, 75, 162, 0.9) 100%);
+        border-radius: 16px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        color: white;
+        box-shadow: 0 8px 32px rgba(102, 126, 234, 0.3);
+        border: 1px solid rgba(102, 126, 234, 0.3);
+    }
+
+    .claim-content h3 {
+        font-size: 1.25rem;
+        font-weight: 700;
+        margin: 0 0 0.5rem;
+    }
+
+    .claim-content p {
+        margin: 0 0 1rem;
+        opacity: 0.9;
+    }
+
+    .claim-button {
+        background: white;
+        color: #667eea;
+        border: none;
+        padding: 0.75rem 1.5rem;
+        border-radius: 10px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-size: 1rem;
+    }
+
+    .claim-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+</style>
+{% endblock %}
+
+{% block content_wrapper_class %}{% endblock %}
+
+{% block content %}
+<div class="hero-container">
+    <div class="hero-header" style="position:relative;padding:2rem;">
+        <div class="logo">
+            <span class="logo-icon">🏦</span>
+            <h1>V.R.C Banking</h1>
+        </div>
+        <nav class="nav-links">
+            <a href="#features">Features</a>
+            <a href="#about">About</a>
+            <a href="#contact">Contact</a>
+            <a href="/">Home</a>
+            <a href="/shop/">E-Shop</a>
+            <a href="/forum/">Forum</a>
+            <a href="/advertisement">Ads</a>
+            <a href="/chatbot/">Support</a>
+        </nav>
+    </div>
+
+    <main class="hero-content">
+        <div class="hero-text">
+            <h2 class="hero-title">Modern Banking<br><span class="gradient-text">Simplified</span></h2>
+            <p class="hero-description">
+                Experience the future of banking with our secure, fast, and intuitive platform.
+                Manage your finances with confidence and ease.
+            </p>
+
+            {% if show_claim_banner %}
+            <div class="claim-banner">
+                <div class="claim-content">
+                    <h3>🎉 Welcome Bonus: 150 Neuros!</h3>
+                    <p>You have a bank account but haven't claimed your bonus yet. Claim it now!</p>
+                    <form method="POST" action="/banking/dashboard/">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="claim_bonus">
+                        <button type="submit" class="claim-button">
+                            Claim Now
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="hero-actions">
+                {% if user.is_authenticated %}
+                <button class="primary-btn" onclick="window.location.href='/banking/verification/';">
+                    <span>Get Started</span>
+                    <span class="btn-icon">→</span>
+                </button>
+                {% else %}
+                <button class="primary-btn" onclick="window.location.href='/account/register/';">
+                    <span>Get Started</span>
+                    <span class="btn-icon">→</span>
+                </button>
+                {% endif %}
+                <button class="secondary-btn" onclick="document.getElementById('features').scrollIntoView({behavior: 'smooth'});">
+                    <span>Learn More</span>
+                </button>
+            </div>
+
+            <div class="hero-stats">
+                <div class="stat">
+                    <span class="stat-number">Instant</span>
+                    <span class="stat-label">Transfers</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-number">PIN</span>
+                    <span class="stat-label">Protected</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-number">Free</span>
+                    <span class="stat-label">To Join</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="hero-visual">
+            <div class="banking-card">
+                <div class="card-header">
+                    <span class="card-logo">Virtual</span>
+                    <span class="card-type">V.R.C</span>
+                </div>
+                <div class="card-arr"><</div>
+                <div class="card-footer">
+                    <div class="card-number">
+                        <span class="label">Card Number</span>
+                        <span class="name">**** **** **** 8842</span>
+                    </div>
+                    <div class="card-hook">
+                    </div>
+                </div>
+            </div>
+
+            <div class="floating-elements">
+                <div class="floating-item" style="--delay: 0s">💳</div>
+                <div class="floating-item" style="--delay: 1s">💰</div>
+                <div class="floating-item" style="--delay: 2s">📱</div>
+                <div class="floating-item" style="--delay: 3s">🔒</div>
+            </div>
+        </div>
+    </main>
+
+    <section class="features-preview" id="features">
+        <div class="feature-card">
+            <div class="feature-icon">🚀</div>
+            <h3>Lightning Fast</h3>
+            <p>Instant transfers and real-time updates</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🔐</div>
+            <h3>Bank-Level Security</h3>
+            <p>Your data is protected with military-grade encryption</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">📊</div>
+            <h3>Smart Analytics</h3>
+            <p>Track spending patterns and financial insights</p>
+        </div>
+    </section>
+</div>
+
+<section id="about" style="max-width: 1200px; margin: 0 auto; padding: 4rem 2rem; position: relative; z-index: 1;">
+    <div style="background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 20px; padding: 3rem; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);">
+        <h2 style="font-size: 2rem; font-weight: 800; margin-bottom: 1.5rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">About V.R.C Banking</h2>
+        <p style="color: #666; line-height: 1.8; font-size: 1.1rem; margin-bottom: 1rem;">
+            V.R.C (Virtual Reality Commerce) Banking is a digital banking platform built for the modern web.
+            Manage your Neuros, send instant transfers to other users, and keep track of your transaction history — all from one dashboard.
+        </p>
+        <p style="color: #666; line-height: 1.8; font-size: 1.1rem;">
+            Every account is secured with a personal PIN. Whether you are purchasing CSS themes from the shop,
+            paying fellow users, or managing your bank cards, V.R.C gives you full control over your finances.
+        </p>
+    </div>
+</section>
+
+<section id="contact" style="max-width: 1200px; margin: 0 auto; padding: 0 2rem 4rem; position: relative; z-index: 1;">
+    <div style="background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 20px; padding: 3rem; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1); text-align: center;">
+        <h2 style="font-size: 2rem; font-weight: 800; margin-bottom: 1.5rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">Contact Us</h2>
+        <p style="color: #666; line-height: 1.8; font-size: 1.1rem; margin-bottom: 1.5rem;">
+            Have questions or need help with your account? Our support team is here for you.
+        </p>
+        <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+            <a href="/chatbot/" style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 1rem 2rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 12px; font-weight: 600; font-size: 1rem; text-decoration: none; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3); transition: all 0.3s ease;">
+                💬 Chat with Support
+            </a>
+            <a href="/contact/" style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 1rem 2rem; background: rgba(102, 126, 234, 0.1); color: #667eea; border: 2px solid rgba(102, 126, 234, 0.2); border-radius: 12px; font-weight: 600; font-size: 1rem; text-decoration: none; transition: all 0.3s ease;">
+                📧 Contact Page
+            </a>
+        </div>
+    </div>
+</section>
+
+<div class="tapered-border"></div>
+{% endblock %}

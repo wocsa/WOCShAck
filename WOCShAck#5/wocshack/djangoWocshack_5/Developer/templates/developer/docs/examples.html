@@ -1,0 +1,135 @@
+{% extends 'base/base.html' %}
+{% block title %}Code Examples - V.R.C{% endblock %}
+
+{% block extra_css %}
+<style>
+    .docs-layout { display: grid; grid-template-columns: 240px 1fr; max-width: 1200px; margin: 0 auto; padding: var(--vrc-spacing-xl); gap: var(--vrc-spacing-xl); }
+    .docs-sidebar { position: sticky; top: 100px; align-self: start; }
+    .docs-sidebar h3 { font-size: var(--vrc-font-size-sm); text-transform: uppercase; letter-spacing: 0.1em; color: var(--vrc-gray-500); margin-bottom: var(--vrc-spacing-sm); }
+    .docs-nav { list-style: none; padding: 0; }
+    .docs-nav li { margin-bottom: 4px; }
+    .docs-nav a { display: block; padding: 8px 12px; border-radius: var(--vrc-radius-md); color: var(--vrc-gray-600); text-decoration: none; font-size: var(--vrc-font-size-sm); }
+    .docs-nav a:hover, .docs-nav a.active { background: rgba(102, 126, 234, 0.1); color: var(--vrc-primary); }
+    .docs-content { background: var(--vrc-white); border-radius: var(--vrc-radius-lg); padding: var(--vrc-spacing-xl) var(--vrc-spacing-2xl); box-shadow: var(--vrc-shadow-md); }
+    .docs-content h1 { font-size: var(--vrc-font-size-3xl); font-weight: var(--vrc-font-weight-bold); margin-bottom: var(--vrc-spacing-lg); }
+    .docs-content h2 { font-size: var(--vrc-font-size-xl); font-weight: var(--vrc-font-weight-semibold); margin-top: var(--vrc-spacing-xl); margin-bottom: var(--vrc-spacing-md); }
+    .docs-content p { line-height: var(--vrc-line-height-relaxed); color: var(--vrc-gray-600); margin-bottom: var(--vrc-spacing-md); }
+    .docs-content code { background: var(--vrc-gray-100); padding: 2px 6px; border-radius: var(--vrc-radius-sm); font-size: var(--vrc-font-size-sm); }
+    .docs-content pre { background: var(--vrc-gray-800); color: var(--vrc-gray-100); padding: var(--vrc-spacing-lg); border-radius: var(--vrc-radius-md); overflow-x: auto; margin-bottom: var(--vrc-spacing-lg); }
+    .docs-content pre code { background: none; padding: 0; color: inherit; }
+    .back-link { display: inline-block; margin-bottom: var(--vrc-spacing-lg); color: var(--vrc-primary); text-decoration: none; font-size: var(--vrc-font-size-sm); }
+    @media (max-width: 768px) { .docs-layout { grid-template-columns: 1fr; } }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="docs-layout">
+    <div class="docs-sidebar">
+        <a href="{% url 'developer_dashboard' %}" class="back-link">&larr; Dashboard</a>
+        <h3>Documentation</h3>
+        <ul class="docs-nav">
+            <li><a href="{% url 'developer_docs' %}">Getting Started</a></li>
+            <li><a href="{% url 'developer_docs_api' %}">API Reference</a></li>
+            <li><a href="{% url 'developer_docs_webhooks' %}">Webhooks</a></li>
+            <li><a href="{% url 'developer_docs_examples' %}" class="active">Examples</a></li>
+        </ul>
+    </div>
+
+    <div class="docs-content">
+        <h1>Code Examples</h1>
+
+        <h2>Python — List Your CSS Projects</h2>
+        <pre><code>import requests
+
+API_KEY = "vrc_your_api_key_here"
+BASE_URL = "http://localhost:8000/api"
+
+headers = {"X-API-Key": API_KEY}
+
+response = requests.get(f"{BASE_URL}/css/my/", headers=headers)
+projects = response.json()
+
+for project in projects["data"]:
+    print(f"{project['name']} - {project['category']}")</code></pre>
+
+        <h2>JavaScript — Fetch Analytics</h2>
+        <pre><code>const API_KEY = 'vrc_your_api_key_here';
+
+async function getAnalytics(days = 30) {
+    const response = await fetch(
+        `/api/analytics/?days=${days}`,
+        { headers: { 'X-API-Key': API_KEY } }
+    );
+    const data = await response.json();
+    console.log(`Revenue: ${data.data.total_revenue} NE`);
+    console.log(`Sales: ${data.data.total_sales}`);
+    return data;
+}</code></pre>
+
+        <h2>Python — Webhook Handler (Flask)</h2>
+        <pre><code>import hmac
+import hashlib
+from flask import Flask, request, jsonify
+
+app = Flask(__name__)
+WEBHOOK_SECRET = "your_webhook_secret"
+
+@app.route("/webhook", methods=["POST"])
+def handle_webhook():
+    signature = request.headers.get("X-Webhook-Signature", "")
+    payload = request.get_data()
+
+    expected = hmac.new(
+        WEBHOOK_SECRET.encode(),
+        payload,
+        hashlib.sha256
+    ).hexdigest()
+
+    if not hmac.compare_digest(expected, signature):
+        return jsonify({"error": "Invalid signature"}), 401
+
+    event = request.json
+    print(f"Received event: {event['event']}")
+
+    if event["event"] == "sale.completed":
+        print(f"New sale! Amount: {event['data']['amount']} NE")
+
+    return jsonify({"status": "ok"}), 200</code></pre>
+
+        <h2>cURL — Create a CSS Project</h2>
+        <pre><code>curl -X POST http://localhost:8000/api/css/create/ \
+    -H "X-API-Key: vrc_your_api_key_here" \
+    -H "Content-Type: application/json" \
+    -d '{
+        "name": "My Dark Theme",
+        "description": "A sleek dark theme for modern web apps"
+    }'</code></pre>
+
+        <h2>CSS Template — Starter Button Styles</h2>
+        <pre><code>/* VRC Button Component */
+.vrc-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.625rem 1.25rem;
+    border: none;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 200ms ease;
+}
+
+.vrc-btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.vrc-btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+}</code></pre>
+    </div>
+</div>
+{% endblock %}

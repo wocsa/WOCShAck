@@ -1,0 +1,89 @@
+{% extends "base/base.html" %}
+{% load static %}
+
+
+{% block title %}Browse Messages - Chatbot Moderation{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'base/css/admin.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Browse Chat Messages</h1>
+    <a href="{% url 'chatbot:admin_dashboard' %}" class="back-link">&larr; Back to Dashboard</a>
+</div>
+
+<form method="get" class="filters-bar">
+    <div class="filter-group">
+        <label for="q">Search:</label>
+        <input type="text" name="q" id="q" value="{{ search_query }}" placeholder="Search messages or responses...">
+    </div>
+    <div class="filter-group">
+        <label for="user">Username:</label>
+        <input type="text" name="user" id="user" value="{{ user_filter }}" placeholder="Filter by username...">
+    </div>
+    <div class="filter-group">
+        <label for="date_from">From:</label>
+        <input type="date" name="date_from" id="date_from" value="{{ date_from }}">
+    </div>
+    <div class="filter-group">
+        <label for="date_to">To:</label>
+        <input type="date" name="date_to" id="date_to" value="{{ date_to }}">
+    </div>
+    <button type="submit" class="filter-btn">Search</button>
+</form>
+
+{% if messages_list %}
+<table class="messages-table">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>User</th>
+            <th>Message</th>
+            <th>Response</th>
+            <th>Time</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for msg in messages_list %}
+        <tr>
+            <td>{{ msg.id }}</td>
+            <td>{% if msg.user %}{{ msg.user.username }}{% else %}Anonymous{% endif %}</td>
+            <td class="text-preview" title="{{ msg.message }}">{{ msg.message|truncatewords:8 }}</td>
+            <td class="text-preview" title="{{ msg.response }}">{{ msg.response|truncatewords:8 }}</td>
+            <td>{{ msg.timestamp|timesince }} ago</td>
+            <td class="action-links">
+                <a href="{% url 'chatbot:edit_response' message_id=msg.id %}">Edit</a>
+                <a href="{% url 'chatbot:score_response' message_id=msg.id %}">Score</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% if page_obj.has_other_pages %}
+<div class="pagination-container">
+    {% if page_obj.has_previous %}
+    <a href="?page={{ page_obj.previous_page_number }}&q={{ search_query }}&user={{ user_filter }}&date_from={{ date_from }}&date_to={{ date_to }}">&laquo; Prev</a>
+    {% endif %}
+    {% for num in page_obj.paginator.page_range %}
+        {% if page_obj.number == num %}
+        <span class="current">{{ num }}</span>
+        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+        <a href="?page={{ num }}&q={{ search_query }}&user={{ user_filter }}&date_from={{ date_from }}&date_to={{ date_to }}">{{ num }}</a>
+        {% endif %}
+    {% endfor %}
+    {% if page_obj.has_next %}
+    <a href="?page={{ page_obj.next_page_number }}&q={{ search_query }}&user={{ user_filter }}&date_from={{ date_from }}&date_to={{ date_to }}">Next &raquo;</a>
+    {% endif %}
+</div>
+{% endif %}
+
+{% else %}
+<div class="empty-state">
+    <p>No messages matching your search criteria.</p>
+</div>
+{% endif %}
+{% endblock %}

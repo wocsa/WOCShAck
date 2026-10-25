@@ -1,0 +1,419 @@
+{% extends "base/base_forum.html" %}
+{% load static %}
+
+
+{% block title %}V.R.C - Community Forum{% endblock %}
+
+<!-- Forum etiquette for bots: lurk gently, rate-limit yourself, and do not confuse pagination with permission. -->
+
+{% block extra_css %}
+<style>
+    .forum-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 40px;
+        border-radius: 16px;
+        margin-bottom: 30px;
+        text-align: center;
+    }
+    .forum-header h1 {
+        font-size: 2.5rem;
+        margin-bottom: 10px;
+    }
+    .forum-header p {
+        opacity: 0.9;
+        font-size: 1.1rem;
+    }
+
+    .forum-stats {
+        display: flex;
+        justify-content: center;
+        gap: 40px;
+        margin-top: 20px;
+    }
+    .stat-item {
+        text-align: center;
+    }
+    .stat-value {
+        font-size: 2rem;
+        font-weight: 700;
+    }
+    .stat-label {
+        font-size: 0.9rem;
+        opacity: 0.8;
+    }
+
+    .forum-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+    .search-box {
+        display: flex;
+        gap: 10px;
+        flex: 1;
+        max-width: 400px;
+    }
+    .search-box input {
+        flex: 1;
+        padding: 10px 15px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        font-size: 1rem;
+    }
+    .search-box button {
+        padding: 10px 20px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: transform 0.2s ease;
+    }
+    .search-box button:hover {
+        transform: translateY(-2px);
+    }
+
+    .categories-section h2 {
+        font-size: 1.5rem;
+        margin-bottom: 20px;
+        color: #333;
+    }
+
+    .category-list {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+    .category-card {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        text-decoration: none;
+        color: inherit;
+    }
+    .category-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+    }
+    .category-icon {
+        width: 60px;
+        height: 60px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        flex-shrink: 0;
+    }
+    .category-icon svg {
+        width: 30px;
+        height: 30px;
+    }
+    .category-info {
+        flex: 1;
+    }
+    .category-name {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 5px;
+    }
+    .category-description {
+        color: #666;
+        font-size: 0.95rem;
+    }
+    .category-stats {
+        display: flex;
+        gap: 20px;
+        color: #888;
+        font-size: 0.9rem;
+        text-align: center;
+    }
+    .category-stats span {
+        display: flex;
+        flex-direction: column;
+    }
+    .category-stats strong {
+        font-size: 1.1rem;
+        color: #333;
+    }
+
+    .recent-section {
+        margin-top: 40px;
+    }
+    .recent-section h2 {
+        font-size: 1.5rem;
+        margin-bottom: 20px;
+        color: #333;
+    }
+    .recent-topics {
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    .recent-topic {
+        display: flex;
+        align-items: center;
+        padding: 15px 20px;
+        border-bottom: 1px solid #eee;
+        gap: 15px;
+        text-decoration: none;
+        color: inherit;
+        transition: background 0.2s ease;
+    }
+    .recent-topic:last-child {
+        border-bottom: none;
+    }
+    .recent-topic:hover {
+        background: #f8f9fa;
+    }
+    .topic-title {
+        flex: 1;
+        font-weight: 500;
+        color: #333;
+    }
+    .topic-meta {
+        color: #888;
+        font-size: 0.85rem;
+    }
+    .topic-category {
+        background: #667eea;
+        color: white;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+    }
+
+    /* Quick links bar */
+    .forum-quick-links {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-bottom: 20px;
+    }
+    .quick-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 14px;
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        color: #666;
+        text-decoration: none;
+        font-size: 0.9rem;
+        transition: all 0.2s ease;
+    }
+    .quick-link:hover {
+        border-color: #667eea;
+        color: #667eea;
+    }
+    .quick-link svg {
+        width: 16px;
+        height: 16px;
+    }
+    .quick-link .badge-count {
+        background: #ef4444;
+        color: white;
+        font-size: 0.7rem;
+        padding: 1px 6px;
+        border-radius: 10px;
+        font-weight: 600;
+    }
+
+    /* Create Topic Button */
+    .new-topic-btn {
+        padding: 10px 20px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        text-decoration: none;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .new-topic-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        color: white;
+    }
+    .new-topic-btn svg {
+        width: 18px;
+        height: 18px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="forum-header">
+    <h1>Community Forum</h1>
+    <p>Connect, discuss, and share with the V.R.C community</p>
+    <div class="forum-stats">
+        <div class="stat-item">
+            <div class="stat-value">{{ stats.total_topics }}</div>
+            <div class="stat-label">Topics</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value">{{ stats.total_posts }}</div>
+            <div class="stat-label">Posts</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value">{{ stats.total_members }}</div>
+            <div class="stat-label">Members</div>
+        </div>
+    </div>
+</div>
+
+<div class="forum-actions">
+    <form action="{% url 'forum_search' %}" method="get" class="search-box">
+        <input type="text" name="q" placeholder="Search the forum..." required>
+        <button type="submit">Search</button>
+    </form>
+    {% if user.is_authenticated %}
+    <a href="{% url 'forum_create_topic_general' %}" class="new-topic-btn">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+        </svg>
+        New Topic
+    </a>
+    {% else %}
+    <a href="{% url 'login' %}?next={{ request.path }}" class="new-topic-btn">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+        </svg>
+        Log in to Post
+    </a>
+    {% endif %}
+</div>
+
+<div class="forum-quick-links">
+    <a href="{% url 'forum_advanced_search' %}" class="quick-link">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+        Advanced Search
+    </a>
+    <a href="{% url 'forum_statistics' %}" class="quick-link">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+        </svg>
+        Statistics
+    </a>
+    {% if user.is_authenticated %}
+    <a href="{% url 'forum_notifications' %}" class="quick-link" id="notification-link">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+        </svg>
+        Notifications
+        <span class="badge-count" id="notif-badge" style="display: none;"></span>
+    </a>
+    <a href="{% url 'forum_bookmarks' %}" class="quick-link">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+        </svg>
+        Bookmarks
+    </a>
+    <a href="{% url 'forum_blocked_users' %}" class="quick-link">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+        </svg>
+        Blocked Users
+    </a>
+    {% endif %}
+    <a href="{% url 'forum_rss_latest' %}" class="quick-link" title="RSS Feed">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 5c7.18 0 13 5.82 13 13M6 11a7 7 0 017 7m-6 0a1 1 0 11-2 0 1 1 0 012 0z" />
+        </svg>
+        RSS
+    </a>
+</div>
+
+<div class="categories-section">
+    <h2>Categories</h2>
+    <div class="category-list">
+        {% for category in categories %}
+        <a href="{% url 'forum_category' slug=category.slug %}" class="category-card">
+            <div class="category-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                </svg>
+            </div>
+            <div class="category-info">
+                <div class="category-name">{{ category.name }}</div>
+                <div class="category-description">{{ category.description }}</div>
+            </div>
+            <div class="category-stats">
+                <span>
+                    <strong>{{ category.topic_count }}</strong>
+                    Topics
+                </span>
+                <span>
+                    <strong>{{ category.post_count }}</strong>
+                    Posts
+                </span>
+            </div>
+        </a>
+        {% empty %}
+        <div class="no-categories" style="text-align: center; padding: 40px; background: white; border-radius: 12px;">
+            <h3>No categories yet</h3>
+            <p>Forum categories will be created by administrators.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+{% if recent_topics %}
+<div class="recent-section">
+    <h2>Recent Discussions</h2>
+    <div class="recent-topics">
+        {% for topic in recent_topics %}
+        <a href="{% url 'forum_topic' topic_id=topic.id %}" class="recent-topic">
+            <span class="topic-category">{{ topic.category.name }}</span>
+            <span class="topic-title">{{ topic.title }}</span>
+            <span class="topic-meta">by {{ topic.author.username }} | {{ topic.created_at|timesince }} ago</span>
+        </a>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+{% if user.is_authenticated %}
+<script>
+// Fetch unread notification count for badge display
+(function() {
+    fetch('/forum/api/notifications/count/')
+    .then(function(response) { return response.json(); })
+    .then(function(data) {
+        if (data.unread_count && data.unread_count > 0) {
+            var badge = document.getElementById('notif-badge');
+            if (badge) {
+                badge.textContent = data.unread_count;
+                badge.style.display = 'inline';
+            }
+        }
+    })
+    .catch(function() {
+        // Silently fail - notification badge is not critical
+    });
+})();
+</script>
+{% endif %}
+{% endblock %}

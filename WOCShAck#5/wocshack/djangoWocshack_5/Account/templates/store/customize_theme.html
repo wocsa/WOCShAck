@@ -1,0 +1,331 @@
+{% extends "base/base_account.html" %}
+{% load static %}
+
+
+{% block title %}V.R.C - Customize Profile Theme{% endblock %}
+
+{% block account_title %}Customize Profile Theme{% endblock %}
+
+{% block account_subtitle %}
+<p class="account-subtitle">Choose colors for your public profile</p>
+{% endblock %}
+
+{% block account_content %}
+<div class="theme-container">
+    <a href="{% url 'store' %}" class="theme-back-link">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="15 18 9 12 15 6"/>
+        </svg>
+        Back to Store
+    </a>
+
+    <div class="theme-editor-grid">
+        <!-- Color Controls -->
+        <div class="theme-controls">
+            <form method="POST" action="{% url 'customize_theme' %}">
+                {% csrf_token %}
+
+                <div class="theme-color-group">
+                    <label for="primary_color">Primary Color</label>
+                    <p class="theme-color-hint">Used for headings and avatar border</p>
+                    <div class="theme-color-input-wrapper">
+                        <input type="color" id="primary_color" name="primary_color"
+                               value="{{ theme.primary_color }}" class="theme-color-picker">
+                        <input type="text" id="primary_color_hex" value="{{ theme.primary_color }}"
+                               class="theme-color-hex" pattern="^#[0-9A-Fa-f]{6}$" maxlength="7"
+                               onchange="document.getElementById('primary_color').value = this.value; updatePreview();">
+                    </div>
+                </div>
+
+                <div class="theme-color-group">
+                    <label for="secondary_color">Secondary Color</label>
+                    <p class="theme-color-hint">Used for gradient effects and accents</p>
+                    <div class="theme-color-input-wrapper">
+                        <input type="color" id="secondary_color" name="secondary_color"
+                               value="{{ theme.secondary_color }}" class="theme-color-picker">
+                        <input type="text" id="secondary_color_hex" value="{{ theme.secondary_color }}"
+                               class="theme-color-hex" pattern="^#[0-9A-Fa-f]{6}$" maxlength="7"
+                               onchange="document.getElementById('secondary_color').value = this.value; updatePreview();">
+                    </div>
+                </div>
+
+                <div class="theme-color-group">
+                    <label for="bio_background_color">Bio Background Color</label>
+                    <p class="theme-color-hint">Background color for your biography section</p>
+                    <div class="theme-color-input-wrapper">
+                        <input type="color" id="bio_background_color" name="bio_background_color"
+                               value="{{ theme.bio_background_color }}" class="theme-color-picker">
+                        <input type="text" id="bio_background_color_hex" value="{{ theme.bio_background_color }}"
+                               class="theme-color-hex" pattern="^#[0-9A-Fa-f]{6}$" maxlength="7"
+                               onchange="document.getElementById('bio_background_color').value = this.value; updatePreview();">
+                    </div>
+                </div>
+
+                <div class="theme-form-actions">
+                    <button type="submit" class="save-button">Save Theme</button>
+                    <button type="button" class="cancel-button" onclick="resetToDefaults()">Reset to Defaults</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Live Preview -->
+        <div class="theme-preview">
+            <h3 class="theme-preview-label">Live Preview</h3>
+            <div class="theme-preview-card" id="preview-card">
+                <div class="preview-avatar" id="preview-avatar">
+                    <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                        <circle cx="12" cy="7" r="4"/>
+                    </svg>
+                </div>
+                <h4 class="preview-username" id="preview-username">{{ user.username }}</h4>
+                <div class="preview-badges">
+                    <span class="preview-badge" id="preview-badge">User</span>
+                </div>
+                <div class="preview-bio" id="preview-bio">
+                    <p>{{ user.profile.biography|default:"This is how your biography section will look." }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <a href="{% url 'public_profile_by_username' user.username %}" class="theme-view-profile-link" target="_blank">
+        View your public profile
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+            <polyline points="15 3 21 3 21 9"/>
+            <line x1="10" y1="14" x2="21" y2="3"/>
+        </svg>
+    </a>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .theme-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    .theme-back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.375rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: var(--vrc-gray-500);
+        text-decoration: none;
+        margin-bottom: 1.5rem;
+        transition: color 0.2s;
+    }
+
+    .theme-back-link:hover {
+        color: var(--vrc-primary);
+    }
+
+    .theme-editor-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+    }
+
+    .theme-controls {
+        background: var(--vrc-white);
+        border: 1px solid var(--vrc-gray-200);
+        border-radius: var(--vrc-radius-xl);
+        padding: 1.5rem;
+    }
+
+    .theme-color-group {
+        margin-bottom: 1.25rem;
+    }
+
+    .theme-color-group label {
+        display: block;
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--vrc-gray-800);
+        margin-bottom: 0.125rem;
+    }
+
+    .theme-color-hint {
+        font-size: 0.75rem;
+        color: var(--vrc-gray-500);
+        margin: 0 0 0.5rem;
+    }
+
+    .theme-color-input-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .theme-color-picker {
+        width: 48px;
+        height: 40px;
+        border: 2px solid var(--vrc-gray-200);
+        border-radius: var(--vrc-radius-md);
+        padding: 2px;
+        cursor: pointer;
+        background: none;
+    }
+
+    .theme-color-hex {
+        flex: 1;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.9rem;
+        font-family: monospace;
+        border: 2px solid var(--vrc-gray-200);
+        border-radius: var(--vrc-radius-md);
+        text-transform: uppercase;
+    }
+
+    .theme-color-hex:focus {
+        outline: none;
+        border-color: var(--vrc-primary);
+    }
+
+    .theme-form-actions {
+        display: flex;
+        gap: 0.75rem;
+        margin-top: 1.5rem;
+    }
+
+    /* Preview */
+    .theme-preview {
+        position: sticky;
+        top: 2rem;
+    }
+
+    .theme-preview-label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--vrc-gray-500);
+        margin-bottom: 0.75rem;
+    }
+
+    .theme-preview-card {
+        background: var(--vrc-white);
+        border: 1px solid var(--vrc-gray-200);
+        border-radius: var(--vrc-radius-xl);
+        padding: 1.5rem;
+        text-align: center;
+    }
+
+    .preview-avatar {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1rem;
+        color: white;
+        border: 3px solid {{ theme.primary_color }};
+        background: linear-gradient(135deg, {{ theme.primary_color }} 0%, {{ theme.secondary_color }} 100%);
+    }
+
+    .preview-username {
+        font-size: 1.25rem;
+        font-weight: 700;
+        margin: 0 0 0.5rem;
+        color: var(--vrc-gray-900);
+    }
+
+    .preview-badges {
+        display: flex;
+        justify-content: center;
+        gap: 0.375rem;
+        margin-bottom: 1rem;
+    }
+
+    .preview-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.25rem 0.5rem;
+        font-size: 0.7rem;
+        font-weight: 600;
+        color: white;
+        border-radius: 12px;
+        background: linear-gradient(135deg, {{ theme.primary_color }} 0%, {{ theme.secondary_color }} 100%);
+    }
+
+    .preview-bio {
+        padding: 1rem;
+        border-radius: var(--vrc-radius-lg);
+        background: {{ theme.bio_background_color }};
+    }
+
+    .preview-bio p {
+        font-size: 0.85rem;
+        color: var(--vrc-gray-600);
+        margin: 0;
+        line-height: 1.5;
+    }
+
+    .theme-view-profile-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.375rem;
+        margin-top: 1.5rem;
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: var(--vrc-primary);
+        text-decoration: none;
+    }
+
+    .theme-view-profile-link:hover {
+        text-decoration: underline;
+    }
+
+    @media (max-width: 768px) {
+        .theme-editor-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .theme-preview {
+            position: static;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function updatePreview() {
+    var primary = document.getElementById('primary_color').value;
+    var secondary = document.getElementById('secondary_color').value;
+    var bioBg = document.getElementById('bio_background_color').value;
+
+    // Update hex input fields
+    document.getElementById('primary_color_hex').value = primary;
+    document.getElementById('secondary_color_hex').value = secondary;
+    document.getElementById('bio_background_color_hex').value = bioBg;
+
+    // Update preview
+    var avatar = document.getElementById('preview-avatar');
+    avatar.style.borderColor = primary;
+    avatar.style.background = 'linear-gradient(135deg, ' + primary + ' 0%, ' + secondary + ' 100%)';
+
+    var badge = document.getElementById('preview-badge');
+    badge.style.background = 'linear-gradient(135deg, ' + primary + ' 0%, ' + secondary + ' 100%)';
+
+    var bio = document.getElementById('preview-bio');
+    bio.style.background = bioBg;
+}
+
+function resetToDefaults() {
+    document.getElementById('primary_color').value = '#667eea';
+    document.getElementById('secondary_color').value = '#764ba2';
+    document.getElementById('bio_background_color').value = '#f0f0ff';
+    updatePreview();
+}
+
+// Attach live preview listeners to color pickers
+document.getElementById('primary_color').addEventListener('input', updatePreview);
+document.getElementById('secondary_color').addEventListener('input', updatePreview);
+document.getElementById('bio_background_color').addEventListener('input', updatePreview);
+</script>
+{% endblock %}

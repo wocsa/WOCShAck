@@ -1,0 +1,322 @@
+{% extends "base/base_shop.html" %}
+{% load static %}
+
+
+{% block title %}V.R.C - Order {{ order.id|truncatechars:13 }}{% endblock %}
+
+{% block module_css %}
+<link rel="stylesheet" href="{% static 'css/cart.css' %}">
+{% endblock %}
+
+{% block content_wrapper_class %}{% endblock %}
+
+{% block content %}
+<div class="cart-page-wrapper">
+    <div class="cart-container" style="max-width: 900px;">
+        <nav class="vrc-breadcrumbs" style="margin-bottom:1rem;">
+            <a href="{% url 'shop' %}">Shop</a>
+            <span class="bc-sep">›</span>
+            <a href="{% url 'order_history' %}">Orders</a>
+            <span class="bc-sep">›</span>
+            <span class="bc-current">Order {{ order.id|truncatechars:13 }}</span>
+        </nav>
+
+        <a href="{% url 'order_history' %}" class="vrc-back-link">Back to Orders</a>
+
+        <div class="order-detail-header">
+            <h1 class="cart-title">Order Details</h1>
+            <span class="status-badge status-{{ order.status }}">{{ order.get_status_display }}</span>
+        </div>
+
+
+        <!-- Order Info -->
+        <div class="order-info-grid">
+            <div class="info-card">
+                <h3>Order Information</h3>
+                <div class="info-row">
+                    <span class="label">Order ID:</span>
+                    <span class="value mono">{{ order.id }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Date:</span>
+                    <span class="value">{{ order.created_at|date:"F d, Y - H:i" }}</span>
+                </div>
+                {% if order.completed_at %}
+                <div class="info-row">
+                    <span class="label">Completed:</span>
+                    <span class="value">{{ order.completed_at|date:"F d, Y - H:i" }}</span>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="info-card">
+                <h3>Billing Information</h3>
+                <div class="info-row">
+                    <span class="label">Name:</span>
+                    <span class="value">{{ order.billing_first_name }} {{ order.billing_last_name }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Email:</span>
+                    <span class="value">{{ order.billing_email }}</span>
+                </div>
+                {% if order.billing_phone %}
+                <div class="info-row">
+                    <span class="label">Phone:</span>
+                    <span class="value">{{ order.billing_phone }}</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Order Items -->
+        <div class="order-items-section">
+            <h3>Items Ordered</h3>
+            <table class="cart_table">
+                <thead>
+                    <tr>
+                        <th>CSS Name</th>
+                        <th>Author</th>
+                        <th>Qty</th>
+                        <th>Price</th>
+                        <th>Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in order_items %}
+                    <tr>
+                        <td>
+                            {% if item.css_file %}
+                            <a href="{% url 'product_detail' item.css_file.id %}" class="product-link">
+                                {{ item.css_name }}
+                            </a>
+                            {% else %}
+                            {{ item.css_name }}
+                            <span class="unavailable-badge">Unavailable</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if item.css_file %}
+                            <a href="{% url 'seller_by_css' item.css_file.id %}" class="author-link">{{ item.css_author }}</a>
+                            {% else %}
+                            {{ item.css_author }}
+                            {% endif %}
+                        </td>
+                        <td>{{ item.quantity }}</td>
+                        <td>{{ item.price_at_purchase }} Neuros</td>
+                        <td>{{ item.get_total }} Neuros</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Order Summary -->
+        <div class="order-summary-section">
+            <div class="summary-row">
+                <span>Subtotal:</span>
+                <span>{{ order.total_amount }} Neuros</span>
+            </div>
+            {% if order.discount_amount %}
+            <div class="summary-row discount">
+                <span>Discount{% if order.coupon_code %} ({{ order.coupon_code }}){% endif %}:</span>
+                <span>-{{ order.discount_amount }} Neuros</span>
+            </div>
+            {% endif %}
+            <div class="summary-row total">
+                <span>Total Paid:</span>
+                <span>{{ order.get_final_total }} Neuros</span>
+            </div>
+        </div>
+
+        <div class="order-actions">
+            <a href="{% url 'order_history' %}" class="cart-btn cart-btn-secondary">&larr; Back to Orders</a>
+            {% if order.status == 'completed' %}
+            <a href="{% url 'download_invoice' order.id %}" class="cart-btn order-invoice-btn">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                    <polyline points="7 10 12 15 17 10"/>
+                    <line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+                Download Invoice PDF
+            </a>
+            {% endif %}
+            <a href="{% url 'shop' %}" class="cart-btn cart-btn-primary">Continue Shopping</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .order-detail-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    .order-detail-header .cart-title {
+        margin: 0;
+    }
+
+    .status-badge {
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        text-transform: capitalize;
+    }
+    .status-pending { background: #fff3cd; color: #856404; }
+    .status-processing { background: #cce5ff; color: #004085; }
+    .status-completed { background: #d4edda; color: #155724; }
+    .status-cancelled { background: #f8d7da; color: #721c24; }
+    .status-refunded { background: #e2e3e5; color: #383d41; }
+
+    .order-info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .info-card {
+        background: rgba(102, 126, 234, 0.05);
+        border-radius: 12px;
+        padding: 1.25rem;
+    }
+    .info-card h3 {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #333;
+        margin: 0 0 1rem 0;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid rgba(102, 126, 234, 0.1);
+    }
+    .info-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.5rem 0;
+        font-size: 0.9rem;
+    }
+    .info-row .label {
+        color: #666;
+    }
+    .info-row .value {
+        font-weight: 500;
+        color: #333;
+        text-align: right;
+    }
+    .info-row .value.mono {
+        font-family: monospace;
+        font-size: 0.8rem;
+        word-break: break-all;
+    }
+
+    .order-items-section {
+        margin-bottom: 1.5rem;
+    }
+    .order-items-section h3 {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #333;
+        margin: 0 0 1rem 0;
+    }
+
+    .product-link {
+        color: #667eea;
+        text-decoration: none;
+        font-weight: 600;
+    }
+    .product-link:hover {
+        text-decoration: underline;
+    }
+
+    .author-link {
+        color: #667eea;
+        text-decoration: none;
+    }
+    .author-link:hover {
+        text-decoration: underline;
+        color: #764ba2;
+    }
+
+    .unavailable-badge {
+        display: inline-block;
+        padding: 0.2rem 0.5rem;
+        background: #e2e3e5;
+        color: #6c757d;
+        border-radius: 4px;
+        font-size: 0.7rem;
+        margin-left: 0.5rem;
+    }
+
+    .order-summary-section {
+        background: rgba(102, 126, 234, 0.05);
+        border-radius: 12px;
+        padding: 1.25rem 1.5rem;
+        margin-bottom: 2rem;
+        max-width: 350px;
+        margin-left: auto;
+    }
+    .summary-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.5rem 0;
+        font-size: 0.95rem;
+    }
+    .summary-row.discount {
+        color: #27ae60;
+    }
+    .summary-row.total {
+        border-top: 1px solid rgba(102, 126, 234, 0.1);
+        margin-top: 0.5rem;
+        padding-top: 1rem;
+        font-weight: 700;
+        font-size: 1.1rem;
+    }
+    .summary-row.total span:last-child {
+        color: #667eea;
+    }
+
+    .order-actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+
+    .order-invoice-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        background: rgba(34, 197, 94, 0.1);
+        color: #16a34a;
+        border: 1px solid rgba(34, 197, 94, 0.35);
+        font-weight: 600;
+    }
+    .order-invoice-btn:hover {
+        background: rgba(34, 197, 94, 0.18);
+        color: #15803d;
+    }
+
+
+    @media (max-width: 600px) {
+        .order-detail-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        .info-row {
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+        .info-row .value {
+            text-align: left;
+        }
+        .order-summary-section {
+            max-width: 100%;
+        }
+    }
+</style>
+{% endblock %}

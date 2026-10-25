@@ -1,0 +1,83 @@
+{% extends "base/base.html" %}
+{% load static community_tags %}
+
+{% block title %}VRC — {{ tutorial.title }}{% endblock %}
+
+{% block module_css %}
+<link rel="stylesheet" href="{% static 'community/css/content.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="main-container">
+<nav class="vrc-breadcrumbs">
+  <a href="{% url 'community:index' %}">Community</a>
+  <span class="bc-sep">›</span>
+  <a href="{% url 'community:tutorial_list' %}">Tutorials</a>
+  <span class="bc-sep">›</span>
+  <span class="bc-current">{{ tutorial.title }}</span>
+</nav>
+<div class="tutorial-detail-wrapper">
+
+  <div class="tutorial-detail-header">
+    <div class="tutorial-detail-tags">
+      <span class="difficulty-badge difficulty-badge--{{ tutorial.difficulty }}">{{ tutorial.get_difficulty_display }}</span>
+      {% if tutorial.is_premium %}<span class="premium-badge">⚡ Premium</span>{% endif %}
+      {% if tutorial.category %}<span class="topic-badge">{{ tutorial.category }}</span>{% endif %}
+    </div>
+    <h1 class="tutorial-detail-title">{{ tutorial.title }}</h1>
+    <div class="tutorial-detail-desc">{{ tutorial.description|markdownify }}</div>
+    <div class="tutorial-detail-meta">
+      <span>⏱ {{ tutorial.estimated_minutes }} min estimated</span>
+      <span>·</span>
+      <span>{{ steps|length }} steps</span>
+      <span>·</span>
+      <span>By {{ tutorial.author.username }}</span>
+    </div>
+    {% if tutorial.prerequisites %}
+    <div class="tutorial-prereqs">
+      <strong>Prerequisites:</strong> {{ tutorial.prerequisites|markdownify }}
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="tutorial-detail-layout">
+
+    {# Steps sidebar #}
+    <nav class="tutorial-steps-nav">
+      <h3 class="steps-nav-title">Steps</h3>
+      <ol class="steps-nav-list">
+        {% for step in steps %}
+        <li class="steps-nav-item {% if progress and progress.current_step and progress.current_step.order >= step.order %}steps-nav-item--done{% endif %}">
+          <a href="{% url 'community:tutorial_step' tutorial.slug step.order %}" class="steps-nav-link">
+            <span class="step-num">{{ step.order }}</span>
+            <span class="step-name">{{ step.title }}</span>
+          </a>
+        </li>
+        {% endfor %}
+      </ol>
+      {% if progress and progress.completed %}
+      <div class="tutorial-completed-badge">✓ Completed</div>
+      {% elif progress and progress.current_step %}
+      <a href="{% url 'community:tutorial_step' tutorial.slug progress.current_step.order %}" class="content-btn content-btn--primary" style="margin-top:1rem;display:block;text-align:center">Continue →</a>
+      {% elif steps %}
+      <a href="{% url 'community:tutorial_step' tutorial.slug steps.0.order %}" class="content-btn content-btn--primary" style="margin-top:1rem;display:block;text-align:center">Start Tutorial →</a>
+      {% endif %}
+    </nav>
+
+    {# Overview #}
+    <main class="tutorial-detail-main">
+      <h2>About this tutorial</h2>
+      <div>{{ tutorial.description|markdownify }}</div>
+      {% if not request.user.is_authenticated %}
+      <div class="tutorial-login-prompt">
+        <a href="{% url 'login' %}" class="content-btn content-btn--primary">Log in to track progress</a>
+      </div>
+      {% endif %}
+    </main>
+
+  </div>
+
+
+</div>
+</div>
+{% endblock %}

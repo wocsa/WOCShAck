@@ -1,0 +1,142 @@
+{% extends "base/base_auth.html" %}
+{% load static %}
+
+
+{% block title %}V.R.C - Email Verification{% endblock %}
+
+{% block auth_icon %}
+<svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+    <polyline points="22,6 12,13 2,6"/>
+</svg>
+{% endblock %}
+
+{% block auth_title %}Email Verification Required{% endblock %}
+
+{% block auth_subtitle %}
+{% if code_sent %}
+<p class="auth-subtitle">Enter the verification code we sent to <strong>{{ email }}</strong></p>
+{% else %}
+<p class="auth-subtitle">Click below to receive a verification code at <strong>{{ email }}</strong></p>
+{% endif %}
+{% endblock %}
+
+{% block auth_form %}
+{% if not code_sent %}
+<!-- Request verification code -->
+<form action="{% url 'email_2fa_verify' %}" method="POST" class="auth-form">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="send_code">
+    <button type="submit" class="auth-btn">
+        <span>Send Verification Code</span>
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="22" y1="2" x2="11" y2="13"/>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+        </svg>
+    </button>
+</form>
+{% else %}
+<!-- Enter verification code -->
+<form action="{% url 'email_2fa_verify' %}" method="POST" class="auth-form">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="verify_code">
+
+    <div class="auth-form-group">
+        <label for="code" class="auth-label">Verification Code</label>
+        <div class="auth-input-wrapper">
+            <span class="auth-input-icon">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                    <circle cx="12" cy="16" r="1"/>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                </svg>
+            </span>
+            <input type="text"
+                   id="code"
+                   name="code"
+                   class="auth-input auth-2fa-input"
+                   placeholder="XXXXXX"
+                   required
+                   maxlength="6"
+                   pattern="[A-Za-z0-9]{6}"
+                   autocomplete="one-time-code"
+                   autofocus>
+        </div>
+        <p class="auth-help-text">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="16" x2="12" y2="12"/>
+                <line x1="12" y1="8" x2="12.01" y2="8"/>
+            </svg>
+            Enter the 6-character code from your email
+        </p>
+    </div>
+
+    <button type="submit" class="auth-btn">
+        <span>Verify</span>
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+            <polyline points="22 4 12 14.01 9 11.01"/>
+        </svg>
+    </button>
+</form>
+
+<div class="resend-code-section">
+    <p>Didn't receive the code?</p>
+    <form action="{% url 'email_2fa_verify' %}" method="POST">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="send_code">
+        <button type="submit" class="resend-btn">Resend Code</button>
+    </form>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .auth-2fa-input {
+        text-align: center;
+        font-size: 1.5rem;
+        font-weight: 600;
+        letter-spacing: 0.3rem;
+        text-transform: uppercase;
+        padding-left: 3rem !important;
+    }
+
+    .auth-help-text {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-top: 0.75rem;
+        font-size: 0.8125rem;
+        color: var(--vrc-gray-500);
+    }
+
+    .resend-code-section {
+        margin-top: 1.5rem;
+        text-align: center;
+        padding-top: 1.5rem;
+        border-top: 1px solid var(--vrc-gray-200);
+    }
+
+    .resend-code-section p {
+        font-size: 0.85rem;
+        color: var(--vrc-gray-600);
+        margin-bottom: 0.5rem;
+    }
+
+    .resend-btn {
+        background: none;
+        border: none;
+        color: var(--vrc-primary);
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: underline;
+    }
+
+    .resend-btn:hover {
+        color: var(--vrc-primary-dark);
+    }
+</style>
+{% endblock %}

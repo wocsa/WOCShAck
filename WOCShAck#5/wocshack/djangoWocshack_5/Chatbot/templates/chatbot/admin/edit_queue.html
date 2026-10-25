@@ -1,0 +1,123 @@
+{% extends "base/base.html" %}
+{% load static %}
+
+
+{% block title %}Edit Queue - Chatbot Moderation{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'base/css/admin.css' %}">
+<style>
+  /* page-specific: approval status badge */
+  .approval-badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: 600; }
+  .approval-pending  { background: #fef3c7; color: #92400e; }
+  .approval-approved { background: #d1fae5; color: #059669; }
+  .approval-rejected { background: #fecaca; color: #dc2626; }
+  /* page-specific: diff side-by-side box */
+  .diff-container { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
+  @media (max-width: 768px) { .diff-container { grid-template-columns: 1fr; } }
+  .diff-box { background: #f8f9fa; border: 1px solid #eee; border-radius: 8px; padding: 12px; font-size: 0.9rem; line-height: 1.5; }
+  .diff-box.original { border-left: 4px solid #ef4444; }
+  .diff-box.edited   { border-left: 4px solid #10b981; }
+  .diff-label { font-weight: 600; color: #555; margin-bottom: 5px; font-size: 0.85rem; }
+  /* page-specific: edit card header inside mod-table-card */
+  .edit-card-header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; background: #f8f9fa; border-bottom: 1px solid #eee; }
+  .edit-card-body { padding: 20px; }
+  .edit-meta { font-size: 0.85rem; color: #888; margin-bottom: 15px; }
+  /* page-specific: inline approval form with textarea + button */
+  .action-form { display: flex; gap: 10px; align-items: flex-end; }
+  .action-form textarea { flex: 1; padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 0.9rem; resize: none; height: 40px; }
+  .btn-success { background: #10b981; color: white; border: none; border-radius: 8px; padding: 8px 16px; cursor: pointer; font-weight: 500; font-size: 0.9rem; }
+  .btn-success:hover { opacity: 0.9; }
+  .btn-danger  { background: #ef4444; color: white; border: none; border-radius: 8px; padding: 8px 16px; cursor: pointer; font-weight: 500; font-size: 0.9rem; }
+  .btn-danger:hover  { opacity: 0.9; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Edit Approval Queue</h1>
+    <a href="{% url 'chatbot:admin_dashboard' %}" class="back-link">&larr; Back to Dashboard</a>
+</div>
+
+<form method="get" class="filters-bar">
+    <div class="filter-group">
+        <label for="status">Status:</label>
+        <select name="status" id="status">
+            {% for value, label in approval_choices %}
+            <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <button type="submit" class="filter-btn">Filter</button>
+</form>
+
+{% for edit in edits %}
+<div class="edit-card">
+    <div class="edit-card-header">
+        <span>
+            Edit by <strong>{{ edit.edited_by.username|default:"Unknown" }}</strong>
+            on message #{{ edit.chat_message_id }}
+        </span>
+        <span class="approval-badge approval-{{ edit.approval_status }}">{{ edit.get_approval_status_display }}</span>
+    </div>
+    <div class="edit-card-body">
+        <div class="edit-meta">
+            Reason: {{ edit.edit_reason }} | Submitted {{ edit.created_at|timesince }} ago
+            {% if edit.reviewed_by %} | Reviewed by {{ edit.reviewed_by.username }}{% endif %}
+        </div>
+
+        <div class="diff-container">
+            <div>
+                <div class="diff-label">Original Response:</div>
+                <div class="diff-box original">{{ edit.original_response|truncatewords:50 }}</div>
+            </div>
+            <div>
+                <div class="diff-label">Edited Response:</div>
+                <div class="diff-box edited">{{ edit.edited_response|truncatewords:50 }}</div>
+            </div>
+        </div>
+
+        {% if edit.approval_status == 'pending' %}
+        <div style="display: flex; gap: 15px;">
+            <form method="post" action="{% url 'chatbot:approve_edit' edit_id=edit.id %}" class="action-form">
+                {% csrf_token %}
+                <textarea name="review_notes" placeholder="Approval notes (optional)"></textarea>
+                <button type="submit" class="btn btn-success">Approve</button>
+            </form>
+            <form method="post" action="{% url 'chatbot:reject_edit' edit_id=edit.id %}" class="action-form">
+                {% csrf_token %}
+                <textarea name="review_notes" placeholder="Rejection reason (required)" required></textarea>
+                <button type="submit" class="btn btn-danger">Reject</button>
+            </form>
+        </div>
+        {% elif edit.review_notes %}
+        <div style="margin-top: 10px; font-size: 0.9rem;">
+            <strong>Review notes:</strong> {{ edit.review_notes }}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% empty %}
+<div class="empty-state">
+    <p>No edits matching your filter.</p>
+</div>
+{% endfor %}
+
+{% if page_obj.has_other_pages %}
+<div class="pagination-container">
+    {% if page_obj.has_previous %}
+    <a href="?page={{ page_obj.previous_page_number }}&status={{ status_filter }}">&laquo; Prev</a>
+    {% endif %}
+    {% for num in page_obj.paginator.page_range %}
+        {% if page_obj.number == num %}
+        <span class="current">{{ num }}</span>
+        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+        <a href="?page={{ num }}&status={{ status_filter }}">{{ num }}</a>
+        {% endif %}
+    {% endfor %}
+    {% if page_obj.has_next %}
+    <a href="?page={{ page_obj.next_page_number }}&status={{ status_filter }}">Next &raquo;</a>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}

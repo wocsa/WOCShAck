@@ -1,0 +1,757 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Header Styles - Updated to match your dark theme but adapted for light background */
+        header, .header_L_R {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(15px);
+            border-bottom: 1px solid rgba(102, 126, 234, 0.1);
+            z-index: 999;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 2rem;
+            box-sizing: border-box;
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.1);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        /* Logo Button - Enhanced with gradient */
+        .Todo_button {
+            cursor: pointer;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 14px;
+            padding: 0.65rem 1.4rem;
+            margin: 0;
+            font-weight: 800;
+            font-size: 1.15rem;
+            letter-spacing: 1.5px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.35);
+            position: static;
+            text-transform: uppercase;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            line-height: 1;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+        }
+
+        .Todo_button::before {
+            content: "◆";
+            font-size: 0.7rem;
+            opacity: 0.7;
+        }
+
+        .Todo_button:hover {
+            transform: translateY(-2px) scale(1.03);
+            box-shadow: 0 8px 28px rgba(102, 126, 234, 0.55);
+            letter-spacing: 2px;
+        }
+
+        .Todo_button:active {
+            transform: translateY(0) scale(0.98);
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
+        }
+
+        /* Main Buttons - Light theme adaptation */
+        .main_buttons {
+            cursor: pointer;
+            background: transparent;
+            color: #333;
+            border: 2px solid rgba(102, 126, 234, 0.3);
+            border-radius: 12px;
+            padding: 0.9rem 1.6rem;
+            margin: 0 0.3rem;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .main_buttons:hover {
+            background: rgba(102, 126, 234, 0.1);
+            border-color: rgba(102, 126, 234, 0.5);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);
+            color: #667eea;
+        }
+
+        /* Special accent button */
+        .main_buttons.accent {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+        }
+
+        .main_buttons.accent:hover {
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        /* Off-screen Menu - Light theme adaptation */
+        .off-screen-menu {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(20px);
+            border-right: 1px solid rgba(102, 126, 234, 0.1);
+            bottom: 0;
+            width: 100%;
+            max-width: 280px;
+            position: fixed;
+            left: -280px;
+            top: 0;
+            display: flex;
+            z-index: 998;
+            flex-direction: column;
+            align-items: flex-start;
+            justify-content: flex-start;
+            padding: 1rem 1.5rem 1rem;
+            font-size: 1.1rem;
+            transition: left 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 4px 0 30px rgba(102, 126, 234, 0.1);
+            overflow-y: auto;
+        }
+
+        .off-screen-menu.active {
+            left: 0;
+        }
+
+        /* Navigation Links */
+        .header_ul {
+            padding: 0;
+            list-style: none;
+            width: 100%;
+            text-align: center;
+        }
+
+        .header_ul li {
+            padding: 0.3rem 0;
+            width: 100%;
+        }
+
+        .header_ul li a {
+            color: #333;
+            text-decoration: none;
+            font-weight: 500;
+            padding: 1rem 1.2rem;
+            border-radius: 10px;
+            display: block;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header_ul li a::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.1), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .header_ul li a:hover::before {
+            left: 100%;
+        }
+
+        .header_ul li a:hover {
+            color: white;
+            background: rgba(102, 126, 234, 0.8);
+            transform: translateX(8px);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        /* Add a subtle glow effect to the header */
+        header::after, .header_L_R::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #667eea, #764ba2, transparent);
+            opacity: 0.6;
+        }
+
+        /* Menu Toggle Button */
+        .menu-toggle {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: #333;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .menu-toggle:hover {
+            background: rgba(102, 126, 234, 0.1);
+            color: #667eea;
+        }
+
+        /* Demo Content */
+        .demo-content {
+            margin-top: 120px;
+            padding: 2rem;
+            text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .demo-content h1 {
+            font-size: 3rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .demo-content p {
+            font-size: 1.2rem;
+            color: #666;
+            max-width: 600px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            header, .header_L_R {
+                padding: 0.8rem 1rem;
+            }
+
+            .menu-toggle {
+                display: block;
+            }
+
+            .Todo_button, .main_buttons {
+                padding: 0.7rem 1.2rem;
+                font-size: 0.9rem;
+            }
+
+            .main_buttons {
+                display: none;
+            }
+
+            .off-screen-menu {
+                max-width: 260px;
+                padding: 0.5rem 1rem 0.5rem;
+            }
+
+            .user-off-screen-menu {
+                max-width: 260px;
+                padding: 0.5rem 1rem 0.5rem;
+            }
+
+            .off-screen-menu .header_ul li,
+            .user-off-screen-menu .header_ul li {
+                padding: 0.1rem 0;
+            }
+
+            .off-screen-menu .header_ul li a,
+            .user-off-screen-menu .header_ul li a {
+                padding: 0.6rem 1rem;
+                font-size: 0.95rem;
+            }
+
+            .off-screen-menu .logout-button,
+            .user-off-screen-menu .logout-button {
+                margin-left: 0;
+                padding: 0.6rem 1.2rem;
+                font-size: 0.95rem;
+            }
+
+            .demo-content h1 {
+                font-size: 2rem;
+            }
+
+            .demo-content {
+                padding: 1rem;
+            }
+        }
+
+        /* Optional: Add some micro-animations */
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+
+        .Todo_button {
+            animation: pulse 3s ease-in-out infinite;
+        }
+
+        @media (max-width: 768px) {
+            .desktop-buttons {
+                display: none;
+            }
+
+            .mobile-only {
+                display: block;
+            }
+        }
+
+        @media (min-width: 769px) {
+            .mobile-only {
+                display: none;
+            }
+        }
+
+.user-off-screen-menu {
+    position: fixed;
+    right: -280px; /* Start hidden off the right edge */
+    top: 0;
+    bottom: 0;
+    width: 100%;
+    max-width: 280px;
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(20px);
+    border-left: 1px solid rgba(102, 126, 234, 0.1);
+    box-shadow: -4px 0 30px rgba(102, 126, 234, 0.1);
+    padding: 1rem 1.5rem 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+    font-size: 1.1rem;
+    z-index: 998;
+    transition: right 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+}
+
+/* Active = slide in */
+.user-off-screen-menu.active {
+    right: 0;
+}
+
+/* Logout form pinned at bottom of sidebar */
+.sidebar-logout-form {
+    margin-top: auto;
+    width: 100%;
+    padding: 0.5rem 0;
+    flex-shrink: 0;
+}
+
+/* Make the nav list scrollable while logout stays pinned */
+.user-off-screen-menu .header_ul {
+    overflow-y: auto;
+    flex: 1;
+    min-height: 0;
+}
+
+.logout-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.8rem 1.6rem;
+    font-size: 1rem;
+    font-weight: 600;
+    color: white;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.logout-button:hover {
+    transform: translateY(-2px) scale(1.03);
+}
+
+.logout-icon {
+    font-size: 1.2rem;
+}
+
+
+.user_button {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    border-radius: 50%;
+    padding: 0.3rem;
+    cursor: pointer;
+    transition: all 0.3s ease, box-shadow 0.3s ease;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 52px;
+    height: 52px;
+    position: relative;
+    overflow: hidden;
+}
+
+.user_button:hover {
+    transform: translateY(-2px) scale(1.05);
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.6);
+}
+
+.user_button img {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.user_button:hover img {
+    transform: scale(1.1);
+}
+
+
+.desktop-buttons {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.cart_button {
+    cursor: pointer;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 0.8rem 1.6rem;
+    font-weight: 600;
+    font-size: 1rem;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    animation: pulse 3s ease-in-out infinite;
+}
+
+.cart_button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.5);
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem; /* space between cart and user button */
+}
+
+.logout-button {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 0 auto;
+    gap: 0.5rem;
+    padding: 0.8rem 1.6rem;
+    font-size: 1rem;
+    font-weight: 600;
+    color: white;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    width: 100%;
+}
+
+.logout-button:hover {
+    transform: translateY(-2px) scale(1.03);
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+}
+
+.logout-icon {
+    font-size: 1.2rem;
+}
+
+/* ── Notification Bell ── */
+.notif-bell-wrapper {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.notif-bell-btn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    transition: all 0.3s ease;
+}
+
+.notif-bell-btn:hover {
+    background: rgba(102, 126, 234, 0.1);
+}
+
+.notif-bell-btn svg {
+    width: 24px;
+    height: 24px;
+    stroke: #555;
+    transition: stroke 0.3s ease;
+}
+
+.notif-bell-btn:hover svg {
+    stroke: #667eea;
+}
+
+.notif-bell-badge {
+    position: absolute;
+    top: 0;
+    right: 0;
+    background: #ef4444;
+    color: #fff;
+    font-size: 0.7rem;
+    font-weight: 700;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    min-width: 18px;
+    height: 18px;
+    line-height: 18px;
+    text-align: center;
+    border-radius: 9px;
+    padding: 0 4px;
+    pointer-events: none;
+    box-shadow: 0 2px 6px rgba(239, 68, 68, 0.4);
+}
+
+.notif-bell-badge.hidden {
+    display: none;
+}
+
+/* Dropdown panel */
+.notif-bell-dropdown {
+    display: none;
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    width: 340px;
+    max-height: 420px;
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(20px);
+    border-radius: 12px;
+    box-shadow: 0 8px 30px rgba(102, 126, 234, 0.18), 0 2px 8px rgba(0, 0, 0, 0.06);
+    border: 1px solid rgba(102, 126, 234, 0.12);
+    z-index: 1001;
+    overflow: hidden;
+    flex-direction: column;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.notif-bell-dropdown.active {
+    display: flex;
+}
+
+.notif-dd-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    border-bottom: 1px solid rgba(102, 126, 234, 0.1);
+}
+
+.notif-dd-title {
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: #333;
+}
+
+.notif-dd-mark-all {
+    background: none;
+    border: none;
+    color: #667eea;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.notif-dd-mark-all:hover {
+    background: rgba(102, 126, 234, 0.1);
+}
+
+.notif-dd-list {
+    overflow-y: auto;
+    flex: 1;
+    max-height: 320px;
+}
+
+.notif-dd-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 16px;
+    text-decoration: none;
+    color: #333;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+    transition: background 0.2s ease;
+    cursor: pointer;
+}
+
+.notif-dd-item:hover {
+    background: rgba(102, 126, 234, 0.06);
+}
+
+.notif-dd-item.unread {
+    background: rgba(102, 126, 234, 0.08);
+}
+
+.notif-dd-item.unread:hover {
+    background: rgba(102, 126, 234, 0.14);
+}
+
+.notif-dd-icon {
+    font-size: 1.3rem;
+    flex-shrink: 0;
+    width: 28px;
+    text-align: center;
+    line-height: 1.4;
+}
+
+.notif-dd-body {
+    flex: 1;
+    min-width: 0;
+}
+
+.notif-dd-item-title {
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: #333;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.notif-dd-item-msg {
+    font-size: 0.78rem;
+    color: #666;
+    margin-top: 2px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.notif-dd-item-time {
+    font-size: 0.7rem;
+    color: #999;
+    margin-top: 3px;
+}
+
+.notif-dd-footer {
+    display: block;
+    text-align: center;
+    padding: 12px 16px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #667eea;
+    text-decoration: none;
+    border-top: 1px solid rgba(102, 126, 234, 0.1);
+    transition: background 0.2s ease;
+}
+
+.notif-dd-footer:hover {
+    background: rgba(102, 126, 234, 0.06);
+}
+
+.notif-dd-empty {
+    text-align: center;
+    padding: 32px 16px;
+    color: #999;
+    font-size: 0.88rem;
+}
+
+/* ── Active Navigation State ── */
+.header_ul li a.nav-active {
+    color: white;
+    background: rgba(102, 126, 234, 0.85);
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.25);
+}
+
+/* ── Breadcrumb Utilities ── */
+.vrc-breadcrumbs {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0.75rem 2rem 0;
+    font-size: 0.875rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.vrc-breadcrumbs a {
+    color: #667eea;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s ease;
+}
+
+.vrc-breadcrumbs a:hover {
+    color: #764ba2;
+    text-decoration: underline;
+}
+
+.vrc-breadcrumbs .bc-sep {
+    color: #aaa;
+    font-size: 0.8rem;
+    user-select: none;
+}
+
+.vrc-breadcrumbs .bc-current {
+    color: #555;
+    font-weight: 600;
+}
+
+/* ── Back Link Utility ── */
+.vrc-back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.875rem;
+    color: #667eea;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s ease;
+    margin-bottom: 1rem;
+}
+
+.vrc-back-link:hover {
+    color: #764ba2;
+}
+
+.vrc-back-link::before {
+    content: "←";
+    font-size: 1rem;
+}
+
+/* Responsive: dropdown near full-width on mobile */
+@media (max-width: 768px) {
+    .notif-bell-dropdown {
+        position: fixed;
+        top: 70px;
+        right: 8px;
+        left: 8px;
+        width: auto;
+        max-height: 70vh;
+    }
+}

@@ -1,0 +1,82 @@
+{% extends 'base/base.html' %}
+{% block title %}Set Pricing - V.R.C{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dev-container { max-width: 800px; margin: 0 auto; padding: var(--vrc-spacing-xl); }
+    .form-card { background: var(--vrc-white); border-radius: var(--vrc-radius-lg); padding: var(--vrc-spacing-xl); box-shadow: var(--vrc-shadow-md); }
+    .form-card h1 { font-size: var(--vrc-font-size-2xl); font-weight: var(--vrc-font-weight-bold); margin-bottom: var(--vrc-spacing-lg); }
+    .tier-row { display: grid; grid-template-columns: 2fr 1fr 1fr auto auto; gap: var(--vrc-spacing-sm); align-items: center; margin-bottom: var(--vrc-spacing-md); padding-bottom: var(--vrc-spacing-md); border-bottom: 1px solid var(--vrc-gray-100); }
+    .tier-row label { font-size: var(--vrc-font-size-xs); color: var(--vrc-gray-500); }
+    .tier-row input, .tier-row select { padding: 8px 10px; border: 1px solid var(--vrc-gray-300); border-radius: var(--vrc-radius-sm); font-size: var(--vrc-font-size-sm); box-sizing: border-box; }
+    .tier-row input:focus, .tier-row select:focus { outline: none; border-color: var(--vrc-primary); }
+    .checkbox-label { display: flex; align-items: center; gap: 4px; font-size: var(--vrc-font-size-xs); color: var(--vrc-gray-600); }
+    .btn-primary { padding: 10px 24px; background: var(--vrc-gradient); color: white; border: none; border-radius: var(--vrc-radius-md); cursor: pointer; }
+    .btn-add { padding: 8px 16px; background: var(--vrc-gray-100); color: var(--vrc-gray-700); border: none; border-radius: var(--vrc-radius-md); cursor: pointer; font-size: var(--vrc-font-size-sm); margin-bottom: var(--vrc-spacing-lg); }
+    .back-link { display: inline-block; margin-bottom: var(--vrc-spacing-lg); color: var(--vrc-primary); text-decoration: none; font-size: var(--vrc-font-size-sm); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dev-container">
+    <a href="{% url 'developer_edit_listing' listing_id=listing.id %}" class="back-link">&larr; Back to Listing</a>
+    <div class="form-card">
+        <h1>Pricing: {{ listing.title }}</h1>
+        <form method="post" id="pricing-form">
+            {% csrf_token %}
+            <div id="tiers-container">
+                {% for tier in pricing_tiers %}
+                <div class="tier-row">
+                    <div><label>Name</label><input type="text" name="tier_name" value="{{ tier.name }}" required></div>
+                    <div><label>Price (NE)</label><input type="number" name="tier_price" value="{{ tier.price }}" step="0.01" min="0" required></div>
+                    <div><label>Scope</label>
+                        <select name="tier_scope">
+                            <option value="personal" {% if tier.scope == 'personal' %}selected{% endif %}>Personal</option>
+                            <option value="commercial" {% if tier.scope == 'commercial' %}selected{% endif %}>Commercial</option>
+                            <option value="extended" {% if tier.scope == 'extended' %}selected{% endif %}>Extended</option>
+                        </select>
+                    </div>
+                    <label class="checkbox-label"><input type="checkbox" name="tier_includes_source" value="{{ forloop.counter0 }}" {% if tier.includes_source %}checked{% endif %}> Source</label>
+                    <label class="checkbox-label"><input type="checkbox" name="tier_includes_support" value="{{ forloop.counter0 }}" {% if tier.includes_support %}checked{% endif %}> Support</label>
+                </div>
+                {% empty %}
+                <div class="tier-row">
+                    <div><label>Name</label><input type="text" name="tier_name" placeholder="Basic" required></div>
+                    <div><label>Price (NE)</label><input type="number" name="tier_price" value="0" step="0.01" min="0" required></div>
+                    <div><label>Scope</label>
+                        <select name="tier_scope">
+                            <option value="personal">Personal</option>
+                            <option value="commercial">Commercial</option>
+                            <option value="extended">Extended</option>
+                        </select>
+                    </div>
+                    <label class="checkbox-label"><input type="checkbox" name="tier_includes_source" value="0"> Source</label>
+                    <label class="checkbox-label"><input type="checkbox" name="tier_includes_support" value="0"> Support</label>
+                </div>
+                {% endfor %}
+            </div>
+            <button type="button" class="btn-add" onclick="addTier()">+ Add Tier</button>
+            <br>
+            <button type="submit" class="btn-primary">Save Pricing</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let tierIndex = {{ pricing_tiers.count|default:1 }};
+function addTier() {
+    const container = document.getElementById('tiers-container');
+    const html = `<div class="tier-row">
+        <div><label>Name</label><input type="text" name="tier_name" required></div>
+        <div><label>Price (NE)</label><input type="number" name="tier_price" value="0" step="0.01" min="0" required></div>
+        <div><label>Scope</label><select name="tier_scope"><option value="personal">Personal</option><option value="commercial">Commercial</option><option value="extended">Extended</option></select></div>
+        <label class="checkbox-label"><input type="checkbox" name="tier_includes_source" value="${tierIndex}"> Source</label>
+        <label class="checkbox-label"><input type="checkbox" name="tier_includes_support" value="${tierIndex}"> Support</label>
+    </div>`;
+    container.insertAdjacentHTML('beforeend', html);
+    tierIndex++;
+}
+</script>
+{% endblock %}

@@ -1,0 +1,43 @@
+{% extends 'base/base.html' %}
+{% block title %}Webhook Logs - V.R.C{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dev-container { max-width: 1000px; margin: 0 auto; padding: var(--vrc-spacing-xl); }
+    .section { background: var(--vrc-white); border-radius: var(--vrc-radius-lg); padding: var(--vrc-spacing-xl); box-shadow: var(--vrc-shadow-md); }
+    .section h1 { font-size: var(--vrc-font-size-xl); font-weight: var(--vrc-font-weight-bold); margin-bottom: var(--vrc-spacing-lg); }
+    .log-table { width: 100%; border-collapse: collapse; }
+    .log-table th { background: var(--vrc-gray-50); padding: 10px 14px; text-align: left; font-size: var(--vrc-font-size-sm); color: var(--vrc-gray-500); border-bottom: 1px solid var(--vrc-gray-200); }
+    .log-table td { padding: 10px 14px; border-bottom: 1px solid var(--vrc-gray-100); font-size: var(--vrc-font-size-sm); }
+    .status-success { color: var(--vrc-success); font-weight: var(--vrc-font-weight-medium); }
+    .status-fail { color: var(--vrc-error); font-weight: var(--vrc-font-weight-medium); }
+    .back-link { display: inline-block; margin-bottom: var(--vrc-spacing-lg); color: var(--vrc-primary); text-decoration: none; font-size: var(--vrc-font-size-sm); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dev-container">
+    <a href="{% url 'developer_webhooks' %}" class="back-link">&larr; Back to Webhooks</a>
+    <div class="section">
+        <h1>Delivery Logs: {{ webhook.url }}</h1>
+        {% if deliveries %}
+        <table class="log-table">
+            <thead><tr><th>Event</th><th>Status</th><th>Attempts</th><th>Delivered</th><th>Created</th></tr></thead>
+            <tbody>
+                {% for d in deliveries %}
+                <tr>
+                    <td>{{ d.event_type }}</td>
+                    <td>{% if d.delivered_at %}<span class="status-success">{{ d.status_code }}</span>{% else %}<span class="status-fail">Failed</span>{% endif %}</td>
+                    <td>{{ d.attempts }}</td>
+                    <td>{{ d.delivered_at|date:"M d H:i:s"|default:"-" }}</td>
+                    <td>{{ d.created_at|date:"M d H:i:s" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p style="color: var(--vrc-gray-500);">No deliveries yet. Send a test to see logs here.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

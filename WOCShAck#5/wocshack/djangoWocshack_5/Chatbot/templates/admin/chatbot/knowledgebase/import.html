@@ -1,0 +1,61 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls static %}
+
+{% block title %}Import Knowledge Base{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{% url 'admin:index' %}">Home</a>
+    &rsaquo; <a href="{% url 'admin:app_list' app_label=opts.app_label %}">{{ opts.app_label|capfirst }}</a>
+    &rsaquo; <a href="{% url 'admin:chatbot_knowledgebase_changelist' %}">{{ opts.verbose_name_plural|capfirst }}</a>
+    &rsaquo; Import
+</div>
+{% endblock %}
+
+{% block content %}
+<h1>Import Knowledge Base Entries</h1>
+
+<div style="margin-bottom: 20px; padding: 15px; background: #f8f8f8; border-radius: 4px;">
+    <h3>Supported Formats:</h3>
+    <p><strong>JSON:</strong> A file containing a "qa_pairs" array with objects having: question, answer, category, keywords (array)</p>
+    <p><strong>CSV:</strong> A file with headers: Category, Question, Answer, Keywords, Is Active</p>
+</div>
+
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+
+    <fieldset class="module aligned">
+        <h2>Select File</h2>
+        <div class="form-row">
+            <label for="import_file">Import File:</label>
+            <input type="file" name="import_file" id="import_file" accept=".json,.csv" required>
+            <p class="help">Upload a JSON or CSV file containing knowledge base entries.</p>
+        </div>
+    </fieldset>
+
+    <div class="submit-row">
+        <input type="submit" value="Import" class="default">
+        <a href="{% url 'admin:chatbot_knowledgebase_changelist' %}" class="deletelink" style="margin-left: 15px;">Cancel</a>
+    </div>
+</form>
+
+<div style="margin-top: 30px; padding: 15px; background: #fffbe5; border-radius: 4px;">
+    <h3>Example JSON Format:</h3>
+    <pre style="background: #fff; padding: 10px; border: 1px solid #ddd; overflow-x: auto;">{
+    "qa_pairs": [
+        {
+            "category": "general",
+            "question": "What is your name?",
+            "answer": "I am the V.R.C Support Assistant.",
+            "keywords": ["name", "who", "assistant"]
+        }
+    ]
+}</pre>
+</div>
+
+<div style="margin-top: 20px; padding: 15px; background: #e8f4fd; border-radius: 4px;">
+    <h3>Example CSV Format:</h3>
+    <pre style="background: #fff; padding: 10px; border: 1px solid #ddd; overflow-x: auto;">Category,Question,Answer,Keywords,Is Active
+general,What is your name?,I am the V.R.C Support Assistant.,"name, who, assistant",Yes</pre>
+</div>
+{% endblock %}

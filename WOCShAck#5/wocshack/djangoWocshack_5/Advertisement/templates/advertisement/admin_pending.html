@@ -1,0 +1,103 @@
+{% extends "base/base.html" %}
+{% load static %}
+
+{% block title %}V.R.C — Pending Ads{% endblock %}
+
+{% block content %}
+<div style="max-width:1000px; margin:2rem auto;">
+
+    <!-- Admin nav -->
+    <div style="display:flex; gap:0.75rem; margin-bottom:1.25rem; flex-wrap:wrap;">
+        <a href="{% url 'advertisement_admin_dashboard' %}"
+           style="padding:0.4rem 1rem; background:var(--vrc-gray-200); color:var(--vrc-gray-700); border-radius:8px; text-decoration:none; font-weight:600; font-size:0.85rem;">
+            &#8592; Admin Dashboard
+        </a>
+        <a href="{% url 'advertisement_admin_all' %}"
+           style="padding:0.4rem 1rem; background:#667eea; color:white; border-radius:8px; text-decoration:none; font-weight:600; font-size:0.85rem;">
+            All Ads
+        </a>
+    </div>
+
+    <h1 style="font-size:1.75rem; color:var(--vrc-gray-900); margin-bottom:1.5rem;">
+        Pending Advertisements
+        {% if pending_ads %}<span style="background:#fef3c7; color:#92400e; font-size:1rem; padding:0.25rem 0.75rem; border-radius:20px; margin-left:0.5rem;">{{ pending_ads|length }}</span>{% endif %}
+    </h1>
+
+    {% if pending_ads %}
+    <div style="display:flex; flex-direction:column; gap:1.25rem;">
+        {% for ad in pending_ads %}
+        <div style="background:white; border-radius:var(--vrc-radius-xl); padding:1.5rem; box-shadow:0 2px 10px rgba(0,0,0,0.06);">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:1rem; flex-wrap:wrap;">
+                <div style="flex:1;">
+                    <h2 style="font-size:1.2rem; margin:0 0 0.4rem; color:var(--vrc-gray-900);">{{ ad.title }}</h2>
+                    <p style="color:var(--vrc-gray-500); font-size:0.85rem; margin:0 0 0.75rem;">
+                        By <strong>{{ ad.advertiser.username }}</strong>
+                        &middot; Zone: <strong>{{ ad.get_placement_zone_display }}</strong>
+                        &middot; Submitted {{ ad.created_at|date:"Y-m-d H:i" }}
+                        {% if ad.end_date %}&middot; Ends {{ ad.end_date|date:"Y-m-d" }}{% endif %}
+                    </p>
+
+                    {# Projected billing cost #}
+                    {% if ad.projected_cost %}
+                    <div style="background:#fef3c7; border:1px solid #fcd34d; border-radius:8px; padding:0.5rem 0.75rem; margin-bottom:0.75rem; display:inline-block; font-size:0.85rem; color:#78350f;">
+                        Billing on activation:
+                        <strong>{{ ad.projected_cost }} Neuros</strong>
+                        ({{ ad.projected_days }} day(s) &times; {{ ad.rate_per_day }} N/day)
+                    </div>
+                    {% else %}
+                    <div style="background:#f0fdf4; border:1px solid #86efac; border-radius:8px; padding:0.5rem 0.75rem; margin-bottom:0.75rem; display:inline-block; font-size:0.85rem; color:#166534;">
+                        No billing (no end date set)
+                    </div>
+                    {% endif %}
+
+                    {% if ad.body_html %}
+                    <div style="color:var(--vrc-gray-700); margin:0 0 0.75rem; font-size:0.9rem; line-height:1.6;">{{ ad.body_html|safe }}</div>
+                    {% else %}
+                    <p style="color:var(--vrc-gray-700); margin:0 0 0.75rem; white-space:pre-wrap;">{{ ad.body }}</p>
+                    {% endif %}
+                    <p style="margin:0; font-size:0.85rem;">
+                        Target: <a href="{{ ad.target_url }}" target="_blank" rel="noopener noreferrer" style="color:#667eea; word-break:break-all;">{{ ad.target_url|truncatechars:60 }}</a>
+                    </p>
+                    {% if ad.image_url %}
+                    <p style="margin:0.5rem 0 0; font-size:0.85rem;">Image: <a href="{{ ad.image_url }}" target="_blank" rel="noopener noreferrer" style="color:#667eea;">Preview link</a></p>
+                    {% endif %}
+                    {% with images=ad.images.all %}
+                    {% if images %}
+                    <p style="margin:0.5rem 0 0; font-size:0.85rem; color:var(--vrc-gray-500);">{{ images|length }} uploaded image(s)</p>
+                    {% endif %}
+                    {% endwith %}
+                </div>
+            </div>
+
+            <div style="display:flex; gap:1rem; align-items:flex-end; flex-wrap:wrap; margin-top:1.25rem; padding-top:1rem; border-top:1px solid var(--vrc-gray-100);">
+                {# Approve #}
+                <form method="post" action="{% url 'approve_ad' ad.id %}" style="margin:0;">
+                    {% csrf_token %}
+                    <button type="submit"
+                            style="padding:0.5rem 1.25rem; background:#10b981; color:white; border:none; border-radius:8px; font-weight:600; cursor:pointer;">
+                        Approve{% if ad.projected_cost %} ({{ ad.projected_cost }} Neuros){% endif %}
+                    </button>
+                </form>
+                {# Reject #}
+                <form method="post" action="{% url 'reject_ad' ad.id %}" style="margin:0; display:flex; gap:0.5rem; flex:1; align-items:center; flex-wrap:wrap;">
+                    {% csrf_token %}
+                    <input type="text" name="rejection_reason" maxlength="1000"
+                           placeholder="Rejection reason (optional)…"
+                           style="flex:1; min-width:200px; padding:0.5rem 0.75rem; border:1px solid var(--vrc-gray-300); border-radius:8px; font-size:0.9rem;">
+                    <button type="submit" style="padding:0.5rem 1.25rem; background:#ef4444; color:white; border:none; border-radius:8px; font-weight:600; cursor:pointer;">
+                        Reject
+                    </button>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div style="text-align:center; padding:4rem 2rem; background:white; border-radius:var(--vrc-radius-xl); box-shadow:0 2px 10px rgba(0,0,0,0.06);">
+        <div style="font-size:3rem; margin-bottom:1rem;">&#10003;</div>
+        <h2 style="color:var(--vrc-gray-700); margin-bottom:0.5rem;">All clear!</h2>
+        <p style="color:var(--vrc-gray-500);">No advertisements pending review.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

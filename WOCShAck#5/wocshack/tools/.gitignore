@@ -1,0 +1,7 @@
+.idea/
+Webmail/__pycache__
+Webmail/src/DataBase/DataBase.db
+.oasis_cache/
+security_reports/
+__pycache__/
+.claude/

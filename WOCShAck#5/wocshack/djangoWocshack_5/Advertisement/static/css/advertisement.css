@@ -1,0 +1,11 @@
+html, body {
+    box-sizing: border-box;
+    background-color: #e8e9eb;
+    color: #313638;
+    padding: 0px;
+    margin: 0;
+    padding-top: 80px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}

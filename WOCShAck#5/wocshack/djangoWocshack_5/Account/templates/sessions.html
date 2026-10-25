@@ -1,0 +1,409 @@
+{% extends "base/base_account.html" %}
+{% load static %}
+
+
+{% block title %}V.R.C - Active Sessions{% endblock %}
+
+{% block breadcrumbs %}
+<nav class="vrc-breadcrumbs">
+    <a href="{% url 'account' %}">Account</a>
+    <span class="bc-sep">›</span>
+    <a href="{% url 'settings' %}">Settings</a>
+    <span class="bc-sep">›</span>
+    <span class="bc-current">Sessions</span>
+</nav>
+{% endblock %}
+
+{% block account_title %}Active Sessions{% endblock %}
+
+{% block account_subtitle %}
+<p class="account-subtitle">Manage your active sessions across devices</p>
+{% endblock %}
+
+{% block account_content %}
+<div class="sessions-container">
+    <div class="info-banner">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="16" x2="12" y2="12"/>
+            <line x1="12" y1="8" x2="12.01" y2="8"/>
+        </svg>
+        <span>These are the devices currently logged into your account. If you see any suspicious activity, revoke the session immediately.</span>
+    </div>
+
+    <div class="sessions-list">
+        {% for session in sessions %}
+        <div class="session-card {% if session.is_current_session %}current{% endif %}">
+            <div class="session-icon">
+                {% if session.device_type == 'mobile' %}
+                <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
+                    <line x1="12" y1="18" x2="12.01" y2="18"/>
+                </svg>
+                {% elif session.device_type == 'tablet' %}
+                <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="4" y="2" width="16" height="20" rx="2" ry="2"/>
+                    <line x1="12" y1="18" x2="12.01" y2="18"/>
+                </svg>
+                {% else %}
+                <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+                    <line x1="8" y1="21" x2="16" y2="21"/>
+                    <line x1="12" y1="17" x2="12" y2="21"/>
+                </svg>
+                {% endif %}
+            </div>
+            <div class="session-details">
+                <div class="session-header">
+                    <span class="session-browser">{{ session.get_browser_info }} on {{ session.device_type|title }}</span>
+                    {% if session.is_current_session %}
+                    <span class="current-badge">Current Session</span>
+                    {% endif %}
+                </div>
+                <div class="session-meta">
+                    <span class="session-ip">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <line x1="2" y1="12" x2="22" y2="12"/>
+                            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                        </svg>
+                        {{ session.ip_address|default:"Unknown IP" }}
+                    </span>
+                    <span class="session-time">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <polyline points="12 6 12 12 16 14"/>
+                        </svg>
+                        Last active: {{ session.last_activity|timesince }} ago
+                    </span>
+                </div>
+            </div>
+            <div class="session-actions">
+                {% if session.is_current_session %}
+                <span class="action-disabled">You are here</span>
+                {% else %}
+                <form method="POST" action="{% url 'revoke_session' session.id %}" onsubmit="return confirm('Are you sure you want to revoke this session?');">
+                    {% csrf_token %}
+                    <button type="submit" class="revoke-btn">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <line x1="15" y1="9" x2="9" y2="15"/>
+                            <line x1="9" y1="9" x2="15" y2="15"/>
+                        </svg>
+                        Revoke
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+        {% empty %}
+        <div class="no-sessions">
+            <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5">
+                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+                <line x1="8" y1="21" x2="16" y2="21"/>
+                <line x1="12" y1="17" x2="12" y2="21"/>
+            </svg>
+            <p>No active sessions found.</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if sessions|length > 1 %}
+    <div class="revoke-all-section">
+        <h3>Sign Out Everywhere</h3>
+        <p>This will revoke all sessions except your current one.</p>
+        <button class="revoke-all-btn" onclick="OpenDialog('revoke_all_dialog')">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                <polyline points="16 17 21 12 16 7"/>
+                <line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+            Sign Out All Other Devices
+        </button>
+    </div>
+    {% endif %}
+
+    <div class="back-link">
+        <a href="{% url 'settings' %}">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="19" y1="12" x2="5" y2="12"/>
+                <polyline points="12 19 5 12 12 5"/>
+            </svg>
+            Back to Settings
+        </a>
+    </div>
+</div>
+
+<dialog id="revoke_all_dialog">
+    <div class="dialog-wrapper">
+        <form method="POST" action="{% url 'revoke_all_sessions' %}">
+            {% csrf_token %}
+            <h2>Sign Out All Devices</h2>
+            <p style="color: var(--vrc-gray-600); margin-bottom: 1rem;">
+                This will sign you out of all devices except this one. Enter your password to confirm.
+            </p>
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" required placeholder="Enter your password">
+            <div class="dialog-buttons">
+                <button type="submit" class="save-button" style="background: #ef4444;">Sign Out All</button>
+                <button type="button" class="cancel-button" onclick="document.getElementById('revoke_all_dialog').close()">Cancel</button>
+            </div>
+        </form>
+    </div>
+</dialog>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .sessions-container {
+        max-width: 700px;
+        margin: 0 auto;
+    }
+
+    .info-banner {
+        display: flex;
+        gap: 0.75rem;
+        align-items: flex-start;
+        background: rgba(102, 126, 234, 0.1);
+        border-radius: var(--vrc-radius-lg);
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+        font-size: 0.875rem;
+        color: var(--vrc-gray-700);
+    }
+
+    .info-banner svg {
+        flex-shrink: 0;
+        color: var(--vrc-primary);
+    }
+
+    .sessions-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .session-card {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        background: var(--vrc-white);
+        border: 1px solid var(--vrc-gray-200);
+        border-radius: var(--vrc-radius-lg);
+        padding: 1.25rem;
+        transition: all 0.2s ease;
+    }
+
+    .session-card:hover {
+        border-color: var(--vrc-gray-300);
+        box-shadow: var(--vrc-shadow-sm);
+    }
+
+    .session-card.current {
+        border-color: var(--vrc-primary);
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+    }
+
+    .session-icon {
+        flex-shrink: 0;
+        width: 48px;
+        height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--vrc-gray-100);
+        border-radius: var(--vrc-radius-lg);
+        color: var(--vrc-gray-600);
+    }
+
+    .session-card.current .session-icon {
+        background: var(--vrc-gradient);
+        color: var(--vrc-white);
+    }
+
+    .session-details {
+        flex-grow: 1;
+        min-width: 0;
+    }
+
+    .session-header {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .session-browser {
+        font-weight: 600;
+        color: var(--vrc-gray-900);
+    }
+
+    .current-badge {
+        display: inline-block;
+        padding: 0.2rem 0.6rem;
+        background: var(--vrc-success-light);
+        color: #065f46;
+        font-size: 0.7rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        border-radius: 9999px;
+    }
+
+    .session-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .session-ip,
+    .session-time {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        font-size: 0.8rem;
+        color: var(--vrc-gray-500);
+    }
+
+    .session-actions {
+        flex-shrink: 0;
+    }
+
+    .revoke-btn {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.5rem 1rem;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #dc2626;
+        background: var(--vrc-error-light);
+        border: 1px solid #fecaca;
+        border-radius: var(--vrc-radius-md);
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .revoke-btn:hover {
+        background: #dc2626;
+        color: var(--vrc-white);
+        border-color: #dc2626;
+    }
+
+    .action-disabled {
+        font-size: 0.8rem;
+        color: var(--vrc-gray-500);
+        font-style: italic;
+    }
+
+    .no-sessions {
+        text-align: center;
+        padding: 3rem;
+        color: var(--vrc-gray-500);
+    }
+
+    .no-sessions svg {
+        margin-bottom: 1rem;
+        opacity: 0.5;
+    }
+
+    .revoke-all-section {
+        background: var(--vrc-error-light);
+        border: 1px solid #fecaca;
+        border-radius: var(--vrc-radius-lg);
+        padding: 1.25rem;
+        margin-top: 1.5rem;
+        text-align: center;
+    }
+
+    .revoke-all-section h3 {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #991b1b;
+        margin-bottom: 0.5rem;
+    }
+
+    .revoke-all-section p {
+        font-size: 0.85rem;
+        color: #7f1d1d;
+        margin-bottom: 1rem;
+    }
+
+    .revoke-all-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1.5rem;
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--vrc-white);
+        background: #dc2626;
+        border: none;
+        border-radius: var(--vrc-radius-lg);
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .revoke-all-btn:hover {
+        background: #b91c1c;
+        transform: translateY(-1px);
+    }
+
+    .back-link {
+        margin-top: 2rem;
+        text-align: center;
+    }
+
+    .back-link a {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: var(--vrc-primary);
+        text-decoration: none;
+        font-size: 0.9rem;
+    }
+
+    .back-link a:hover {
+        text-decoration: underline;
+    }
+
+    @media (max-width: 600px) {
+        .session-card {
+            flex-wrap: wrap;
+        }
+
+        .session-details {
+            width: calc(100% - 64px);
+        }
+
+        .session-actions {
+            width: 100%;
+            margin-top: 0.5rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid var(--vrc-gray-100);
+        }
+
+        .revoke-btn {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .session-meta {
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function OpenDialog(DialogId) {
+    const dialog = document.getElementById(DialogId);
+    const wrapper = dialog.querySelector(".dialog-wrapper");
+    dialog.onclick = (e) => {
+        if (!wrapper.contains(e.target)) dialog.close();
+    };
+    dialog.showModal();
+}
+</script>
+{% endblock %}

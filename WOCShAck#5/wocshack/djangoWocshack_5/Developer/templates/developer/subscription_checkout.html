@@ -1,0 +1,49 @@
+{% extends 'base/base.html' %}
+{% block title %}Subscribe to {{ plan.name }} — V.R.C{% endblock %}
+
+{% block extra_css %}
+<style>
+    .checkout-container { max-width: 480px; margin: 0 auto; padding: var(--vrc-spacing-xl); }
+    .back-link { display: inline-block; margin-bottom: var(--vrc-spacing-lg); color: var(--vrc-primary); text-decoration: none; font-size: var(--vrc-font-size-sm); }
+    .page-title { font-size: var(--vrc-font-size-2xl); font-weight: var(--vrc-font-weight-bold); margin-bottom: var(--vrc-spacing-xl); text-align: center; }
+    .plan-summary { background: var(--vrc-white); border-radius: var(--vrc-radius-lg); padding: var(--vrc-spacing-xl); box-shadow: var(--vrc-shadow-md); margin-bottom: var(--vrc-spacing-xl); text-align: center; }
+    .plan-summary .plan-name { font-size: var(--vrc-font-size-lg); font-weight: var(--vrc-font-weight-semibold); color: var(--vrc-gray-800); }
+    .plan-summary .plan-amount { font-size: var(--vrc-font-size-3xl); font-weight: var(--vrc-font-weight-bold); color: var(--vrc-primary); margin: var(--vrc-spacing-sm) 0; }
+    .plan-summary .plan-amount span { font-size: var(--vrc-font-size-sm); color: var(--vrc-gray-500); font-weight: normal; }
+    .plan-summary .plan-note { font-size: var(--vrc-font-size-xs); color: var(--vrc-gray-500); margin-top: 4px; }
+    .payment-card { background: var(--vrc-white); border-radius: var(--vrc-radius-lg); padding: var(--vrc-spacing-xl); box-shadow: var(--vrc-shadow-md); }
+    .payment-card h2 { font-size: var(--vrc-font-size-lg); font-weight: var(--vrc-font-weight-semibold); margin-bottom: var(--vrc-spacing-lg); }
+    .form-group { margin-bottom: var(--vrc-spacing-lg); }
+    .form-group label { display: block; font-size: var(--vrc-font-size-sm); font-weight: var(--vrc-font-weight-medium); color: var(--vrc-gray-700); margin-bottom: 6px; }
+    .form-group input { width: 100%; padding: 10px 14px; border: 1px solid var(--vrc-gray-300); border-radius: var(--vrc-radius-md); font-size: var(--vrc-font-size-base); box-sizing: border-box; letter-spacing: 0.2em; }
+    .btn-pay { width: 100%; padding: 13px; background: var(--vrc-gradient); color: white; border: none; border-radius: var(--vrc-radius-md); font-size: var(--vrc-font-size-base); font-weight: var(--vrc-font-weight-semibold); cursor: pointer; margin-top: var(--vrc-spacing-sm); }
+    .btn-pay:hover { opacity: 0.9; }
+    .secure-note { text-align: center; font-size: var(--vrc-font-size-xs); color: var(--vrc-gray-400); margin-top: var(--vrc-spacing-md); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="checkout-container">
+    <a href="{% url 'developer_subscribe' %}" class="back-link">&larr; Back to Plans</a>
+    <h1 class="page-title">Complete Subscription</h1>
+
+    <div class="plan-summary">
+        <div class="plan-name">{{ plan.name }}</div>
+        <div class="plan-amount">{{ plan.price_monthly }} NE <span>/month</span></div>
+        <div class="plan-note">Billed monthly from your bank account</div>
+    </div>
+
+    <div class="payment-card">
+        <h2>Confirm Payment</h2>
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="id_pin">Bank PIN</label>
+                <input type="password" name="pin" id="id_pin" maxlength="10" placeholder="••••••" autocomplete="off" required>
+            </div>
+            <button type="submit" class="btn-pay">Pay {{ plan.price_monthly }} NE &amp; Subscribe</button>
+        </form>
+        <p class="secure-note">Your PIN is verified securely and never stored.</p>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,146 @@
+{# Multi-ad carousel banner. Expects 'ads' (list of Advertisement) in context. #}
+{# If there is more than one ad, they rotate automatically every 20 seconds.   #}
+{% load static %}
+{% if ads %}
+<style>
+.ad-body p { margin: 0 0 0.4rem; }
+.ad-body p:last-child { margin-bottom: 0; }
+.ad-body strong, .ad-body b { font-weight: 700; color: inherit; }
+.ad-body em, .ad-body i { font-style: italic; }
+.ad-body ul, .ad-body ol { margin: 0 0 0.4rem; padding-left: 1.25rem; }
+.ad-body li { margin-bottom: 0.15rem; }
+.ad-body a { color: #667eea; text-decoration: underline; }
+.ad-body code { background: #f3f4f6; border-radius: 3px; padding: 0.1rem 0.3rem; font-size: 0.8rem; }
+</style>
+<div class="ad-zone-wrap" style="max-width:1200px; margin:0 auto 1rem; padding:0 var(--vrc-spacing-xl);">
+    <p style="font-size:0.65rem; color:#9ca3af; text-transform:uppercase; letter-spacing:0.05em; margin:0 0 0.4rem;">Sponsored</p>
+
+    {# ---- Slides: one per ad ---- #}
+    <div class="adz-carousel" id="adz-carousel" style="position:relative;">
+        {% for ad in ads %}
+        <div class="adz-slide" data-adz-idx="{{ forloop.counter0 }}"
+             style="display:{% if forloop.first %}block{% else %}none{% endif %}; border:1px solid #e5e7eb; border-radius:12px; padding:1rem; background:#f9fafb; overflow:hidden;">
+
+            {# Image: uploaded carousel images, then image_url fallback #}
+            {% with images=ad.images.all %}
+            {% if images %}
+                {% if images|length > 1 %}
+                {# Inner image carousel for this ad's own images #}
+                <div style="position:relative; margin-bottom:0.75rem; border-radius:8px; overflow:hidden;">
+                    {% for img in images %}
+                    <div class="adz-img-slide" data-adz-ad="{{ forloop.parentloop.counter0 }}"
+                         style="display:{% if forloop.first %}block{% else %}none{% endif %};">
+                        <a href="#" onclick="event.preventDefault(); this.closest('.adz-slide').querySelector('.adz-click-form').submit();" style="display:block; cursor:pointer;">
+                            <img src="{{ img.image.url }}" alt="{{ img.alt_text|default:ad.title }}"
+                                 style="width:100%; max-height:160px; object-fit:cover;">
+                        </a>
+                    </div>
+                    {% endfor %}
+                    <button onclick="adzImgPrev({{ forloop.counter0 }})"
+                            style="position:absolute;left:4px;top:50%;transform:translateY(-50%);background:rgba(0,0,0,0.45);color:white;border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;font-size:0.85rem;line-height:1;padding:0;">&#8249;</button>
+                    <button onclick="adzImgNext({{ forloop.counter0 }})"
+                            style="position:absolute;right:4px;top:50%;transform:translateY(-50%);background:rgba(0,0,0,0.45);color:white;border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;font-size:0.85rem;line-height:1;padding:0;">&#8250;</button>
+                </div>
+                {% else %}
+                <a href="#" onclick="event.preventDefault(); this.closest('.adz-slide').querySelector('.adz-click-form').submit();" style="display:block; cursor:pointer;">
+                    <img src="{{ images.0.image.url }}" alt="{{ images.0.alt_text|default:ad.title }}"
+                         style="width:100%;border-radius:8px;margin-bottom:0.75rem;max-height:160px;object-fit:cover;">
+                </a>
+                {% endif %}
+            {% elif ad.image_url %}
+            <a href="#" onclick="event.preventDefault(); this.closest('.adz-slide').querySelector('.adz-click-form').submit();" style="display:block; cursor:pointer;">
+                <img src="{{ ad.image_url }}" alt="{{ ad.title }}"
+                     style="width:100%;border-radius:8px;margin-bottom:0.75rem;max-height:160px;object-fit:cover;">
+            </a>
+            {% endif %}
+            {% endwith %}
+
+            <div onclick="this.closest('.adz-slide').querySelector('.adz-click-form').submit();" style="cursor:pointer;">
+                <h4 style="margin:0 0 0.5rem; font-size:1rem; color:#111827;">{{ ad.title }}</h4>
+
+                {% if ad.body_html %}
+                <div class="ad-body" style="font-size:0.875rem; color:#6b7280; margin:0 0 0.75rem; line-height:1.5;">{{ ad.body_html|safe }}</div>
+                {% else %}
+                <div class="ad-body ad-body-md" style="font-size:0.875rem; color:#6b7280; margin:0 0 0.75rem; line-height:1.5;">{{ ad.body|escape }}</div>
+                {% endif %}
+            </div>
+
+            <form class="adz-click-form" method="post" action="{% url 'record_click' ad.id %}" style="display:none;">
+                {% csrf_token %}
+            </form>
+        </div>
+        {% endfor %}
+
+        {# Navigation arrows (only shown when there are multiple ads) #}
+        {% if ads|length > 1 %}
+        <button id="adz-prev" onclick="adzGo(adzCur - 1)"
+                style="position:absolute;left:-12px;top:50%;transform:translateY(-50%);background:white;border:1px solid #e5e7eb;border-radius:50%;width:28px;height:28px;cursor:pointer;font-size:1rem;line-height:1;padding:0;box-shadow:0 1px 4px rgba(0,0,0,0.12);display:flex;align-items:center;justify-content:center;">&#8249;</button>
+        <button id="adz-next" onclick="adzGo(adzCur + 1)"
+                style="position:absolute;right:-12px;top:50%;transform:translateY(-50%);background:white;border:1px solid #e5e7eb;border-radius:50%;width:28px;height:28px;cursor:pointer;font-size:1rem;line-height:1;padding:0;box-shadow:0 1px 4px rgba(0,0,0,0.12);display:flex;align-items:center;justify-content:center;">&#8250;</button>
+        {% endif %}
+    </div>
+
+    {# Dot indicators #}
+    {% if ads|length > 1 %}
+    <div style="display:flex;justify-content:center;gap:6px;margin-top:0.5rem;">
+        {% for ad in ads %}
+        <button class="adz-dot" data-adz-dot="{{ forloop.counter0 }}" onclick="adzGo({{ forloop.counter0 }})"
+                style="width:8px;height:8px;border-radius:50%;border:none;cursor:pointer;padding:0;transition:background 0.2s;background:{% if forloop.first %}#667eea{% else %}#d1d5db{% endif %};"></button>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+
+<script>
+(function () {
+    // Per-ad inner image carousels (always needed)
+    var imgCursors = {};
+    window.adzImgGo = function (adIdx, imgIdx) {
+        var slides = document.querySelectorAll('.adz-img-slide[data-adz-ad="' + adIdx + '"]');
+        var n = slides.length;
+        if (!n) return;
+        imgIdx = ((imgIdx % n) + n) % n;
+        slides.forEach(function (s, i) { s.style.display = i === imgIdx ? 'block' : 'none'; });
+        imgCursors[adIdx] = imgIdx;
+    };
+    window.adzImgPrev = function (adIdx) { adzImgGo(adIdx, (imgCursors[adIdx] || 0) - 1); };
+    window.adzImgNext = function (adIdx) { adzImgGo(adIdx, (imgCursors[adIdx] || 0) + 1); };
+
+    // Client-side markdown rendering for ads without pre-rendered body_html
+    document.querySelectorAll('.ad-body-md').forEach(function (el) {
+        var raw = el.textContent;
+        var html = raw
+            .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+            .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+            .replace(/\*(.+?)\*/g,'<em>$1</em>')
+            .replace(/\[(.+?)\]\(https?:\/\/[^\)]+\)/g,'<a>$1</a>')
+            .replace(/^- (.+)$/gm,'<li>$1</li>')
+            .replace(/(<li>.*<\/li>)/gs,'<ul>$1</ul>')
+            .replace(/\n/g,'<br>');
+        el.innerHTML = html;
+    });
+
+    {% if ads|length > 1 %}
+    // Multi-ad rotation (only when there are multiple ads)
+    var total = {{ ads|length }};
+    var cur = 0;
+    window.adzCur = cur;
+
+    function adzShow(idx) {
+        idx = ((idx % total) + total) % total;
+        document.querySelectorAll('.adz-slide').forEach(function (s, i) {
+            s.style.display = i === idx ? 'block' : 'none';
+        });
+        document.querySelectorAll('.adz-dot').forEach(function (d, i) {
+            d.style.background = i === idx ? '#667eea' : '#d1d5db';
+        });
+        cur = idx;
+        window.adzCur = cur;
+    }
+
+    window.adzGo = adzShow;
+    setInterval(function () { adzShow(cur + 1); }, 20000);
+    {% endif %}
+})();
+</script>
+{% endif %}

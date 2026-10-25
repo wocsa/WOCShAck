@@ -1,0 +1,234 @@
+{% extends "base/base.html" %}
+{% load static %}
+
+{% block title %}VRC — Conversation with {{ other_user.username }}{% endblock %}
+
+
+{% block module_css %}
+<link rel="stylesheet" href="{% static 'community/css/community.css' %}">
+<link rel="stylesheet" href="{% static 'community/css/conversation.css' %}">
+{% endblock %}
+
+{% block content %}
+
+{% include "community/partials/is_user_blocked.html" %}
+
+<div class="modal-overlay" id="report-modal">
+  <div class="modal">
+    <p class="modal-title">🚩 Report Message</p>
+    <input class="modal-input" type="text" id="report-reason-input" placeholder="Reason for report...">
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="closeReportModal()">Cancel</button>
+      <button class="modal-submit" onclick="submitReport()">Report</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="edit-modal">
+  <div class="modal">
+    <p class="modal-title">✏️ Edit Message</p>
+    <input class="modal-input" type="text" id="edit-content-input">
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="closeEditModal()">Cancel</button>
+      <button class="modal-submit" onclick="submitEdit()">Edit</button>
+    </div>
+  </div>
+</div>
+
+<nav class="vrc-breadcrumbs" style="padding: 0.75rem 1.5rem 0;">
+  <a href="{% url 'community:index' %}">Community</a>
+  <span class="bc-sep">›</span>
+  <a href="{% url 'community:inbox' %}">Messages</a>
+  <span class="bc-sep">›</span>
+  <span class="bc-current">{{ other_user.username }}</span>
+</nav>
+
+<div class="conversation-nav">
+    <a class="btn-nav return-button" href="{% url 'community:inbox' %}">
+      Back to Inbox
+    </a>
+    <a class="btn-nav" href="{% url 'community:add_friends' %}">
+      🔍 Add Friends
+    </a>
+    <a class="btn-nav" href="{% url 'community:friend_requests' %}">
+      📬 View Friend Requests
+    </a>
+</div>
+
+<div class="conversation-page">
+
+    <div class="conversation-list">
+        <h2 class="conversation-list-title">Your Conversations</h2>
+        <div class="conversation-list-scroll-box">
+            <ul class="conversation-list-items">
+            {% for friend in friends %}
+                <li>
+
+                    {% if  conversation.user1 == request.user %}
+                        {% if friend == conversation.user2 %}
+                            <span class="current-conversation-indicator"> {{ friend.username|capfirst }} (Current Conversation)</span>
+                        {% else %}
+                                <a href="{% url 'community:start_conversation' friend.id %}">
+                                    {{ friend.username|capfirst }}
+                                </a>
+                        {% endif %}
+                    {% else %}
+                        {% if friend == conversation.user1 %}
+                            <span class="current-conversation-indicator"> {{ friend.username|capfirst }} (Current Conversation)</span>
+                        {% else %}
+                                <a href="{% url 'community:start_conversation' friend.id %}">
+                                    {{ friend.username|capfirst }}
+                                </a>
+                        {% endif %}
+                    {% endif %}
+                </li>
+            {% empty %}
+                <p class="no-conversations">No conversations.</p>
+            {% endfor %}
+        </ul>
+        </div>
+        
+    </div>
+
+
+    <container class="chat-container">
+        {% if  conversation.user1 == request.user %}
+        <div class="div-title">
+            <h2 class="conversation-title">Conversation with {{conversation.user2.username|capfirst }}</h2>
+
+            <a class = "handle-friend-link" href="{% url 'community:handle_friend' conversation.user2.id %}">
+                Manage Friend
+            </a>
+        </div>
+        {% else %}
+        <div class="div-title">
+            <h2 class="conversation-title">Conversation with {{conversation.user1.username|capfirst }}</h2>
+
+            <a class = "handle-friend-link" href="{% url 'community:handle_friend' conversation.user1.id %}">
+                Manage Friend
+            </a>
+        </div>
+        {% endif %}
+
+
+        <div id="message-scroll-box" >
+            {% for message in page_obj %}
+                
+                
+                {% if message.sender == request.user %}
+                    <div style="text-align:right;" class ="message-sent">
+                        <strong class = "message-sender-name">
+                            {{ message.sender.username }}
+                        </strong>
+                        <div class = "message-data">
+                            {% if not message.is_deleted %}
+                            <div class="message-actions-wrapper">
+                                <button class="message-actions-btn" onclick="toggleMenu(this)">⋯</button>
+                                <div class="message-actions-menu">
+                                    <button class="menu-item" onclick="copyMessage(this)">📋 Copy</button>
+                                    {% if not message.is_reported %}
+                                        <a class="menu-item" 
+                                                data-edit-url="{% url 'community:edit_message' message.id %}"
+                                                data-message-id="{{ message.id }}"
+                                                data-message-content="{{ message.content }}"
+                                                onclick="openEditModal(this.dataset.editUrl, this.dataset.messageContent, this.dataset.messageId)">
+                                                ✏️ Edit
+                                            </a>
+                                        <form method="post" onsubmit="return confirm('Are you sure you want to delete this message?');" action="{% url 'community:delete_message' message.id %}">
+                                            {% csrf_token %}
+                                            <button class="menu-item danger" type="submit">🗑️ Delete</button>
+                                        </form>
+                                    {% endif %}
+                                    
+                                </div>
+                            </div>
+                            {% endif %}
+                            {% if message.is_reported %}
+                                <span class="message-reported">(Reported)</span>
+                            {% endif %}
+                            <small class = "message-timestamp">
+                                {{ message.timestamp }}
+                            </small>
+                        </div>
+                        {% if not message.is_deleted %}
+                        <p class="message-content">
+                            {{ message.content }}
+                        </p>
+                        {% if message.is_edited %}
+                                <small class="message-edited">(Edited)</small>
+                            {% endif %}
+                        {% else %}
+                            <small class="message-deleted">(Message Deleted)</small>
+                        {% endif %}
+                    </div>
+                {% else %}
+                    <div class ="message-received">
+                        
+                        <strong class = "message-sender-name">
+                            {{ message.sender.username }}
+                        </strong>
+                        <div class = "message-data">
+                            <small class = "message-timestamp">
+                                {{ message.timestamp }}
+                            </small>
+                            {% if message.is_reported %}
+                                <span class="message-reported">(Reported)</span>
+                            {% endif %}
+                            
+                            {% if not message.is_deleted %}
+                            <div class="message-actions-wrapper">
+                                <button class="message-actions-btn" onclick="toggleMenu(this)">⋯</button>
+                                <div class="message-actions-menu">
+                                    <button class="menu-item" onclick="copyMessage(this)">📋 Copy</button>
+                                    <a class="menu-item" href="{% url 'community:friends_list' %}">👤 View Profile</a>
+                                    {% if not message.is_reported %}
+                                        <button class="menu-item danger"
+                                                data-report-url="{% url 'community:report_message' message.id %}"
+                                                onclick="openReportModal(this.dataset.reportUrl)">
+                                            🚩 Report
+                                        </button>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endif %}
+                        </div>
+                        {% if not message.is_deleted %}
+                        <p class="message-content">
+                            {{ message.content }}
+                        </p>
+                        {% if message.is_edited %}
+                                <small class="message-edited">(Edited)</small>
+                            {% endif %}
+                        {% else %}
+                            <small class="message-deleted">(Message Deleted)</small>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            {% empty %}
+                <p class="empty-message">No messages.</p>
+            {% endfor %}
+            <div class="start-scroll-box">
+                <p class="start-conversation-message">
+                    You have reached the beginning of the conversation.
+                </p>
+            </div>
+        </div>
+
+        <form class="form-send-message" method="post" action="{% url 'community:send_message' conversation.id %}">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button class="submit-send-message" type="submit">Send</button>
+        </form>
+
+        <div class="pagination">
+            {% if page_obj.has_previous %}
+                <a href="?page={{ page_obj.previous_page_number }}">Older Messages</a>
+            {% endif %}
+        </div>
+
+        
+    </container>
+</div>
+<script src="{% static 'community/js/conversation.js' %}"></script>
+
+{% endblock %}

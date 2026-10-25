@@ -1,0 +1,41 @@
+    # Do your logic here: authenticate, process data, etc.
+    token = 'example-token'  # this would be generated/obtained dynamically
+
+    # Return HTML with JS that sends message back to parent
+    html = f"""
+    <html>
+      <body>
+        <script>
+          window.opener.postMessage({json.dumps({"status": "success", "token": token})}, "*");
+          window.close();
+        </script>
+        <p>Processing... You can close this window if it doesn't close automatically.</p>
+      </body>
+    </html>
+    """
+    return HttpResponse(html)
+
+
+
+
+
+
+
+
+
+
+    <script>
+        function openPopup() {
+            const popup = window.open('/banking/payment/popup-action/init', 'PopupWindow', 'width=500,height=600');
+        }
+
+        window.addEventListener('message', function(event) {
+        // Optionally check event.origin here
+        console.log('Message received:', event.data);
+
+        if (event.data.status === 'success') {
+            alert("Token received: " + event.data.token);
+            // You can now use the token (e.g., send it to your backend via fetch/AJAX)
+            }
+        });
+    </script>

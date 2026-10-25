@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% load static %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>V.R.C - Saved Beneficiaries</title>
+    <link rel="stylesheet" href="{% static 'css/account/account.css' %}">
+    <link rel="icon" type="image/svg+xml" href="{% static 'img/favicon.svg' %}">
+    <link rel="stylesheet" href="{% static 'header/css/header.css' %}">
+    <style>
+        body { padding-top: 70px; }
+        /* No user-supplied content rendered as HTML */
+        .page-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.5rem 1rem;
+            background: rgba(102,126,234,0.1);
+            color: #667eea;
+            border-radius: 10px;
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 600;
+            border: 1px solid rgba(102,126,234,0.2);
+            transition: all 0.2s ease;
+        }
+        .back-link:hover { background: rgba(102,126,234,0.18); }
+
+        /* ---------- beneficiary list ---------- */
+        .ben-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            margin-bottom: 2rem;
+        }
+        .ben-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem 1.25rem;
+            background: rgba(0,0,0,0.02);
+            border: 1px solid rgba(0,0,0,0.06);
+            border-radius: 14px;
+            transition: background 0.2s;
+        }
+        .ben-item:hover { background: rgba(102,126,234,0.05); border-color: rgba(102,126,234,0.15); }
+        .ben-avatar {
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.15rem;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+        .ben-info { flex: 1; min-width: 0; }
+        .ben-label {
+            font-weight: 700;
+            color: #333;
+            font-size: 0.95rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .ben-number {
+            font-size: 0.82rem;
+            color: #888;
+            font-family: monospace;
+            margin-top: 0.15rem;
+        }
+        .ben-date {
+            font-size: 0.75rem;
+            color: #bbb;
+            white-space: nowrap;
+        }
+        .ben-actions { display: flex; gap: 0.5rem; }
+        .btn-transfer {
+            padding: 0.4rem 0.85rem;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-decoration: none;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        .btn-transfer:hover { opacity: 0.88; }
+        .btn-delete {
+            padding: 0.4rem 0.75rem;
+            background: rgba(239,68,68,0.1);
+            color: #dc2626;
+            border: 1px solid rgba(239,68,68,0.25);
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn-delete:hover { background: rgba(239,68,68,0.18); }
+
+        /* ---------- empty state ---------- */
+        .ben-empty {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: #aaa;
+        }
+        .ben-empty-icon { font-size: 3.5rem; margin-bottom: 1rem; }
+
+        /* ---------- add form ---------- */
+        .add-card {
+            background: rgba(102,126,234,0.04);
+            border: 2px dashed rgba(102,126,234,0.3);
+            border-radius: 16px;
+            padding: 1.75rem 2rem;
+        }
+        .add-card h3 {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #444;
+            margin: 0 0 1.25rem;
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr auto;
+            gap: 0.75rem;
+            align-items: end;
+        }
+        @media (max-width: 600px) {
+            .form-row { grid-template-columns: 1fr; }
+        }
+        .form-group { display: flex; flex-direction: column; gap: 0.4rem; }
+        .form-group label {
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+        }
+        .form-group input {
+            padding: 0.6rem 1rem;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .form-group input:focus { border-color: #667eea; }
+        .btn-add {
+            padding: 0.6rem 1.5rem;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: opacity 0.2s;
+            white-space: nowrap;
+        }
+        .btn-add:hover { opacity: 0.88; }
+
+        /* ---------- messages ---------- */
+        .message-list { margin-bottom: 1rem; }
+        .message-item {
+            padding: 0.75rem 1rem;
+            border-radius: 10px;
+            font-size: 0.88rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        .message-item.success { background: rgba(34,197,94,0.1); color: #16a34a; border: 1px solid rgba(34,197,94,0.25); }
+        .message-item.error   { background: rgba(239,68,68,0.1);  color: #dc2626; border: 1px solid rgba(239,68,68,0.25); }
+        .message-item.warning { background: rgba(251,146,60,0.1); color: #c2410c; border: 1px solid rgba(251,146,60,0.25); }
+        .message-item.info    { background: rgba(59,130,246,0.1); color: #2563eb; border: 1px solid rgba(59,130,246,0.25); }
+
+        /* ---------- count badge ---------- */
+        .count-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: #fff;
+            border-radius: 20px;
+            padding: 0.15rem 0.65rem;
+            font-size: 0.8rem;
+            font-weight: 700;
+            margin-left: 0.5rem;
+            vertical-align: middle;
+        }
+    </style>
+</head>
+<body>
+    {% if user.is_authenticated %}
+        {% include 'header/html/header_account.html' %}
+    {% else %}
+        {% include 'header/html/header.html' %}
+    {% endif %}
+    <div class="account-container">
+        <!-- Page header -->
+        <div class="page-header">
+            <a href="/banking/dashboard/" class="back-link">&#x2190; Back to Dashboard</a>
+            <h1 style="font-size:2rem;">
+                Saved Beneficiaries
+                {% if beneficiaries %}
+                <span class="count-badge">{{ beneficiaries|length }}</span>
+                {% endif %}
+            </h1>
+        </div>
+
+        <!-- Flash messages -->
+        {% if messages %}
+        <div class="message-list">
+            {% for message in messages %}
+            <div class="message-item {{ message.tags }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Beneficiary list -->
+        {% if beneficiaries %}
+        <div class="ben-list">
+            {% for b in beneficiaries %}
+            <div class="ben-item">
+                <!-- Avatar initial — first letter of label, safe via Django slice/upper filters -->
+                <div class="ben-avatar">{{ b.label|slice:":1"|upper }}</div>
+
+                <div class="ben-info">
+                    <div class="ben-label">{{ b.label }}</div>
+                    <div class="ben-number">{{ b.masked_number }}</div>
+                </div>
+
+                <div class="ben-date">Added {{ b.created_at|date:"M j, Y" }}</div>
+
+                <div class="ben-actions">
+                    <!-- Quick transfer: link to dashboard transfer tab with pre-filled account -->
+                    <a href="/banking/dashboard/?tab=transfer&recipient={{ b.account_number }}"
+                       class="btn-transfer">
+                        Transfer &#x2192;
+                    </a>
+
+                    <!-- Delete form — CSRF protected, ownership enforced server-side -->
+                    <form method="POST" action="/banking/beneficiaries/"
+                          onsubmit="return confirm('Remove {{ b.label|escapejs }} from your saved beneficiaries?');">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="delete">
+                        <input type="hidden" name="beneficiary_id" value="{{ b.pk }}">
+                        <button type="submit" class="btn-delete">Remove</button>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="ben-empty">
+            <div class="ben-empty-icon">&#x1F465;</div>
+            <p style="font-weight:700;color:#555;margin-bottom:0.5rem;">No saved beneficiaries yet.</p>
+            <p style="font-size:0.85rem;">Save frequent transfer recipients here so you can fill in their account number with one click on the Transfer tab.</p>
+        </div>
+        {% endif %}
+
+        <!-- Add new beneficiary form -->
+        <div class="add-card">
+            <h3>&#x2795; Add New Beneficiary</h3>
+            <form method="POST" action="/banking/beneficiaries/" autocomplete="off">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="add">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="ben-label">Label / Name</label>
+                        <input type="text" id="ben-label" name="label"
+                               placeholder="e.g. Alice, Landlord, Mom..."
+                               maxlength="100" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="ben-account">Account Number (16 digits)</label>
+                        <!-- pattern restricts to 16 digits client-side;
+                             server validates independently -->
+                        <input type="text" id="ben-account" name="account_number"
+                               placeholder="1234567890123456"
+                               pattern="\d{16}" maxlength="16"
+                               inputmode="numeric" required>
+                    </div>
+                    <button type="submit" class="btn-add">Save Beneficiary</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+{% comment %}
+Floating chat widget
+{% endcomment %}
+{% include 'chat-bubble/chat_widget.html' %}
+<script src="{% static 'header/js/hamburger_menu.js' %}"></script>
+{% if user.is_authenticated %}
+<script src="{% static 'header/js/user_hamburger_menu.js' %}"></script>
+{% endif %}
+</body>
+</html>

@@ -1,0 +1,82 @@
+{% load static %}
+{% load developer_tags %}
+<div class="user-off-screen-menu">
+    <ul class="header_ul">
+        <li><a href="/account/" {% if current_app == 'account' %}class="nav-active"{% endif %}>Dashboard</a></li>
+        <li><a href="/account/settings/">Settings</a></li>
+        <li><a href="/banking/dashboard/">Bank Account</a></li>
+        <li><a href="/shop/cart">My Cart</a></li>
+        <li><a href="/shop/orders/">My Orders</a></li>
+        <li><a href="/shop/wishlist/">My Wishlist</a></li>
+        <li><a href="/shop/sell/">Sell CSS</a></li>
+        <li><a href="/todos/missions/">My Missions</a></li>
+        <li><a href="/community/friends/">My Friends</a></li>
+        <li><a href="/community/messages/">My Messages{% if unread_message_count %} ({{ unread_message_count }}){% endif %}</a></li>
+        <li><a href="/community/notifications/">Notifications{% if unread_notification_count %} ({{ unread_notification_count }}){% endif %}</a></li>
+        <li><a href="/account/store/" style="color: #f59e0b;">Premium Store</a></li>
+        <li><a href="/api/keys/" style="color: #667eea;">API Keys</a></li>
+        {% include 'header/html/includes/admin_menu.html' %}
+    </ul>
+    <form method="post" action="{% url 'logout' %}" class="sidebar-logout-form">
+        {% csrf_token %}
+        <button type="submit" class="logout-button">
+            Log Out
+        </button>
+    </form>
+</div>
+<div class="off-screen-menu">
+    <ul class="header_ul">
+        <li><a href="/">Main Page</a></li>
+        <li><a href="/banking/" {% if current_app == 'bank' %}class="nav-active"{% endif %}>Bank</a></li>
+        <li><a href="/shop/" {% if current_app == 'shop' %}class="nav-active"{% endif %}>E-Shop</a></li>
+        <li><a href="/forum/" {% if current_app == 'forum' %}class="nav-active"{% endif %}>Forum</a></li>
+        <li><a href="/advertisement" {% if current_app == 'advertisement' %}class="nav-active"{% endif %}>Advertisement</a></li>
+        {% is_developer user as user_is_dev %}
+        {% if user_is_dev %}
+        <li><a href="/developer/" {% if current_app == 'developer' %}class="nav-active"{% endif %}>Developer</a></li>
+        {% endif %}
+        <li><a href="/chatbot/" {% if current_app == 'chatbot' %}class="nav-active"{% endif %}>Support Chat</a></li>
+        <li><a href="/community/" {% if current_app == 'community' %}class="nav-active"{% endif %}>Community</a></li>
+    </ul>
+</div>
+<header class="header_L_R">
+    <button class="Todo_button todo_button_right"><strong>V.R.C</strong></button>
+    <div class="notif-bell-wrapper">
+        <button class="notif-bell-btn" id="notif-bell-btn" aria-label="Notifications">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+            </svg>
+        </button>
+        <span class="notif-bell-badge{% if not unread_notification_count %} hidden{% endif %}" id="notif-bell-badge">{{ unread_notification_count }}</span>
+        <div class="notif-bell-dropdown" id="notif-bell-dropdown">
+            <div class="notif-dd-header">
+                <span class="notif-dd-title">Notifications</span>
+                <button class="notif-dd-mark-all" id="notif-dd-mark-all">Mark all read</button>
+            </div>
+            <div class="notif-dd-list" id="notif-bell-list">
+                {% if recent_notifications %}
+                    {% for notif in recent_notifications %}
+                    <a class="notif-dd-item{% if not notif.is_read %} unread{% endif %}" href="{{ notif.action_url|default:'#' }}" data-notif-id="{{ notif.id }}">
+                        <span class="notif-dd-icon" data-type="{{ notif.notif_type }}"></span>
+                        <div class="notif-dd-body">
+                            <div class="notif-dd-item-title">{{ notif.title }}</div>
+                            <div class="notif-dd-item-msg">{{ notif.message|truncatewords:12 }}</div>
+                            <div class="notif-dd-item-time" data-created="{{ notif.created_at|date:'c' }}">{{ notif.created_at|timesince }} ago</div>
+                        </div>
+                    </a>
+                    {% endfor %}
+                {% else %}
+                    <div class="notif-dd-empty">No notifications yet</div>
+                {% endif %}
+            </div>
+            <a class="notif-dd-footer" href="/community/notifications/">View all notifications</a>
+        </div>
+    </div>
+    <div class="header-actions">
+        <a href="/shop/cart/" class="cart_button">
+            🛒 Cart
+        </a>
+        <button class="user_button"><img src="{% static 'uploads/' %}{{ user.profile.picture_path }}" width="50" height="50"></button>
+    </div>
+</header>

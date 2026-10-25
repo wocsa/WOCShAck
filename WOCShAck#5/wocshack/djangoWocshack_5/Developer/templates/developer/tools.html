@@ -1,0 +1,99 @@
+{% extends 'base/base.html' %}
+{% block title %}CSS Tools - V.R.C{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dev-container { max-width: 1000px; margin: 0 auto; padding: var(--vrc-spacing-xl); }
+    .page-header h1 { font-size: var(--vrc-font-size-2xl); font-weight: var(--vrc-font-weight-bold); margin-bottom: var(--vrc-spacing-xl); }
+    .tools-layout { display: grid; grid-template-columns: 1fr 1fr; gap: var(--vrc-spacing-lg); }
+    .tool-panel { background: var(--vrc-white); border-radius: var(--vrc-radius-lg); padding: var(--vrc-spacing-lg); box-shadow: var(--vrc-shadow-md); }
+    .tool-panel h2 { font-size: var(--vrc-font-size-lg); font-weight: var(--vrc-font-weight-semibold); margin-bottom: var(--vrc-spacing-md); }
+    .tool-panel textarea { width: 100%; height: 300px; padding: 12px; border: 1px solid var(--vrc-gray-300); border-radius: var(--vrc-radius-md); font-family: 'Courier New', monospace; font-size: 13px; resize: vertical; box-sizing: border-box; }
+    .tool-panel textarea:focus { outline: none; border-color: var(--vrc-primary); }
+    .tool-buttons { display: flex; gap: var(--vrc-spacing-sm); margin: var(--vrc-spacing-md) 0; flex-wrap: wrap; }
+    .tool-btn { padding: 8px 18px; background: var(--vrc-gradient); color: white; border: none; border-radius: var(--vrc-radius-md); cursor: pointer; font-size: var(--vrc-font-size-sm); transition: background var(--vrc-transition-normal); }
+    .tool-btn:hover { background: var(--vrc-gradient-hover); }
+    .tool-btn.secondary { background: var(--vrc-gray-100); color: var(--vrc-gray-700); }
+    .result-info { font-size: var(--vrc-font-size-sm); color: var(--vrc-gray-600); padding: var(--vrc-spacing-sm); background: var(--vrc-gray-50); border-radius: var(--vrc-radius-sm); margin-top: var(--vrc-spacing-sm); min-height: 40px; }
+    .back-link { display: inline-block; margin-bottom: var(--vrc-spacing-lg); color: var(--vrc-primary); text-decoration: none; font-size: var(--vrc-font-size-sm); }
+    @media (max-width: 768px) { .tools-layout { grid-template-columns: 1fr; } }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dev-container">
+    <a href="{% url 'developer_dashboard' %}" class="back-link">&larr; Back to Dashboard</a>
+    <div class="page-header">
+        <h1>CSS Tools</h1>
+    </div>
+    <div class="tools-layout">
+        <div class="tool-panel">
+            <h2>Input</h2>
+            <textarea id="css-input" placeholder="Paste your CSS here..."></textarea>
+            <div class="tool-buttons">
+                <button class="tool-btn" onclick="runTool('minify')">Minify</button>
+                <button class="tool-btn" onclick="runTool('beautify')">Beautify</button>
+                <button class="tool-btn" onclick="runTool('validate')">Validate</button>
+                <button class="tool-btn" onclick="runTool('prefix')">Add Prefixes</button>
+                <button class="tool-btn secondary" onclick="document.getElementById('css-input').value=''; document.getElementById('css-output').value=''; document.getElementById('result-info').textContent='';">Clear</button>
+            </div>
+        </div>
+        <div class="tool-panel">
+            <h2>Output</h2>
+            <textarea id="css-output" readonly placeholder="Result will appear here..."></textarea>
+            <div id="result-info" class="result-info"></div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function runTool(action) {
+    const css = document.getElementById('css-input').value;
+    if (!css) { alert('Please paste some CSS first.'); return; }
+
+    const formData = new FormData();
+    formData.append('css', css);
+    formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+    const urls = {
+        minify: '{% url "developer_minify" %}',
+        beautify: '{% url "developer_beautify" %}',
+        validate: '{% url "developer_validate" %}',
+        prefix: '{% url "developer_prefix" %}',
+    };
+
+    fetch(urls[action], { method: 'POST', body: formData })
+    .then(r => r.json())
+    .then(data => {
+        const output = document.getElementById('css-output');
+        const info = document.getElementById('result-info');
+
+        if (action === 'validate') {
+            output.value = '';
+            let msg = '';
+            if (data.errors && data.errors.length) {
+                msg += 'Errors:\n' + data.errors.join('\n') + '\n\n';
+            }
+            if (data.warnings && data.warnings.length) {
+                msg += 'Warnings:\n' + data.warnings.join('\n');
+            }
+            if (!msg) msg = 'CSS is valid! No errors or warnings found.';
+            output.value = msg;
+            info.textContent = `${data.errors ? data.errors.length : 0} errors, ${data.warnings ? data.warnings.length : 0} warnings`;
+        } else if (data.result !== undefined) {
+            output.value = data.result;
+            if (data.savings !== undefined) {
+                info.textContent = `Saved ${data.savings}% (${data.original_size} → ${data.minified_size} bytes)`;
+            } else {
+                info.textContent = action.charAt(0).toUpperCase() + action.slice(1) + ' complete.';
+            }
+        } else if (data.error) {
+            info.textContent = data.error;
+        }
+    })
+    .catch(() => { document.getElementById('result-info').textContent = 'Error processing CSS.'; });
+}
+</script>
+{% endblock %}

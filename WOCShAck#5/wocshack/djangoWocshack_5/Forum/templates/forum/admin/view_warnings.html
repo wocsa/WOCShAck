@@ -1,0 +1,245 @@
+{% extends "base/base_forum.html" %}
+{% load static %}
+
+
+{% block title %}Warnings for {{ target_user.username }} - V.R.C Forum{% endblock %}
+
+{% block extra_css %}
+<style>
+    .page-header {
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        color: white;
+        padding: 30px;
+        border-radius: 16px;
+        margin-bottom: 30px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .page-header h1 {
+        font-size: 1.8rem;
+        margin-bottom: 5px;
+    }
+
+    .stats-row {
+        display: flex;
+        gap: 30px;
+    }
+    .stat {
+        text-align: center;
+    }
+    .stat-value {
+        font-size: 2rem;
+        font-weight: 700;
+    }
+    .stat-label {
+        font-size: 0.85rem;
+        opacity: 0.9;
+    }
+
+    .warnings-list {
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    .warning-item {
+        padding: 20px;
+        border-bottom: 1px solid #eee;
+    }
+    .warning-item:last-child {
+        border-bottom: none;
+    }
+    .warning-item.expired {
+        opacity: 0.6;
+    }
+
+    .warning-header {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        margin-bottom: 10px;
+    }
+    .severity-badge {
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+    .badge-notice { background: #e0f2fe; color: #0369a1; }
+    .badge-warning { background: #fef3c7; color: #92400e; }
+    .badge-final { background: #fee2e2; color: #dc2626; }
+
+    .warning-status {
+        font-size: 0.85rem;
+    }
+    .status-active { color: #ef4444; }
+    .status-expired { color: #059669; }
+    .status-acknowledged { color: #0369a1; }
+
+    .warning-content {
+        margin-bottom: 10px;
+    }
+    .warning-reason {
+        color: #333;
+        line-height: 1.6;
+    }
+    .warning-rule {
+        margin-top: 5px;
+        font-size: 0.9rem;
+        color: #666;
+    }
+
+    .warning-meta {
+        font-size: 0.85rem;
+        color: #888;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: white;
+        text-decoration: none;
+        opacity: 0.9;
+    }
+    .back-link:hover {
+        opacity: 1;
+    }
+    .back-link svg {
+        width: 18px;
+        height: 18px;
+    }
+
+    .pagination-container {
+        display: flex;
+        justify-content: center;
+        margin-top: 30px;
+    }
+    .pagination {
+        display: flex;
+        gap: 5px;
+    }
+    .pagination a, .pagination span {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 40px;
+        height: 40px;
+        padding: 0 12px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 500;
+    }
+    .pagination a {
+        background: white;
+        color: #333;
+        border: 1px solid #ddd;
+    }
+    .pagination a:hover {
+        background: #f59e0b;
+        color: white;
+        border-color: #f59e0b;
+    }
+    .pagination .current {
+        background: #f59e0b;
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <a href="{% url 'forum_user_admin' username=target_user.username %}" class="back-link">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            Back to User
+        </a>
+        <h1>Warnings for {{ target_user.username }}</h1>
+    </div>
+    <div class="stats-row">
+        <div class="stat">
+            <div class="stat-value">{{ active_warnings_count }}</div>
+            <div class="stat-label">Active</div>
+        </div>
+        <div class="stat">
+            <div class="stat-value">{{ warning_points }}</div>
+            <div class="stat-label">Points</div>
+        </div>
+        <div class="stat">
+            <div class="stat-value">{{ page_obj.paginator.count }}</div>
+            <div class="stat-label">Total</div>
+        </div>
+    </div>
+</div>
+
+<div class="warnings-list">
+    {% for warning in warnings %}
+    <div class="warning-item {% if warning.is_expired or not warning.is_active %}expired{% endif %}">
+        <div class="warning-header">
+            <span class="severity-badge {% if warning.severity == 'final_warning' %}badge-final{% elif warning.severity == 'warning' %}badge-warning{% else %}badge-notice{% endif %}">
+                {{ warning.get_severity_display }}
+            </span>
+            <span class="warning-status">
+                {% if warning.is_expired %}
+                <span class="status-expired">Expired</span>
+                {% elif not warning.is_active %}
+                <span class="status-expired">Inactive</span>
+                {% else %}
+                <span class="status-active">Active</span>
+                {% endif %}
+                {% if warning.is_acknowledged %}
+                | <span class="status-acknowledged">Acknowledged</span>
+                {% endif %}
+            </span>
+            <span style="margin-left: auto; font-size: 0.85rem; color: #888;">
+                {{ warning.points }} point{{ warning.points|pluralize }}
+            </span>
+        </div>
+
+        <div class="warning-content">
+            <div class="warning-reason">{{ warning.reason }}</div>
+            {% if warning.rule_violated %}
+            <div class="warning-rule">
+                <strong>Rule violated:</strong> {{ warning.rule_violated }}
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="warning-meta">
+            <span>Issued by {{ warning.issued_by.username }}</span>
+            <span>{{ warning.created_at|date:"M d, Y H:i" }}</span>
+            {% if warning.expires_at %}
+            <span>Expires: {{ warning.expires_at|date:"M d, Y" }}</span>
+            {% endif %}
+            {% if warning.related_post %}
+            <a href="{% url 'forum_topic' topic_id=warning.related_post.topic.id %}#post-{{ warning.related_post.id %}" style="color: #667eea;">View Related Post</a>
+            {% endif %}
+        </div>
+    </div>
+    {% empty %}
+    <div style="padding: 40px; text-align: center; color: #888;">
+        <p>No warnings found for this user.</p>
+    </div>
+    {% endfor %}
+</div>
+
+{% if page_obj.has_other_pages %}
+<div class="pagination-container">
+    <nav class="pagination">
+        {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}">Previous</a>
+        {% endif %}
+        <span class="current">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+        {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}">Next</a>
+        {% endif %}
+    </nav>
+</div>
+{% endif %}
+{% endblock %}

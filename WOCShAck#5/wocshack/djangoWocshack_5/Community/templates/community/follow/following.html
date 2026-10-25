@@ -1,0 +1,81 @@
+{% extends "base/base.html" %}
+{% load static %}
+
+{% block title %}VRC — {{ target.username }} is following{% endblock %}
+
+{% block module_css %}
+<link rel="stylesheet" href="{% static 'community/css/follow.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="main-container">
+<nav class="vrc-breadcrumbs">
+  <a href="{% url 'community:index' %}">Community</a>
+  <span class="bc-sep">›</span>
+  <a href="{% url 'community:user_profile' target.id %}">{{ target.username }}</a>
+  <span class="bc-sep">›</span>
+  <span class="bc-current">Following</span>
+</nav>
+<div class="follow-wrapper">
+
+  <div class="follow-header">
+    <div>
+      <h1 class="follow-title"><strong>{{ target.username }}</strong> is following</h1>
+      <p class="follow-subtitle">{{ total_count }} user{{ total_count|pluralize }}</p>
+    </div>
+    <a href="{% url 'community:followers_list' target.id %}" class="follow-btn follow-btn--ghost">
+      ← Followers ({{ target.followers.count }})
+    </a>
+  </div>
+
+  {% if following %}
+  <ul class="follow-list">
+    {% for f in following %}
+    <li class="follow-item">
+      <div class="follow-user-info">
+        <span class="follow-avatar">{{ f.following.username|first|upper }}</span>
+        <div>
+          <strong class="follow-username">{{ f.following.username }}</strong>
+          <span class="follow-date">Following since {{ f.created_at|date:"M d, Y" }}</span>
+        </div>
+      </div>
+      {% if f.following != request.user %}
+      <div class="follow-actions">
+        {% if f.following.id in my_following_ids %}
+        <form method="post" action="{% url 'community:unfollow_user' f.following.id %}">
+          {% csrf_token %}
+          <button type="submit" class="follow-btn follow-btn--secondary">Unfollow</button>
+        </form>
+        {% else %}
+        <form method="post" action="{% url 'community:follow_user' f.following.id %}">
+          {% csrf_token %}
+          <button type="submit" class="follow-btn follow-btn--primary">Follow</button>
+        </form>
+        {% endif %}
+      </div>
+      {% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <div class="follow-empty">
+    <span class="follow-empty-icon">👥</span>
+    <p>Not following anyone yet.</p>
+  </div>
+  {% endif %}
+
+  {% if page_obj.has_other_pages %}
+  <nav class="pagination-nav">
+    {% if page_obj.has_previous %}
+    <a href="?page={{ page_obj.previous_page_number }}" class="follow-btn follow-btn--ghost">← Previous</a>
+    {% endif %}
+    <span class="pagination-info">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+    {% if page_obj.has_next %}
+    <a href="?page={{ page_obj.next_page_number }}" class="follow-btn follow-btn--ghost">Next →</a>
+    {% endif %}
+  </nav>
+  {% endif %}
+
+</div>
+</div>
+{% endblock %}

@@ -1,0 +1,101 @@
+{% extends "base/base.html" %}
+{% load static %}
+
+
+{% block title %}V.R.C - {% if action == 'edit' %}Edit Mission{% else %}New Mission{% endif %}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/missions.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="mission-form-card animate-fade-in-up">
+    <div class="card">
+        <div class="card-header">
+            <h1 class="mission-board-title" style="font-size: var(--vrc-font-size-2xl);">
+                {% if action == 'edit' %}Edit Mission{% else %}New Mission{% endif %}
+            </h1>
+            <p class="card-subtitle">
+                {% if action == 'edit' %}Update the details of your mission.{% else %}Create a new mission to track your tasks.{% endif %}
+            </p>
+        </div>
+
+        <form method="post" id="mission-form">
+            {% csrf_token %}
+
+            <div class="form-group">
+                <label for="id-title" class="form-label">Title <span style="color: var(--vrc-error);">*</span></label>
+                <input type="text" id="id-title" name="title" class="form-input" required maxlength="200"
+                       placeholder="What needs to be done?"
+                       value="{% if action == 'edit' %}{{ mission.title }}{% elif form_data %}{{ form_data.title }}{% endif %}">
+            </div>
+
+            <div class="form-group">
+                <label for="id-description" class="form-label">Description</label>
+                <textarea id="id-description" name="description" class="form-textarea" rows="4"
+                          placeholder="Add details, notes, or links…" style="resize: vertical;">{% if action == 'edit' %}{{ mission.description }}{% elif form_data %}{{ form_data.description }}{% endif %}</textarea>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--vrc-spacing-md);">
+                <div class="form-group">
+                    <label for="id-priority" class="form-label">Priority</label>
+                    <select id="id-priority" name="priority" class="form-select">
+                        {% for value, label in priority_choices %}
+                        <option value="{{ value }}"
+                            {% if action == 'edit' and mission.priority == value %}selected{% endif %}
+                            {% if form_data and form_data.priority == value %}selected{% endif %}
+                            {% if action == 'create' and not form_data and value == 'medium' %}selected{% endif %}
+                        >{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="id-status" class="form-label">Status</label>
+                    <select id="id-status" name="status" class="form-select">
+                        {% for value, label in status_choices %}
+                        <option value="{{ value }}"
+                            {% if action == 'edit' and mission.status == value %}selected{% endif %}
+                            {% if form_data and form_data.status == value %}selected{% endif %}
+                            {% if action == 'create' and not form_data and value == 'pending' %}selected{% endif %}
+                        >{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--vrc-spacing-md);">
+                <div class="form-group">
+                    <label for="id-category" class="form-label">Category</label>
+                    <input type="text" id="id-category" name="category" class="form-input" maxlength="100"
+                           placeholder="e.g., Work, Personal, Study"
+                           value="{% if action == 'edit' %}{{ mission.category }}{% elif form_data %}{{ form_data.category }}{% endif %}">
+                </div>
+
+                <div class="form-group">
+                    <label for="id-due-date" class="form-label">Due Date</label>
+                    <input type="datetime-local" id="id-due-date" name="due_date" class="form-input"
+                           value="{% if action == 'edit' and mission.due_date %}{{ mission.due_date|date:'Y-m-d\TH:i' }}{% elif form_data.due_date %}{{ form_data.due_date }}{% endif %}">
+                </div>
+            </div>
+
+            {% if request.user.is_staff %}
+            <div class="form-group">
+                <div class="form-check">
+                    <input type="checkbox" id="id-staff-shared" name="is_staff_shared" class="form-check-input"
+                           {% if action == 'edit' and mission.is_staff_shared %}checked{% endif %}>
+                    <label for="id-staff-shared" class="form-check-label">Share with all users (Staff only)</label>
+                </div>
+            </div>
+            {% endif %}
+
+            <div style="display: flex; gap: var(--vrc-spacing-md); justify-content: flex-end; margin-top: var(--vrc-spacing-xl);">
+                <a href="{% if action == 'edit' %}{% url 'mission_detail' mission.id %}{% else %}{% url 'mission_list' %}{% endif %}" class="btn btn-secondary">Cancel</a>
+                <button type="submit" class="btn btn-primary" id="btn-submit-mission">
+                    {% if action == 'edit' %}Update Mission{% else %}Create Mission{% endif %}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

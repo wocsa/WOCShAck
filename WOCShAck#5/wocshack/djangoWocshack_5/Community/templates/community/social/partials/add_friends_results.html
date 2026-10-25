@@ -1,0 +1,20 @@
+<ul class="search-results-list">
+{% for user in users %}
+  <li class="search-result-item">
+    <strong class="search-result-username">{{ user.username|capfirst }}</strong>
+    <form method="post" action="{% url 'community:send_friend_request' %}">
+      {% csrf_token %}
+      <input type="hidden" name="user_id" value="{{ user.id }}">
+      <button class="search-result-btn" type="submit">➕ Send Request</button>
+    </form>
+  </li>
+{% empty %}
+  <p class="search-empty">
+    {% if query %}
+      No user found for "{{ query }}".
+    {% else %}
+      Enter a username to search for friends.
+    {% endif %}
+  </p>
+{% endfor %}
+</ul>

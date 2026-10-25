@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% load static %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>V.R.C - Transaction History</title>
+    <link rel="stylesheet" href="{% static 'css/account/account.css' %}">
+    <link rel="icon" type="image/svg+xml" href="{% static 'img/favicon.svg' %}">
+    <link rel="stylesheet" href="{% static 'header/css/header.css' %}">
+    <style>
+        body { padding-top: 70px; }
+        .page-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.5rem 1rem;
+            background: rgba(102,126,234,0.1);
+            color: #667eea;
+            border-radius: 10px;
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 600;
+            border: 1px solid rgba(102,126,234,0.2);
+            transition: all 0.2s ease;
+        }
+        .back-link:hover { background: rgba(102,126,234,0.18); }
+
+        .filter-bar {
+            display: flex;
+            gap: 0.6rem;
+            flex-wrap: wrap;
+            margin-bottom: 1.5rem;
+            align-items: center;
+            background: rgba(0,0,0,0.02);
+            padding: 1rem 1.25rem;
+            border-radius: 14px;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+        .filter-chip {
+            padding: 0.4rem 0.9rem;
+            border-radius: 20px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            text-decoration: none;
+            border: 2px solid rgba(102,126,234,0.25);
+            color: #667eea;
+            transition: all 0.2s;
+        }
+        .filter-chip:hover, .filter-chip.active {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-color: transparent;
+        }
+        .search-form {
+            margin-left: auto;
+            display: flex;
+            gap: 0.5rem;
+        }
+        .search-form input {
+            padding: 0.45rem 1rem;
+            border: 2px solid #e1e5e9;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            outline: none;
+            min-width: 200px;
+        }
+        .search-form input:focus { border-color: #667eea; }
+        .search-form button {
+            padding: 0.45rem 1rem;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .export-bar {
+            display: flex;
+            gap: 0.6rem;
+            margin-bottom: 1.5rem;
+            justify-content: flex-end;
+        }
+        .export-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.5rem 1rem;
+            border-radius: 10px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+        .export-btn.csv {
+            background: rgba(34,197,94,0.12);
+            color: #16a34a;
+            border: 1px solid rgba(34,197,94,0.3);
+        }
+        .export-btn.csv:hover { background: rgba(34,197,94,0.2); }
+        .export-btn.json {
+            background: rgba(59,130,246,0.12);
+            color: #2563eb;
+            border: 1px solid rgba(59,130,246,0.3);
+        }
+        .export-btn.json:hover { background: rgba(59,130,246,0.2); }
+        .export-btn.xml {
+            background: rgba(234,88,12,0.12);
+            color: #c2410c;
+            border: 1px solid rgba(234,88,12,0.3);
+        }
+        .export-btn.xml:hover { background: rgba(234,88,12,0.2); }
+
+        .tx-list { display: flex; flex-direction: column; gap: 0.75rem; }
+        .tx-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem 1.25rem;
+            background: rgba(0,0,0,0.02);
+            border: 1px solid rgba(0,0,0,0.05);
+            border-radius: 14px;
+            transition: all 0.2s ease;
+        }
+        .tx-item:hover { background: rgba(102,126,234,0.05); border-color: rgba(102,126,234,0.15); }
+        .tx-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+        .tx-icon.out { background: rgba(239,68,68,0.12); }
+        .tx-icon.in { background: rgba(34,197,94,0.12); }
+        .tx-icon.payment { background: rgba(59,130,246,0.12); }
+        .tx-icon.refund { background: rgba(168,85,247,0.12); }
+        .tx-icon.deposit { background: rgba(251,146,60,0.12); }
+        .tx-info { flex: 1; min-width: 0; }
+        .tx-type { font-weight: 600; color: #333; font-size: 0.9rem; }
+        .tx-meta { font-size: 0.8rem; color: #888; margin-top: 0.2rem; }
+        .tx-amount { font-size: 1rem; font-weight: 700; white-space: nowrap; }
+        .tx-amount.out { color: #ef4444; }
+        .tx-amount.in { color: #22c55e; }
+        .tx-balance { font-size: 0.78rem; color: #aaa; white-space: nowrap; text-align: right; }
+        .tx-receipt-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #667eea;
+            text-decoration: none;
+            margin-top: 0.35rem;
+            padding: 0.2rem 0.5rem;
+            background: rgba(102,126,234,0.08);
+            border-radius: 6px;
+            border: 1px solid rgba(102,126,234,0.2);
+            transition: background 0.15s;
+        }
+        .tx-receipt-link:hover { background: rgba(102,126,234,0.18); }
+        .tx-empty {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: #aaa;
+        }
+        .tx-empty-icon { font-size: 4rem; margin-bottom: 1rem; }
+
+        .summary-bar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .summary-card {
+            background: rgba(0,0,0,0.02);
+            border: 1px solid rgba(0,0,0,0.05);
+            border-radius: 14px;
+            padding: 1rem 1.25rem;
+            text-align: center;
+        }
+        .summary-card .summary-label {
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            color: #888;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.4rem;
+        }
+        .summary-card .summary-value {
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: #333;
+        }
+        .summary-card .summary-value.out { color: #ef4444; }
+        .summary-card .summary-value.in { color: #22c55e; }
+    </style>
+</head>
+<body>
+    {% if user.is_authenticated %}
+        {% include 'header/html/header_account.html' %}
+    {% else %}
+        {% include 'header/html/header.html' %}
+    {% endif %}
+    <div class="account-container">
+        <div class="page-header">
+            <a href="/banking/dashboard/" class="back-link">&#x2190; Back to Dashboard</a>
+            <h1 style="font-size:2rem;">Transaction History</h1>
+        </div>
+
+        <!-- Summary bar -->
+        {% if transactions %}
+        <div class="summary-bar">
+            <div class="summary-card">
+                <div class="summary-label">Total Transactions</div>
+                <div class="summary-value">{{ transactions|length }}</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-label">Money Sent</div>
+                <div class="summary-value out">
+                    {% with total=0 %}
+                    --
+                    {% endwith %}
+                    NE
+                </div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-label">Completed</div>
+                <div class="summary-value in">
+                    {{ transactions|length }} NE
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Export bar -->
+        <div class="export-bar">
+            <a href="/banking/export/csv/" class="export-btn csv">&#x1F4CA; Export CSV</a>
+            <a href="/banking/export/json/" class="export-btn json">&#x7B;&#x7D; Export JSON</a>
+            <a href="/banking/export/xml/" class="export-btn xml">&#x1F5C2; Export XML</a>
+            <a href="/banking/statement/?period=monthly" class="export-btn"
+               style="background:rgba(168,85,247,0.12);color:#7c3aed;border:1px solid rgba(168,85,247,0.3);">
+               &#x1F4C4; PDF Statement
+            </a>
+        </div>
+
+        <!-- Filter + Search bar -->
+        <div class="filter-bar">
+            <a href="/banking/transactions/{% if card_filter %}?card={{ card_filter }}{% endif %}" class="filter-chip {% if not tx_filter %}active{% endif %}">All</a>
+            <a href="/banking/transactions/?type=transfer_out{% if card_filter %}&card={{ card_filter }}{% endif %}" class="filter-chip {% if tx_filter == 'transfer_out' %}active{% endif %}">Sent</a>
+            <a href="/banking/transactions/?type=transfer_in{% if card_filter %}&card={{ card_filter }}{% endif %}" class="filter-chip {% if tx_filter == 'transfer_in' %}active{% endif %}">Received</a>
+            <a href="/banking/transactions/?type=payment{% if card_filter %}&card={{ card_filter }}{% endif %}" class="filter-chip {% if tx_filter == 'payment' %}active{% endif %}">Payments</a>
+            <a href="/banking/transactions/?type=refund{% if card_filter %}&card={{ card_filter }}{% endif %}" class="filter-chip {% if tx_filter == 'refund' %}active{% endif %}">Refunds</a>
+            <a href="/banking/transactions/?type=deposit{% if card_filter %}&card={{ card_filter }}{% endif %}" class="filter-chip {% if tx_filter == 'deposit' %}active{% endif %}">Deposits</a>
+
+            <form method="GET" action="/banking/transactions/" class="search-form">
+                {% if tx_filter %}<input type="hidden" name="type" value="{{ tx_filter }}">{% endif %}
+                {% if card_filter %}<input type="hidden" name="card" value="{{ card_filter }}">{% endif %}
+                <input type="text" name="q" value="{{ search_q }}" placeholder="Search by account, note...">
+                <button type="submit">Search</button>
+            </form>
+        </div>
+
+        {% if user_cards %}
+        <!-- Card filter bar -->
+        <div class="filter-bar" style="margin-top:-0.75rem;">
+            <span style="font-size:0.8rem;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:0.5px;">Card:</span>
+            <a href="/banking/transactions/{% if tx_filter %}?type={{ tx_filter }}{% endif %}"
+               class="filter-chip {% if not card_filter %}active{% endif %}">All Cards</a>
+            {% for card in user_cards %}
+            <a href="/banking/transactions/?card={{ card.id }}{% if tx_filter %}&type={{ tx_filter }}{% endif %}"
+               class="filter-chip {% if card_filter == card.id|stringformat:'s' %}active{% endif %}"
+               title="{{ card.payment_number }}">
+                {{ card.masked_number }}&nbsp;({{ card.card_type|capfirst }}){% if card.status == 'frozen' %}&nbsp;&#x1F512;{% endif %}
+            </a>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Transaction list -->
+        {% if transactions %}
+            <div class="tx-list">
+                {% for tx in transactions %}
+                <div class="tx-item">
+                    <div class="tx-icon
+                        {% if tx.transaction_type == 'transfer_out' %}out
+                        {% elif tx.transaction_type == 'transfer_in' %}in
+                        {% elif tx.transaction_type == 'payment' %}payment
+                        {% elif tx.transaction_type == 'refund' %}refund
+                        {% else %}deposit{% endif %}">
+                        {% if tx.transaction_type == 'transfer_out' %}&#x2B06;
+                        {% elif tx.transaction_type == 'transfer_in' %}&#x2B07;
+                        {% elif tx.transaction_type == 'payment' %}&#x1F6D2;
+                        {% elif tx.transaction_type == 'refund' %}&#x1F504;
+                        {% else %}&#x1F4E5;{% endif %}
+                    </div>
+                    <div class="tx-info">
+                        <div class="tx-type">{{ tx.get_transaction_type_display }}</div>
+                        <div class="tx-meta">
+                            {% if tx.counterpart_payment_number %}
+                                {% if tx.transaction_type == 'transfer_out' %}To:{% else %}From:{% endif %}
+                                **** {{ tx.counterpart_payment_number|slice:"-4:" }}
+                            {% elif tx.counterpart_label %}
+                                {{ tx.counterpart_label }}
+                            {% endif %}
+                            {% if tx.note %} &bull; {{ tx.note }}{% endif %}
+                            {% if tx.card %} &bull; Card: {{ tx.card.masked_number }}{% endif %}
+                            &bull; {{ tx.created_at|date:"M j, Y H:i" }}
+                            &bull;
+                            <span style="{% if tx.status == 'completed' %}color:#16a34a{% elif tx.status == 'failed' %}color:#dc2626{% else %}color:#d97706{% endif %}">
+                                {{ tx.get_status_display }}
+                            </span>
+                        </div>
+                    </div>
+                    <div style="text-align:right;">
+                        <div class="tx-amount {% if tx.transaction_type == 'transfer_out' or tx.transaction_type == 'payment' %}out{% else %}in{% endif %}">
+                            {% if tx.transaction_type == 'transfer_out' or tx.transaction_type == 'payment' %}-{% else %}+{% endif %}{{ tx.amount|floatformat:2 }} NE
+                        </div>
+                        {% if tx.balance_after is not None %}
+                        <div class="tx-balance">Balance: {{ tx.balance_after|floatformat:2 }} NE</div>
+                        {% endif %}
+                        {% if tx.status == 'completed' %}
+                        <div>
+                            <a href="/banking/transactions/{{ tx.pk }}/receipt/"
+                               class="tx-receipt-link"
+                               title="Download PDF receipt for this transaction">
+                                &#x1F4C4; Receipt
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="tx-empty">
+                <div class="tx-empty-icon">&#x1F4C5;</div>
+                <p style="font-weight:600;color:#555;margin-bottom:0.5rem;">
+                    {% if search_q or tx_filter %}
+                        No transactions match your filter.
+                    {% else %}
+                        No transactions yet.
+                    {% endif %}
+                </p>
+                <p style="font-size:0.85rem;">
+                    {% if search_q or tx_filter %}
+                        <a href="/banking/transactions/" style="color:#667eea;">Clear filters</a>
+                    {% else %}
+                        Your transaction history will appear here after your first transfer.
+                    {% endif %}
+                </p>
+            </div>
+        {% endif %}
+    </div>
+
+{% comment %}
+Floating chat widget
+{% endcomment %}
+{% include 'chat-bubble/chat_widget.html' %}
+<script src="{% static 'header/js/hamburger_menu.js' %}"></script>
+{% if user.is_authenticated %}
+<script src="{% static 'header/js/user_hamburger_menu.js' %}"></script>
+{% endif %}
+</body>
+</html>

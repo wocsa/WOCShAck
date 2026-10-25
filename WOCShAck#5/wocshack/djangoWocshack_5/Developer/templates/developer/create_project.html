@@ -1,0 +1,75 @@
+{% extends 'base/base.html' %}
+{% block title %}New Project - V.R.C{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dev-container { max-width: 700px; margin: 0 auto; padding: var(--vrc-spacing-xl); }
+    .form-card { background: var(--vrc-white); border-radius: var(--vrc-radius-lg); padding: var(--vrc-spacing-xl); box-shadow: var(--vrc-shadow-md); }
+    .form-card h1 { font-size: var(--vrc-font-size-2xl); font-weight: var(--vrc-font-weight-bold); margin-bottom: var(--vrc-spacing-lg); }
+    .form-group { margin-bottom: var(--vrc-spacing-lg); }
+    .form-group label { display: block; font-size: var(--vrc-font-size-sm); font-weight: var(--vrc-font-weight-medium); color: var(--vrc-gray-700); margin-bottom: var(--vrc-spacing-xs); }
+    .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 10px 14px; border: 1px solid var(--vrc-gray-300); border-radius: var(--vrc-radius-md); font-size: var(--vrc-font-size-base); font-family: var(--vrc-font-family); box-sizing: border-box; }
+    .form-group input:focus, .form-group textarea:focus, .form-group select:focus { outline: none; border-color: var(--vrc-primary); box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1); }
+    .template-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: var(--vrc-spacing-md); margin-top: var(--vrc-spacing-sm); }
+    .template-option { border: 2px solid var(--vrc-gray-200); border-radius: var(--vrc-radius-md); padding: var(--vrc-spacing-md); cursor: pointer; transition: all var(--vrc-transition-normal); }
+    .template-option:hover { border-color: var(--vrc-primary-light); }
+    .template-option.selected { border-color: var(--vrc-primary); background: rgba(102, 126, 234, 0.05); }
+    .template-option input { display: none; }
+    .template-name { font-weight: var(--vrc-font-weight-medium); font-size: var(--vrc-font-size-sm); }
+    .template-desc { font-size: var(--vrc-font-size-xs); color: var(--vrc-gray-500); margin-top: 4px; }
+    .btn-primary { padding: 10px 24px; background: var(--vrc-gradient); color: white; border: none; border-radius: var(--vrc-radius-md); cursor: pointer; font-size: var(--vrc-font-size-base); }
+    .back-link { display: inline-block; margin-bottom: var(--vrc-spacing-lg); color: var(--vrc-primary); text-decoration: none; font-size: var(--vrc-font-size-sm); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dev-container">
+    <a href="{% url 'developer_projects' %}" class="back-link">&larr; Back to Projects</a>
+    <div class="form-card">
+        <h1>New CSS Project</h1>
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="name">Project Name</label>
+                <input type="text" id="name" name="name" maxlength="200" required placeholder="My Awesome Theme">
+            </div>
+            <div class="form-group">
+                <label for="description">Description</label>
+                <textarea id="description" name="description" rows="3" maxlength="2000" placeholder="A brief description of your CSS project..."></textarea>
+            </div>
+
+            {% if templates %}
+            <div class="form-group">
+                <label>Starter Template (optional)</label>
+                <div class="template-grid">
+                    <div class="template-option selected" onclick="selectTemplate(this, '')">
+                        <input type="radio" name="template_id" value="" checked>
+                        <div class="template-name">Blank</div>
+                        <div class="template-desc">Start from scratch</div>
+                    </div>
+                    {% for tmpl in templates %}
+                    <div class="template-option" onclick="selectTemplate(this, '{{ tmpl.id }}')">
+                        <input type="radio" name="template_id" value="{{ tmpl.id }}">
+                        <div class="template-name">{{ tmpl.name }}</div>
+                        <div class="template-desc">{{ tmpl.description|truncatewords:10 }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <button type="submit" class="btn-primary">Create Project</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function selectTemplate(el, id) {
+    document.querySelectorAll('.template-option').forEach(o => o.classList.remove('selected'));
+    el.classList.add('selected');
+    el.querySelector('input').checked = true;
+}
+</script>
+{% endblock %}

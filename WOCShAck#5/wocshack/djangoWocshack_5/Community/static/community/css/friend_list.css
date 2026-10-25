@@ -1,0 +1,158 @@
+/* ══════════════════════════════════════
+   FRIENDS LIST PAGE
+   ══════════════════════════════════════ */
+
+.friends-list-container {
+  max-width: 560px;
+  margin: 60px auto;
+  padding: 0 var(--vrc-spacing-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--vrc-spacing-xl);
+}
+
+.friends-list-title {
+  font-family: var(--vrc-font-family);
+  font-size: var(--vrc-font-size-2xl);
+  font-weight: var(--vrc-font-weight-semibold);
+  color: var(--vrc-primary);
+  letter-spacing: -0.02em;
+}
+
+
+.friend-list-scroll-box {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  max-height: 80%;
+  overflow-y: scroll;
+  width: 110%;
+  padding: 1% 5%;
+  margin-left: -5%;
+  gap: var(--vrc-spacing-sm);
+  box-shadow: var(--vrc-shadow-lg);
+  border-radius: var(--vrc-radius-lg);
+}
+
+.friend-list-scroll-box::-webkit-scrollbar        { width: 5px; }
+.friend-list-scroll-box::-webkit-scrollbar-track  { background: transparent; }
+.friend-list-scroll-box::-webkit-scrollbar-thumb  { background: var(--vrc-gray-300); border-radius: var(--vrc-radius-full); }
+.friend-list-scroll-box::-webkit-scrollbar-thumb:hover { background: var(--vrc-primary); }
+
+/* ── Friends List ── */
+.friends-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--vrc-spacing-sm);
+}
+
+.friend-item {
+  background: var(--vrc-white);
+  border: 1px solid var(--vrc-gray-200);
+  border-radius: var(--vrc-radius-md);
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--vrc-spacing-sm);
+  transition: background var(--vrc-transition-normal), border-color var(--vrc-transition-normal);
+  flex-wrap: wrap;
+}
+
+.friend-item:hover {
+  background: var(--vrc-gray-50);
+  border-color: var(--vrc-primary);
+}
+
+.friend-item-username {
+  font-family: var(--vrc-font-family);
+  font-size: var(--vrc-font-size-sm);
+  font-weight: var(--vrc-font-weight-semibold);
+  color: var(--vrc-gray-900);
+}
+
+.friend-item-actions {
+  display: flex;
+  gap: var(--vrc-spacing-sm);
+  flex-wrap: wrap;
+}
+
+.friend-item-actions .btn-message {
+  background: rgba(102, 126, 234, 0.12);
+  border: 1px solid var(--vrc-gray-200);
+  color: var(--vrc-primary-light);
+  font-family: var(--vrc-font-family);
+  font-size: var(--vrc-font-size-xs);
+  font-weight: var(--vrc-font-weight-medium);
+  padding: 7px 14px;
+  border-radius: var(--vrc-radius-sm);
+  text-decoration: none;
+  transition: background var(--vrc-transition-normal), border-color var(--vrc-transition-normal);
+}
+
+.friend-item-actions .btn-message:hover {
+  background: rgba(102, 126, 234, 0.28);
+  border-color: var(--vrc-primary);
+}
+
+.friend-item-actions .btn-manage {
+  background: transparent;
+  border: 1px solid var(--vrc-gray-300);
+  color: var(--vrc-gray-500);
+  font-family: var(--vrc-font-family);
+  font-size: var(--vrc-font-size-xs);
+  font-weight: var(--vrc-font-weight-medium);
+  padding: 7px 14px;
+  border-radius: var(--vrc-radius-sm);
+  text-decoration: none;
+  transition: background var(--vrc-transition-normal), color var(--vrc-transition-normal);
+}
+
+.friend-item-actions .btn-manage:hover {
+  background: var(--vrc-gray-50);
+  color: var(--vrc-gray-800);
+}
+
+/* ── Empty state ── */
+.friends-list-empty {
+  color: var(--vrc-gray-400);
+  font-style: italic;
+  font-size: var(--vrc-font-size-sm);
+  text-align: center;
+  padding: var(--vrc-spacing-xl) 0;
+}
+
+
+/* ── Bottom Actions ── */
+.friends-list-nav {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  width: 100%;
+  gap: var(--vrc-spacing-sm);
+}
+
+.btn-nav {
+  display: inline-flex;
+  align-items: center;
+  flex: 1;
+  gap: var(--vrc-spacing-sm);
+  font-family: var(--vrc-font-family);
+  font-size: var(--vrc-font-size-sm);
+  font-weight: var(--vrc-font-weight-medium);
+  color: var(--vrc-gray-500);
+  text-decoration: none;
+  background: var(--vrc-white);
+  border: 1px solid var(--vrc-gray-300);
+  padding: var(--vrc-spacing-md) var(--vrc-spacing-lg);
+  border-radius: var(--vrc-radius-md);
+  transition: background var(--vrc-transition-normal), color var(--vrc-transition-normal), border-color var(--vrc-transition-normal);
+}
+
+.btn-nav:hover {
+  text-decoration: none;
+  background: var(--vrc-gray-50);
+  color: var(--vrc-primary-light);
+  border-color: var(--vrc-gray-200);
+}

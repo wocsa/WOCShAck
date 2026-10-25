@@ -1,0 +1,79 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Appeal Review{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'base/css/admin.css' %}">
+<style>
+  .appeal-meta { display: flex; flex-direction: column; gap: var(--vrc-spacing-2); margin-bottom: var(--vrc-spacing-4); }
+  .appeal-meta-item { display: flex; gap: 8px; font-size: var(--vrc-font-size-sm); }
+  .appeal-meta-item strong { color: var(--vrc-gray-600); min-width: 120px; }
+  .appeal-meta-item span { color: var(--vrc-gray-800); }
+  .appeal-text-box { background: var(--vrc-gray-50); border: 1px solid var(--vrc-gray-100); border-radius: var(--vrc-radius-md); padding: var(--vrc-spacing-3) var(--vrc-spacing-4); margin-bottom: var(--vrc-spacing-4); font-size: var(--vrc-font-size-sm); color: var(--vrc-gray-700); }
+  .appeal-text-label { font-size: var(--vrc-font-size-sm); font-weight: 600; color: var(--vrc-gray-700); margin-bottom: 6px; }
+  .divider { border: none; border-top: 1px solid var(--vrc-gray-100); margin: var(--vrc-spacing-5) 0; }
+  .decision-section { }
+  .decision-title { font-size: var(--vrc-font-size-base); font-weight: 600; color: var(--vrc-gray-800); margin-bottom: var(--vrc-spacing-3); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="mod-page">
+  <h1 class="mod-page-title">Appeal Review</h1>
+
+  <div class="mod-card">
+    <div class="mod-card-body">
+      <div class="appeal-meta">
+        <div class="appeal-meta-item"><strong>User:</strong><span>{{ appeal.user.username }}</span></div>
+        <div class="appeal-meta-item"><strong>Sanction Type:</strong><span>{{ appeal.get_sanction_type_display }}</span></div>
+        <div class="appeal-meta-item"><strong>Submitted:</strong><span>{{ appeal.created_at|date:"M j, Y H:i" }}</span></div>
+      </div>
+
+      <div class="appeal-text-label">Appeal Text</div>
+      <div class="appeal-text-box">{{ appeal.appeal_text|linebreaks|escape }}</div>
+
+      {% if appeal.status == 'pending' %}
+        <hr class="divider">
+        <div class="decision-section">
+          <div class="decision-title">Submit Decision</div>
+          <form method="post">
+            {% csrf_token %}
+            <div class="form-group">
+              <label for="outcome" class="form-label">Decision</label>
+              <select name="outcome" id="outcome" class="form-control" required>
+                <option value="">Select outcome...</option>
+                {% for value, label in outcome_choices %}
+                  <option value="{{ value }}">{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="decision_notes" class="form-label">Decision Notes</label>
+              <textarea name="decision_notes" id="decision_notes" class="form-control" rows="3"></textarea>
+            </div>
+            <div class="form-actions">
+              <button type="submit" class="mod-btn mod-btn-primary">Submit Decision</button>
+              <a href="{% url 'admin_panel:appeal_list' %}" class="mod-btn mod-btn-outline">Back</a>
+            </div>
+          </form>
+        </div>
+      {% else %}
+        <hr class="divider">
+        <div class="decision-section">
+          <div class="decision-title">Decision</div>
+          <div class="appeal-meta">
+            <div class="appeal-meta-item"><strong>Outcome:</strong><span>{{ appeal.get_outcome_display }}</span></div>
+            <div class="appeal-meta-item"><strong>Reviewer:</strong><span>{{ appeal.reviewer.username }}</span></div>
+            <div class="appeal-meta-item"><strong>Reviewed:</strong><span>{{ appeal.reviewed_at|date:"M j, Y H:i" }}</span></div>
+          </div>
+          {% if appeal.decision_notes %}
+            <div class="appeal-text-label">Notes</div>
+            <div class="appeal-text-box">{{ appeal.decision_notes|linebreaks|escape }}</div>
+          {% endif %}
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

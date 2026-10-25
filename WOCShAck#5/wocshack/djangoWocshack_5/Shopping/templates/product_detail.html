@@ -1,0 +1,565 @@
+{% extends "base/base_shop.html" %}
+{% load static %}
+
+
+{% block title %}V.R.C - {{ css_file.name }}{% endblock %}
+
+{% block module_css %}
+<link rel="stylesheet" href="{% static 'css/shop.css' %}">
+{% endblock %}
+
+{% block content_wrapper_class %}{% endblock %}
+
+{% block content %}
+<div class="layout">
+    <div class="main-content">
+        <nav class="vrc-breadcrumbs" style="margin-bottom:1rem;">
+            <a href="{% url 'shop' %}">Shop</a>
+            <span class="bc-sep">›</span>
+            <span class="bc-current">{{ css_file.name|escape }}</span>
+        </nav>
+
+
+        <div class="product-detail-container">
+            <div class="product-main">
+                {# This prevents users from viewing/copying the CSS source code before purchase #}
+                <div class="product-preview-section">
+                    <div class="large-preview">
+                        {% if css_file.preview_gif %}
+                        <img src="{{ css_file.preview_gif.url }}" alt="Preview of {{ css_file.name }}" class="preview-gif-img" draggable="false" oncontextmenu="return false;">
+                        {% else %}
+                        <div class="preview-placeholder-large">
+                            <span>Preview not available</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Product Info -->
+                <div class="product-info-section">
+                    <h1 class="product-name">{{ css_file.name }}</h1>
+                    <p class="product-author">By <a href="{% url 'seller_by_css' css_file.id %}" class="author-link"><strong>{{ css_file.author }}</strong></a></p>
+
+                    <!-- Rating Summary -->
+                    <div class="rating-summary">
+                        <div class="stars">
+                            {% for i in "12345" %}
+                            {% if forloop.counter <= avg_rating %}
+                            <span class="star filled">&#9733;</span>
+                            {% else %}
+                            <span class="star">&#9733;</span>
+                            {% endif %}
+                            {% endfor %}
+                        </div>
+                        <span class="rating-text">{{ avg_rating|floatformat:1 }} ({{ review_count }} review{{ review_count|pluralize }})</span>
+                        <a href="{% url 'reviews_page' css_file.id %}" class="see-reviews">See all reviews</a>
+                    </div>
+
+                    <p class="product-price">{{ css_file.price }} Neuros</p>
+                    <p class="product-date">Added {{ css_file.created_at|date:"F d, Y" }}</p>
+
+                    <div class="product-actions">
+                        <a href="{% url 'add_to_cart' css_file.id %}" class="action-btn action-btn-primary">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                            </svg>
+                            Add to Cart
+                        </a>
+                        {% if user.is_authenticated %}
+                        {% if is_in_wishlist %}
+                        <a href="{% url 'remove_from_wishlist' css_file.id %}" class="action-btn action-btn-secondary wishlist-active">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0112 5.052 5.5 5.5 0 0116.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 01-4.244 3.17 15.247 15.247 0 01-.383.219l-.022.012-.007.004-.003.001a.752.752 0 01-.704 0l-.003-.001z" />
+                            </svg>
+                            In Wishlist
+                        </a>
+                        {% else %}
+                        <a href="{% url 'add_to_wishlist' css_file.id %}" class="action-btn action-btn-secondary">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                            </svg>
+                            Add to Wishlist
+                        </a>
+                        {% endif %}
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reviews Section -->
+            <div class="reviews-section">
+                <div class="reviews-header">
+                    <h2>Customer Reviews</h2>
+                    <a href="{% url 'reviews_page' css_file.id %}" class="see-all-link">See all {{ review_count }} reviews &rarr;</a>
+                </div>
+
+                {% if reviews %}
+                <div class="reviews-preview">
+                    {% for review in reviews|slice:":3" %}
+                    <div class="review-card">
+                        <div class="review-header">
+                            <div class="reviewer-info">
+                                <span class="reviewer-name">{{ review.user.username }}</span>
+                                {% if review.is_verified_purchase %}
+                                <span class="verified-badge">Verified Purchase</span>
+                                {% endif %}
+                            </div>
+                            <div class="review-rating">
+                                {% for i in "12345" %}
+                                {% if forloop.counter <= review.rating %}
+                                <span class="star filled small">&#9733;</span>
+                                {% else %}
+                                <span class="star small">&#9733;</span>
+                                {% endif %}
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <h4 class="review-title">{{ review.title }}</h4>
+                        <p class="review-content">{{ review.content|truncatewords:30 }}</p>
+                        <span class="review-date">{{ review.created_at|date:"M d, Y" }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="no-reviews">No reviews yet. Be the first to review this CSS loader!</p>
+                {% endif %}
+
+                <!-- Write Review Form -->
+                {% if user.is_authenticated and not user_review %}
+                <div class="write-review">
+                    <h3>Write a Review</h3>
+                    <form method="post" action="{% url 'add_review' css_file.id %}" class="review-form">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <label>Your Rating</label>
+                            <div class="rating-input">
+                                {% for i in "54321" %}
+                                <input type="radio" name="rating" value="{{ i }}" id="star{{ i }}" required>
+                                <label for="star{{ i }}" title="{{ i }} star{{ i|pluralize }}">&#9733;</label>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="review-title">Review Title</label>
+                            <input type="text" id="review-title" name="title" maxlength="200" required placeholder="Summarize your experience">
+                        </div>
+                        <div class="form-group">
+                            <label for="review-content">Your Review</label>
+                            <textarea id="review-content" name="content" maxlength="5000" rows="4" required placeholder="What did you like or dislike about this CSS loader?"></textarea>
+                        </div>
+                        <button type="submit" class="action-btn action-btn-primary">Submit Review</button>
+                    </form>
+                </div>
+                {% elif user_review %}
+                <div class="your-review">
+                    <h3>Your Review</h3>
+                    <div class="review-card your-review-card">
+                        <div class="review-header">
+                            <div class="review-rating">
+                                {% for i in "12345" %}
+                                {% if forloop.counter <= user_review.rating %}
+                                <span class="star filled small">&#9733;</span>
+                                {% else %}
+                                <span class="star small">&#9733;</span>
+                                {% endif %}
+                                {% endfor %}
+                            </div>
+                            <form method="post" action="{% url 'delete_review' user_review.id %}" class="delete-form">
+                                {% csrf_token %}
+                                <button type="submit" class="delete-btn" onclick="return confirm('Delete your review?')">Delete</button>
+                            </form>
+                        </div>
+                        <h4 class="review-title">{{ user_review.title }}</h4>
+                        <p class="review-content">{{ user_review.content }}</p>
+                    </div>
+                </div>
+                {% elif not user.is_authenticated %}
+                <p class="login-prompt">
+                    <a href="{% url 'login' %}">Log in</a> to write a review.
+                </p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="back-link">
+            <a href="{% url 'shop' %}">&larr; Back to Shop</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+
+    .product-detail-container {
+        max-width: 900px;
+        margin: 0 auto;
+    }
+
+    .product-main {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2rem;
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 20px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+    }
+
+    .large-preview {
+        width: 100%;
+        aspect-ratio: 1;
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        border-radius: 16px;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .large-preview .preview-gif-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 16px;
+        /* Prevent right-click save and drag of preview images */
+        -webkit-user-drag: none;
+        user-select: none;
+        pointer-events: none;
+    }
+    .large-preview .preview-placeholder-large {
+        color: rgba(255, 255, 255, 0.4);
+        font-size: 0.9rem;
+        text-align: center;
+        padding: 2rem;
+    }
+
+    .product-name {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: #333;
+        margin: 0 0 0.5rem;
+    }
+    .product-author {
+        color: #666;
+        margin: 0 0 1rem;
+    }
+    .product-author strong {
+        color: #667eea;
+    }
+    .author-link {
+        text-decoration: none;
+        transition: all 0.2s ease;
+    }
+    .author-link:hover {
+        text-decoration: underline;
+    }
+    .author-link:hover strong {
+        color: #764ba2;
+    }
+
+    .rating-summary {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+        margin-bottom: 1rem;
+    }
+    .stars {
+        display: flex;
+        gap: 2px;
+    }
+    .star {
+        color: #ddd;
+        font-size: 1.2rem;
+    }
+    .star.filled {
+        color: #f1c40f;
+    }
+    .star.small {
+        font-size: 1rem;
+    }
+    .rating-text {
+        color: #666;
+        font-size: 0.9rem;
+    }
+    .see-reviews {
+        color: #667eea;
+        font-size: 0.9rem;
+        text-decoration: none;
+    }
+    .see-reviews:hover {
+        text-decoration: underline;
+    }
+
+    .product-price {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #667eea;
+        margin: 1rem 0 0.5rem;
+    }
+    .product-date {
+        color: #999;
+        font-size: 0.85rem;
+        margin: 0 0 1.5rem;
+    }
+
+    .product-actions {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+    .action-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.875rem 1.5rem;
+        border-radius: 12px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        border: none;
+        cursor: pointer;
+        font-size: 0.95rem;
+    }
+    .action-btn svg {
+        width: 20px;
+        height: 20px;
+    }
+    .action-btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+    .action-btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    }
+    .action-btn-secondary {
+        background: rgba(102, 126, 234, 0.1);
+        color: #667eea;
+        border: 1px solid rgba(102, 126, 234, 0.2);
+    }
+    .action-btn-secondary:hover {
+        background: rgba(102, 126, 234, 0.15);
+    }
+    .action-btn-secondary.wishlist-active {
+        background: rgba(231, 76, 60, 0.1);
+        color: #e74c3c;
+        border-color: rgba(231, 76, 60, 0.2);
+    }
+
+    /* Reviews Section */
+    .reviews-section {
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 20px;
+        padding: 2rem;
+    }
+    .reviews-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
+    .reviews-header h2 {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: #333;
+        margin: 0;
+    }
+    .see-all-link {
+        color: #667eea;
+        text-decoration: none;
+        font-weight: 500;
+    }
+    .see-all-link:hover {
+        text-decoration: underline;
+    }
+
+    .reviews-preview {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .review-card {
+        background: rgba(102, 126, 234, 0.05);
+        border-radius: 12px;
+        padding: 1.25rem;
+    }
+    .review-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 0.75rem;
+    }
+    .reviewer-info {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+    .reviewer-name {
+        font-weight: 600;
+        color: #333;
+    }
+    .verified-badge {
+        background: #d4edda;
+        color: #155724;
+        padding: 0.2rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.7rem;
+        font-weight: 600;
+    }
+    .review-title {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #333;
+        margin: 0 0 0.5rem;
+    }
+    .review-content {
+        color: #555;
+        font-size: 0.9rem;
+        line-height: 1.5;
+        margin: 0 0 0.75rem;
+    }
+    .review-date {
+        color: #999;
+        font-size: 0.8rem;
+    }
+
+    .no-reviews {
+        color: #666;
+        text-align: center;
+        padding: 2rem;
+    }
+
+    /* Write Review Form */
+    .write-review, .your-review {
+        border-top: 1px solid rgba(102, 126, 234, 0.1);
+        padding-top: 2rem;
+        margin-top: 1rem;
+    }
+    .write-review h3, .your-review h3 {
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: #333;
+        margin: 0 0 1.25rem;
+    }
+
+    .review-form .form-group {
+        margin-bottom: 1.25rem;
+    }
+    .review-form label {
+        display: block;
+        font-weight: 600;
+        color: #555;
+        margin-bottom: 0.5rem;
+        font-size: 0.9rem;
+    }
+    .review-form input[type="text"],
+    .review-form textarea {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border: 1px solid rgba(102, 126, 234, 0.2);
+        border-radius: 8px;
+        font-size: 0.95rem;
+        transition: all 0.2s ease;
+        box-sizing: border-box;
+    }
+    .review-form input:focus,
+    .review-form textarea:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    /* Star Rating Input */
+    .rating-input {
+        display: flex;
+        flex-direction: row-reverse;
+        justify-content: flex-end;
+        gap: 2px;
+    }
+    .rating-input input {
+        display: none;
+    }
+    .rating-input label {
+        cursor: pointer;
+        font-size: 2rem;
+        color: #ddd;
+        margin: 0;
+        transition: color 0.1s ease;
+    }
+    .rating-input label:hover,
+    .rating-input label:hover ~ label,
+    .rating-input input:checked ~ label {
+        color: #f1c40f;
+    }
+
+    .your-review-card {
+        position: relative;
+    }
+    .delete-form {
+        position: absolute;
+        right: 1rem;
+        top: 1rem;
+    }
+    .delete-btn {
+        background: transparent;
+        border: 1px solid rgba(231, 76, 60, 0.3);
+        color: #e74c3c;
+        padding: 0.35rem 0.75rem;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 0.8rem;
+        transition: all 0.2s ease;
+    }
+    .delete-btn:hover {
+        background: rgba(231, 76, 60, 0.1);
+    }
+
+    .login-prompt {
+        text-align: center;
+        color: #666;
+        padding: 1.5rem;
+        background: rgba(102, 126, 234, 0.05);
+        border-radius: 12px;
+        margin-top: 1rem;
+    }
+    .login-prompt a {
+        color: #667eea;
+        font-weight: 600;
+    }
+
+    .back-link {
+        text-align: center;
+        margin-top: 2rem;
+    }
+    .back-link a {
+        color: #667eea;
+        text-decoration: none;
+        font-weight: 500;
+    }
+    .back-link a:hover {
+        text-decoration: underline;
+    }
+
+    @media (max-width: 768px) {
+        .product-main {
+            grid-template-columns: 1fr;
+            padding: 1.5rem;
+        }
+        .product-name {
+            font-size: 1.5rem;
+        }
+        .product-price {
+            font-size: 1.6rem;
+        }
+        .product-actions {
+            flex-direction: column;
+        }
+        .action-btn {
+            justify-content: center;
+        }
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% load static %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{% static 'Chatbot/css/chatbot_widget.css' %}">
+    <title>V.R.C Chat Widget</title>
+</head>
+<body>
+    <div class="widget-container">
+        <div class="widget-header">
+            <span class="widget-avatar">&#129302;</span>
+            <span class="widget-title">Support Chat</span>
+        </div>
+
+        <div class="widget-messages" id="widget-messages">
+            <div class="message bot-message">
+                <p>Hi! How can I help?</p>
+            </div>
+        </div>
+
+        <form id="widget-form" class="widget-form">
+            {% csrf_token %}
+            <input type="text"
+                   id="widget-input"
+                   class="widget-input"
+                   placeholder="Ask a question..."
+                   autocomplete="off"
+                   maxlength="500">
+            <button type="submit" class="widget-send">Send</button>
+        </form>
+    </div>
+
+    <script>
+        /**
+         * V.R.C Chatbot Widget JavaScript
+         * 
+         * - CSRF tokens included in POST requests
+         * - User input escaped before rendering
+         */
+        const form = document.getElementById('widget-form');
+        const input = document.getElementById('widget-input');
+        const messages = document.getElementById('widget-messages');
+
+        // Get CSRF token for secure POST requests
+        function getCsrfToken() {
+            const tokenInput = document.querySelector('input[name="csrfmiddlewaretoken"]');
+            if (tokenInput) return tokenInput.value;
+
+            const name = 'csrftoken';
+            const cookies = document.cookie.split(';');
+            for (let cookie of cookies) {
+                cookie = cookie.trim();
+                if (cookie.startsWith(name + '=')) {
+                    return cookie.substring(name.length + 1);
+                }
+            }
+            return null;
+        }
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const message = input.value.trim();
+            if (!message) return;
+
+            // Add user message
+            addMessage(message, 'user');
+            input.value = '';
+
+            // Show typing indicator
+            const typingDiv = addTypingIndicator();
+
+            try {
+                // Include CSRF token in POST request
+                const response = await fetch('/chatbot/api/chat/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCsrfToken()
+                    },
+                    body: JSON.stringify({ message })
+                });
+                const data = await response.json();
+
+                // Remove typing indicator
+                if (typingDiv) typingDiv.remove();
+
+                if (data.status === 'success') {
+                    addMessage(data.response, 'bot', data.message_id);
+                } else {
+                    addMessage(data.error || 'Sorry, I could not process that.', 'bot');
+                }
+            } catch (error) {
+                // Remove typing indicator
+                if (typingDiv) typingDiv.remove();
+                addMessage('Connection error. Please try again.', 'bot');
+            }
+        });
+
+        function addMessage(text, type, messageId) {
+            const div = document.createElement('div');
+            div.className = `message ${type}-message`;
+            let flagHtml = '';
+            if (type === 'bot' && messageId) {
+                flagHtml = `<div class="widget-message-actions"><button class="widget-flag-btn" data-message-id="${messageId}" title="Flag this response" onclick="flagResponse(this)"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg></button></div>`;
+            }
+            // Escape HTML to prevent XSS
+            div.innerHTML = `<p>${escapeHtml(text)}</p>${flagHtml}`;
+            messages.appendChild(div);
+            messages.scrollTop = messages.scrollHeight;
+            return div;
+        }
+
+        function addTypingIndicator() {
+            const div = document.createElement('div');
+            div.className = 'message bot-message typing';
+            div.innerHTML = '<p>...</p>';
+            messages.appendChild(div);
+            messages.scrollTop = messages.scrollHeight;
+            return div;
+        }
+
+        // Client-side XSS protection
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Allow pressing Enter to send
+        input.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                form.dispatchEvent(new Event('submit', {bubbles: true, cancelable: true}));
+            }
+        });
+
+        /**
+         * Flag a chatbot response for moderation review
+         * Uses inline UI instead of prompt() since
+         * the widget runs in a sandboxed iframe without allow-modals.
+         */
+        function flagResponse(button) {
+            const messageId = button.getAttribute('data-message-id');
+            if (!messageId) return;
+
+            // Remove any existing flag menu
+            const existing = document.querySelector('.widget-flag-menu');
+            if (existing) existing.remove();
+
+            // Build inline reason picker
+            const menu = document.createElement('div');
+            menu.className = 'widget-flag-menu';
+            const reasons = [
+                { code: 'inaccurate', label: 'Inaccurate' },
+                { code: 'inappropriate', label: 'Inappropriate' },
+                { code: 'unhelpful', label: 'Unhelpful' },
+                { code: 'offensive', label: 'Offensive' },
+                { code: 'misleading', label: 'Misleading' },
+                { code: 'security_concern', label: 'Security Concern' },
+                { code: 'other', label: 'Other' },
+            ];
+            reasons.forEach(r => {
+                const btn = document.createElement('button');
+                btn.className = 'widget-flag-option';
+                btn.textContent = r.label;
+                btn.addEventListener('click', () => {
+                    menu.remove();
+                    submitFlag(button, messageId, r.code);
+                });
+                menu.appendChild(btn);
+            });
+
+            // Cancel button
+            const cancel = document.createElement('button');
+            cancel.className = 'widget-flag-option widget-flag-cancel';
+            cancel.textContent = 'Cancel';
+            cancel.addEventListener('click', () => menu.remove());
+            menu.appendChild(cancel);
+
+            // Insert menu after the flag button
+            button.closest('.widget-message-actions').appendChild(menu);
+        }
+
+        async function submitFlag(button, messageId, reasonCode) {
+            try {
+                const response = await fetch('/chatbot/api/flag/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCsrfToken(),
+                    },
+                    body: JSON.stringify({ message_id: messageId, reason: reasonCode, description: '' })
+                });
+                const data = await response.json();
+                if (data.status === 'success') {
+                    button.disabled = true;
+                    button.style.opacity = '0.3';
+                    button.title = 'Response flagged';
+                }
+            } catch (error) {
+                // Silently fail - no alert() available in sandboxed iframe
+            }
+        }
+    </script>
+</body>
+</html>

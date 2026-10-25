@@ -1,0 +1,73 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Content Review{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'base/css/admin.css' %}">
+<style>
+  .meta-row { display: flex; flex-direction: column; gap: var(--vrc-spacing-2); margin-bottom: var(--vrc-spacing-4); }
+  .meta-item { display: flex; gap: 8px; align-items: center; font-size: var(--vrc-font-size-sm); }
+  .meta-item strong { color: var(--vrc-gray-600); min-width: 110px; }
+  .reason-box { background: var(--vrc-gray-50); border: 1px solid var(--vrc-gray-100); border-radius: var(--vrc-radius-md); padding: var(--vrc-spacing-3); font-size: var(--vrc-font-size-sm); color: var(--vrc-gray-700); margin-bottom: var(--vrc-spacing-4); }
+  .divider { border: none; border-top: 1px solid var(--vrc-gray-100); margin: var(--vrc-spacing-4) 0; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="mod-page">
+  <h1 class="mod-page-title">Content Review</h1>
+
+  <div class="mod-card">
+    <div class="mod-card-body">
+      <div class="meta-row">
+        <div class="meta-item">
+          <strong>Module:</strong>
+          <span>{{ queue_item.source_module|title }}</span>
+        </div>
+        <div class="meta-item">
+          <strong>Priority:</strong>
+          <span class="badge badge-{{ queue_item.priority }}">{{ queue_item.get_priority_display }}</span>
+        </div>
+        <div class="meta-item">
+          <strong>Auto-flagged:</strong>
+          <span>{{ queue_item.auto_flagged|yesno:"Yes,No" }}</span>
+        </div>
+      </div>
+
+      {% if queue_item.auto_flag_reason %}
+        <div class="reason-box">
+          <strong>Flag Reason:</strong> {{ queue_item.auto_flag_reason|escape }}
+        </div>
+      {% endif %}
+
+      <hr class="divider">
+
+      <form method="post" action="{% url 'admin_panel:content_action' queue_item.id %}">
+        {% csrf_token %}
+        <div class="form-group">
+          <label for="action_type" class="form-label">Action</label>
+          <select name="action_type" id="action_type" class="form-control" required>
+            <option value="">Select action...</option>
+            {% for value, label in action_choices %}
+              <option value="{{ value }}">{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="reason" class="form-label">Reason</label>
+          <textarea name="reason" id="reason" class="form-control" rows="3"></textarea>
+        </div>
+        <div class="form-group">
+          <label for="internal_notes" class="form-label">Internal Notes</label>
+          <textarea name="internal_notes" id="internal_notes" class="form-control" rows="2"></textarea>
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="mod-btn mod-btn-primary">Take Action</button>
+          <a href="{% url 'admin_panel:content_queue' %}" class="mod-btn mod-btn-outline">Back</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,339 @@
+{% extends "base/base_account.html" %}
+{% load static %}
+
+
+{% block title %}V.R.C - Your Backup Codes{% endblock %}
+
+{% block account_title %}Your Backup Codes{% endblock %}
+
+{% block account_subtitle %}
+<p class="account-subtitle">Save these codes securely - they will only be shown once</p>
+{% endblock %}
+
+{% block account_content %}
+<div class="codes-display-container">
+    <div class="warning-banner">
+        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+            <line x1="12" y1="9" x2="12" y2="13"/>
+            <line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+        <div>
+            <strong>Save these codes now!</strong>
+            <p>These codes will not be shown again. Store them in a safe place like a password manager.</p>
+        </div>
+    </div>
+
+    <div class="codes-card">
+        <div class="codes-header">
+            <h3>Your 10 Backup Codes</h3>
+            <button class="copy-all-btn" onclick="copyAllCodes()">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                </svg>
+                Copy All
+            </button>
+        </div>
+        <div class="codes-grid">
+            {% for code in codes %}
+            <div class="code-item" onclick="copyCode('{{ code }}', this)">
+                <span class="code-number">{{ forloop.counter }}.</span>
+                <span class="code-value">{{ code }}</span>
+                <svg class="copy-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                </svg>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="instructions-card">
+        <h3>How to use backup codes</h3>
+        <ul>
+            <li>Each code can only be used <strong>once</strong></li>
+            <li>Enter a backup code when prompted for your 2FA code</li>
+            <li>Use these codes only if you cannot access your authenticator app</li>
+            <li>Generate new codes before you run out</li>
+        </ul>
+    </div>
+
+    <div class="action-buttons">
+        <button class="print-btn" onclick="window.print()">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="6 9 6 2 18 2 18 9"/>
+                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+                <rect x="6" y="14" width="12" height="8"/>
+            </svg>
+            Print Codes
+        </button>
+        <a href="{% url 'backup_codes' %}" class="done-btn">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="20 6 9 17 4 12"/>
+            </svg>
+            I've Saved My Codes
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .codes-display-container {
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    .warning-banner {
+        display: flex;
+        gap: 1rem;
+        background: #fef3c7;
+        border: 1px solid #fcd34d;
+        border-radius: var(--vrc-radius-lg);
+        padding: 1rem 1.25rem;
+        margin-bottom: 1.5rem;
+        color: #92400e;
+    }
+
+    .warning-banner svg {
+        flex-shrink: 0;
+        margin-top: 2px;
+    }
+
+    .warning-banner strong {
+        display: block;
+        margin-bottom: 0.25rem;
+    }
+
+    .warning-banner p {
+        margin: 0;
+        font-size: 0.875rem;
+    }
+
+    .codes-card {
+        background: var(--vrc-white);
+        border-radius: var(--vrc-radius-xl);
+        border: 1px solid var(--vrc-gray-200);
+        overflow: hidden;
+        margin-bottom: 1.5rem;
+    }
+
+    .codes-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 1.5rem;
+        background: var(--vrc-gray-50);
+        border-bottom: 1px solid var(--vrc-gray-200);
+    }
+
+    .codes-header h3 {
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--vrc-gray-900);
+    }
+
+    .copy-all-btn {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: var(--vrc-primary);
+        background: var(--vrc-white);
+        border: 1px solid var(--vrc-primary);
+        border-radius: var(--vrc-radius-md);
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .copy-all-btn:hover {
+        background: var(--vrc-primary);
+        color: var(--vrc-white);
+    }
+
+    .codes-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.5rem;
+        padding: 1.5rem;
+    }
+
+    .code-item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.75rem 1rem;
+        background: var(--vrc-gray-50);
+        border-radius: var(--vrc-radius-md);
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border: 1px solid transparent;
+    }
+
+    .code-item:hover {
+        background: var(--vrc-white);
+        border-color: var(--vrc-primary);
+    }
+
+    .code-item.copied {
+        background: var(--vrc-success-light);
+        border-color: #10b981;
+    }
+
+    .code-number {
+        font-size: 0.75rem;
+        color: var(--vrc-gray-500);
+        width: 1.5rem;
+    }
+
+    .code-value {
+        font-family: 'Courier New', monospace;
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--vrc-gray-900);
+        letter-spacing: 0.05em;
+        flex-grow: 1;
+    }
+
+    .copy-icon {
+        color: var(--vrc-gray-400);
+        opacity: 0;
+        transition: opacity 0.2s ease;
+    }
+
+    .code-item:hover .copy-icon {
+        opacity: 1;
+    }
+
+    .instructions-card {
+        background: var(--vrc-gray-50);
+        border-radius: var(--vrc-radius-lg);
+        padding: 1.25rem 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .instructions-card h3 {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--vrc-gray-900);
+        margin-bottom: 0.75rem;
+    }
+
+    .instructions-card ul {
+        margin: 0;
+        padding-left: 1.25rem;
+    }
+
+    .instructions-card li {
+        font-size: 0.85rem;
+        color: var(--vrc-gray-600);
+        margin-bottom: 0.5rem;
+    }
+
+    .instructions-card li:last-child {
+        margin-bottom: 0;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+    }
+
+    .print-btn,
+    .done-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.875rem 1.5rem;
+        font-size: 1rem;
+        font-weight: 600;
+        border-radius: var(--vrc-radius-lg);
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-decoration: none;
+    }
+
+    .print-btn {
+        background: var(--vrc-white);
+        color: var(--vrc-gray-700);
+        border: 2px solid var(--vrc-gray-200);
+    }
+
+    .print-btn:hover {
+        border-color: var(--vrc-gray-400);
+    }
+
+    .done-btn {
+        background: var(--vrc-gradient);
+        color: var(--vrc-white);
+        border: none;
+        box-shadow: var(--vrc-shadow-primary);
+    }
+
+    .done-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--vrc-shadow-primary-lg);
+        color: var(--vrc-white);
+    }
+
+    @media print {
+        .warning-banner,
+        .copy-all-btn,
+        .copy-icon,
+        .action-buttons,
+        .instructions-card {
+            display: none !important;
+        }
+
+        .codes-card {
+            border: 1px solid #000;
+        }
+
+        .code-item {
+            background: #fff;
+            border: 1px solid #ccc;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .codes-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .action-buttons {
+            flex-direction: column;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function copyCode(code, element) {
+    navigator.clipboard.writeText(code).then(() => {
+        element.classList.add('copied');
+        setTimeout(() => {
+            element.classList.remove('copied');
+        }, 1000);
+    });
+}
+
+function copyAllCodes() {
+    const codes = [{% for code in codes %}'{{ code }}'{% if not forloop.last %}, {% endif %}{% endfor %}];
+    const text = codes.join('\n');
+    navigator.clipboard.writeText(text).then(() => {
+        const btn = document.querySelector('.copy-all-btn');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Copied!';
+        setTimeout(() => {
+            btn.innerHTML = originalText;
+        }, 2000);
+    });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,152 @@
+{% extends "base/base.html" %}
+{% load static %}
+{% load community_tags %}
+
+{% block title %}VRC — Tutorials{% endblock %}
+
+{% block module_css %}
+<link rel="stylesheet" href="{% static 'community/css/content.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="main-container">
+<nav class="vrc-breadcrumbs">
+  <a href="{% url 'community:index' %}">Community</a>
+  <span class="bc-sep">›</span>
+  <span class="bc-current">Tutorials</span>
+</nav>
+<div class="content-wrapper">
+
+  <div class="content-header">
+    <div>
+      <h1 class="content-title">Tutorials</h1>
+      <p class="content-subtitle">Learn CSS and platform skills step by step</p>
+    </div>
+    {% check_content_creator request.user as can_create %}
+    {% if can_create %}
+    <a href="{% url 'community:tutorial_create' %}" class="content-btn content-btn--primary">+ Create Tutorial</a>
+    {% endif %}
+  </div>
+
+  {# Filters #}
+  <div class="filter-bar">
+    <div class="filter-group">
+      <span class="filter-label">Difficulty:</span>
+      <a href="?" class="filter-chip {% if not active_difficulty %}filter-chip--active{% endif %}">All</a>
+      {% for val, label in difficulties %}
+      <a href="?difficulty={{ val }}{% if active_category %}&category={{ active_category }}{% endif %}"
+         class="filter-chip filter-chip--{{ val }} {% if active_difficulty == val %}filter-chip--active{% endif %}">
+        {{ label }}
+      </a>
+      {% endfor %}
+    </div>
+    {% if categories %}
+    <div class="filter-group">
+      <span class="filter-label">Topic:</span>
+      <a href="?{% if active_difficulty %}difficulty={{ active_difficulty }}{% endif %}"
+         class="filter-chip {% if not active_category %}filter-chip--active{% endif %}">All</a>
+      {% for cat in categories %}
+      <a href="?{% if active_difficulty %}difficulty={{ active_difficulty }}&{% endif %}category={{ cat }}"
+         class="filter-chip {% if active_category == cat %}filter-chip--active{% endif %}">
+        {{ cat }}
+      </a>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+
+  {# My Drafts — only visible to the author #}
+  {% if my_drafts %}
+  <div style="margin-bottom:1.5rem;">
+    <h2 style="font-size:1rem;font-weight:600;color:var(--vrc-gray-500);margin-bottom:.75rem;display:flex;align-items:center;gap:.4rem;">
+      <span style="background:#fef3c7;color:#d97706;border:1px solid #fcd34d;border-radius:.375rem;padding:.15rem .5rem;font-size:.75rem;font-weight:700;text-transform:uppercase;">Draft</span>
+      My Unpublished Tutorials
+    </h2>
+    <div class="tutorial-grid">
+      {% for tut in my_drafts %}
+      <div class="tutorial-card" style="border-left:3px solid #fcd34d;opacity:.85;">
+        <div class="tutorial-card-body">
+          <div class="tutorial-card-tags">
+            <span style="background:#fef3c7;color:#d97706;border-radius:.25rem;padding:.1rem .4rem;font-size:.7rem;font-weight:700;">Draft</span>
+            <span class="difficulty-badge difficulty-badge--{{ tut.difficulty }}">{{ tut.get_difficulty_display }}</span>
+          </div>
+          <h2 class="tutorial-card-title">
+            <a href="{% url 'community:tutorial_edit' tut.slug %}">{{ tut.title }}</a>
+          </h2>
+          <div class="tutorial-card-desc">{{ tut.description|markdownify|truncatewords_html:20 }}</div>
+          <div class="tutorial-card-meta">
+            <span>Created {{ tut.created_at|date:"M d, Y" }}</span>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {% if page_obj.object_list %}
+  <div class="tutorial-grid">
+    {% for tut in page_obj %}
+    <div class="tutorial-card">
+      {% if tut.thumbnail %}
+      <div class="tutorial-card-img">
+        <img src="{{ tut.thumbnail.url }}" alt="{{ tut.title }}">
+      </div>
+      {% else %}
+      <div class="tutorial-card-img tutorial-card-img--placeholder">
+        <span>📖</span>
+      </div>
+      {% endif %}
+      <div class="tutorial-card-body">
+        <div class="tutorial-card-tags">
+          <span class="difficulty-badge difficulty-badge--{{ tut.difficulty }}">{{ tut.get_difficulty_display }}</span>
+          {% if tut.is_premium %}<span class="premium-badge">⚡ Premium</span>{% endif %}
+          {% if tut.category %}<span class="topic-badge">{{ tut.category }}</span>{% endif %}
+        </div>
+        <h2 class="tutorial-card-title">
+          <a href="{% url 'community:tutorial_detail' tut.slug %}">{{ tut.title }}</a>
+        </h2>
+        <div class="tutorial-card-desc">{{ tut.description|markdownify|truncatewords_html:20 }}</div>
+        <div class="tutorial-card-meta">
+          <span>⏱ {{ tut.estimated_minutes }} min</span>
+          <span>·</span>
+          <span>{{ tut.step_count }} steps</span>
+        </div>
+        {% if request.user.is_authenticated %}
+          {% for pid, prog in user_progress.items %}
+            {% if pid == tut.id|stringformat:"s" %}
+            <div class="tutorial-progress-bar">
+              <div class="tutorial-progress-fill {% if prog.completed %}tutorial-progress-fill--done{% endif %}"
+                style="width: {% if prog.completed %}100{% elif prog.current_step %}{% widthratio prog.current_step.order tut.step_count 100 %}{% else %}0{% endif %}%"></div>
+            </div>
+            {% if prog.completed %}<span class="tutorial-done-badge">✓ Completed</span>{% endif %}
+            {% endif %}
+          {% endfor %}
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  {% if page_obj.has_other_pages %}
+  <div class="content-pagination">
+    {% if page_obj.has_previous %}
+    <a href="?{% if active_difficulty %}difficulty={{ active_difficulty }}&{% endif %}{% if active_category %}category={{ active_category }}&{% endif %}page={{ page_obj.previous_page_number }}" class="page-btn">← Prev</a>
+    {% endif %}
+    <span class="page-info">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+    {% if page_obj.has_next %}
+    <a href="?{% if active_difficulty %}difficulty={{ active_difficulty }}&{% endif %}{% if active_category %}category={{ active_category }}&{% endif %}page={{ page_obj.next_page_number }}" class="page-btn">Next →</a>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {% else %}
+  <div class="content-empty">
+    <span class="content-empty-icon">📚</span>
+    <p>No tutorials available yet.</p>
+  </div>
+  {% endif %}
+
+</div>
+</div>
+{% endblock %}

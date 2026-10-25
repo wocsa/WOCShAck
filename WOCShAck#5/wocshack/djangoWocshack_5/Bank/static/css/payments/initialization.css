@@ -1,0 +1,66 @@
+body {
+  margin: 0;
+  height: 100vh;
+  background: black;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.loader {
+  position: relative;
+  width: 140px;
+  height: 140px;
+}
+
+.ring {
+  position: absolute;
+  border-radius: 50%;
+  border-style: solid;
+  border-color: transparent;
+  border-top-color: white;
+  border-left-color: white;
+  /* Thick borders to make big arcs */
+  border-width: 7px;
+  animation: rotate 2s linear infinite;
+  box-sizing: border-box;
+}
+
+
+.ring:nth-child(1) {
+  width: 80px;
+  height: 80px;
+  top: 30px;
+  left: 30px;
+  animation-duration: 1.6s;
+}
+
+.ring:nth-child(2) {
+  width: 100px;
+  height: 100px;
+  top: 20px;
+  left: 20px;
+  animation-duration: 2.2s;
+  animation-direction: reverse;
+}
+.ring:nth-child(3) {
+  width: 120px;
+  height: 120px;
+  top: 10px;
+  left: 10px;
+  animation-duration: 2.8s;
+}
+.ring:nth-child(4) {
+  width: 140px;
+  height: 140px;
+  top: 0;
+  left: 0;
+  animation-duration: 3.4s;
+  animation-direction: reverse;
+}
+
+
+@keyframes rotate {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}

@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% load static %}
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="{% static 'css/payments/popup.css' %}">
+    <title>V.R.C - Verification</title>
+</head>
+<body>
+<div class="center">
+    <form action="" method="POST">
+        {% csrf_token %}
+        <h1>Verification</h1>
+        <h4>Enter your account PIN to validate your payment</h4>
+        {% block error%}{% endblock %}
+        <br>
+        <input type="password" name="pin" placeholder="123456" class="field" required maxlength="6" pattern="[0-9]{6}" autofocus>
+        <br>
+        <br>
+        <br>
+        <button class="button_login" type="submit" id="submitBtn">Verify</button>
+        <br>
+        <br>
+    </form>
+</div>
+</body>
+</html>
