@@ -28,7 +28,7 @@ The message appears in the admin inbox under the spoofed sender; the body is ins
 
 ![Spoofed delivery and active-content execution](Screenshot_From_2026-05-23_21-15-33.png)
 
-No sender verification, authentication, or rate-limiting at any stage.
+No sender verification or authentication was observed in the reported scenario. Rate limiting is disabled in the reviewed BunkerWeb configuration.
 
 # Risk
 
@@ -36,9 +36,9 @@ No sender verification, authentication, or rate-limiting at any stage.
 |-----------|--------|
 | Confidentiality | Stored XSS in the victim's authenticated webmail session → same-origin actions as the victim (read mail, change password, send as them). Session cookies are `HttpOnly`, so direct cookie theft is blocked, but authenticated requests from the XSS origin succeed. |
 | Integrity | Spoofed internal-sender phishing (password resets, fake alerts) is highly convincing. |
-| Availability | Unauthenticated mass injection into any mailbox. |
+| Availability | Potential mailbox flooding; service disruption has not been demonstrated. |
 
-Overall severity: **High** — unauthenticated phishing delivery combined with code execution against the recipient.
+Overall severity: **High** — unauthenticated sender spoofing combined with JavaScript execution in the recipient's browser.
 
 # Remediation
 
