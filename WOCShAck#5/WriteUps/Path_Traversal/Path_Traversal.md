@@ -1,8 +1,10 @@
 # Description
 
-Path traversal / arbitrary file read (CWE-22) on the API loader endpoint `GET /api/loader/?file=<filename>`. The `loader()` view in `Api/views.py` joins the user-supplied `file` parameter to a base path and reads the result with no canonicalisation: there is no `realpath()` boundary check and only a thin, incomplete deny-list. Both absolute paths (`/etc/passwd`) and relative traversal (`../../../etc/passwd`) escape the intended directory.
+Path traversal / arbitrary file read (CWE-22) in the API loader view (`Api/views.py:3875-3886`).
 
-**No authentication is required.** Any anonymous user can read any file readable by the Django process, including `/proc/self/environ`, which leaks internal service URLs and configuration.
+The loader relies on an incomplete deny-list and does not enforce proper path canonicalisation or directory confinement.
+
+The view does not implement an explicit authentication check. Unauthorized file disclosure may expose system information and internal application configuration, subject to filesystem permissions, input restrictions and text decoding.
 
 # Exploitation
 
@@ -29,7 +31,7 @@ curl -s "http://<TARGET>/api/loader/?file=/etc/passwd"
 
 ![Arbitrary read of /etc/passwd](path-traversal-etc-passwd.png)
 
-**Step 2 — read the process environment (secrets / internal services):**
+**Step 2 — internal configuration disclosure:**
 
 ```bash
 curl -s "http://<TARGET>/api/loader/?file=/proc/self/environ" | tr '\0' '\n'
@@ -47,24 +49,27 @@ curl -s "http://<TARGET>/api/loader/?file=/proc/self/environ" | tr '\0' '\n'
 curl -s "http://<TARGET>/api/loader/?file=../../../etc/passwd"   # same output as Step 1
 ```
 
-![Relative ../ traversal](path-traversal-relative.png)
+![Relative path traversal demonstrating system information disclosure](path-traversal-relative.png)
 
 # Risk
 
 | Dimension | Impact |
 |-----------|--------|
-| Confidentiality | Unauthenticated read of any process-readable file: source code, the SQLite DB, secrets, `/proc` data. |
-| Integrity | Indirect — leaked config (e.g. `OLLAMA_BASE_URL`) feeds the SSRF and other chains. |
-| Availability | None directly. |
+| Confidentiality | Unauthorized disclosure of process-readable text files, subject to existing restrictions, including system information and internal application configuration. |
+| Integrity | Indirect — disclosed configuration may contribute to other vulnerability chains. |
+| Availability | None directly demonstrated. |
 
-Overall severity: **High** — zero-privilege full file read; reveals the internal Ollama service that the `/banking/webhook/` SSRF can then reach.
+Overall severity: **High** — unauthorized file disclosure exposes sensitive system information and internal application configuration.
 
 # Remediation
 
-1. **Allow-list filenames** (e.g. `^[A-Za-z0-9_-]+\.css$`) and resolve only known CSS IDs.
-2. **Strip traversal** with `os.path.basename()`, then **`os.path.realpath()`** the final path and assert it stays inside the intended base directory.
-3. **Reject absolute paths and `..`** outright (HTTP 400).
-4. **Require authentication** on API endpoints; run the container read-only with `no-new-privileges` and restricted `/proc` access.
+1. **Allow-list filenames** or resolve server-controlled resource identifiers instead of accepting arbitrary filesystem paths.
+2. **Canonicalise and validate the final path** to ensure that it remains within the intended base directory.
+3. **Reject invalid or unauthorized paths** before opening files.
+4. **Enforce appropriate authentication and authorization** according to the intended access policy.
+5. **Apply least-privilege filesystem permissions** to limit the application's access to sensitive files.
+6. **Add regression tests** covering path validation, directory confinement and unauthorized file access.
 
 # Author
 Hackrapovic
+ 
