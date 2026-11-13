@@ -61,11 +61,13 @@ for i in $(seq 1 100); do
 done
 ```
 
-Expected output shape for a successful request:
+**Step 3 — Observed test results:**
 
-```json
-{"success": true, "user": {"id": 1, "account_number": 2260071635394776, "payment_number": 1111111111111111, "balance": 100000.0, "history": "..."}}
-```
+![Bank account data returned during testing](all_user_bank_data.png)
+
+**Step 4 — Financial fields:**
+
+<img src="users_financial_fields.png" alt="Financial fields returned during testing" width="550">
 
 # Risk
 
@@ -75,12 +77,14 @@ Expected output shape for a successful request:
 | Integrity | None directly. The endpoint is read-only. The exposed payment numbers can be used with other flaws (for example CSRF on the bank transfer) to move funds, which is an indirect integrity impact. |
 | Availability | None. Enumeration is read-only and does not disrupt service, although a high request rate could load the backend banking service. |
 
-Overall severity: **High** (CVSS 3.1 estimate: AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:N/A:N = 6.5 Medium on the base score alone). It is rated High here because the leaked data is full financial account information for every user, it can be harvested completely with a trivial loop, and it enables fund theft when chained with the CSRF transfer flaw.
+Overall severity: **High (business impact)** — unauthorised disclosure of sensitive banking information.
+
+**CVSS 3.1:** 6.5 (Medium) — `CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:N/A:N`.
 
 # Remediation
 
 1. Replace the URL parameter with the authenticated user's ID. Change the view to call `cli.get_user(sid, request.user.id)` and drop `user_id` from the signature, or remove the route entirely if no client needs it.
-2. If staff must read other customers' accounts, put that access behind an explicit check, for example `if request.user.id != user_id and not request.user.is_staff: return HttpResponseForbidden()`, and log each access.
+2. If authorised staff must access other customers' banking data, require an explicit banking-specific permission, enforce least privilege, and audit each access.
 3. Remove `Bank/urls.py:57` (`api/user/<int:user_id>/`) if no legitimate user-facing feature needs it.
 4. Apply the same PIN-session requirement used by `account` (`Bank/views.py:82`) so that banking data is not returned without a verified banking session.
 5. Add a regression test that requests another user's ID and asserts a 403 or 404 response.
