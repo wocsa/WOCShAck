@@ -27,7 +27,8 @@ curl -X POST 'http://<TARGET>/chatbot/api/flag/' \
 
 Message id `11` belongs to another user, yet the flag succeeds.
 
-![Authenticated flag request on a non-owned message](Capture_d_cran_2026-05-23_153257.png)
+![HTTP response statuses observed during testing](Capture_d_cran_2026-05-23_153257.png)
+HTTP 429 responses were also observed during testing. The source of these responses has not been independently verified.
 
 **Bulk enumeration via the 200/404 oracle** maps the live message-id set:
 
@@ -41,21 +42,23 @@ for (const id of [...Array(30).keys()].map(i=>i+1)) {
 // 200 → exists (flaggable), 404 → non-existent
 ```
 
-![Flag attempts against ids the attacker does not own](Capture_d_cran_2026-05-23_161453.png)
+![Account settings of the test user](Capture_d_cran_2026-05-23_161453.png)
 
-![console.table of 200/404 results — existence oracle](Capture_d_cran_2026-05-23_161607.png)
+![Chatbot conversation and reporting interface](Capture_d_cran_2026-05-23_161607.png)
 
-![Single non-owned flag request/response detail](Capture_d_cran_2026-05-23_161822.png)
+![JSON response to a normal chatbot question](Capture_d_cran_2026-05-23_161822.png)
 
 # Risk
 
 | Dimension | Impact |
 |-----------|--------|
-| Confidentiality | Existence oracle enumerates the moderation history (valid message ids) without authorization. |
-| Integrity | Pollution of the moderation queue; mass-flagging of legitimate/system messages degrades the moderation signal. |
-| Availability | Moderators forced to triage attacker-generated noise. |
+| Confidentiality | Limited disclosure of message existence; no disclosure of conversation contents has been demonstrated. |
+| Integrity | Potential pollution of the moderation queue and degradation of moderation quality. |
+| Availability | Increased moderation workload; no direct service disruption demonstrated. |
 
-Secondary chain: the free-text `description` field is stored server-side — if rendered to moderators without escaping, it becomes a stored-XSS vector against privileged sessions. Overall severity: **Medium**.
+The potential stored XSS impact mentioned in the original report has not been demonstrated and requires a separate review of administrative rendering.
+
+Overall severity: **Medium**.
 
 # Remediation
 
@@ -63,6 +66,7 @@ Secondary chain: the free-text `description` field is stored server-side — if 
 2. If "any user may flag any message" is intentional, **return a constant response** regardless of id validity to suppress the oracle, and dedupe flags per user.
 3. **HTML-escape `description`** in every administrative rendering path.
 4. **Audit all object-level endpoints** for missing ownership checks.
+5. **Add regression tests** covering message ownership, reporting permissions, duplicate flags, and safe rendering of user-provided descriptions.
 
 # Author
 CPE LYON
