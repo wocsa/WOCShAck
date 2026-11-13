@@ -2,10 +2,10 @@
 
 Open redirect via Host header injection (CWE-601 / CWE-116), with a second vector on the advertisement click endpoint. Two independent issues abuse the trusted domain:
 
-- **Host Header Injection (unauthenticated):** BunkerWeb (the reverse proxy) performs the HTTP→HTTPS redirect using the incoming `Host` header. Django is configured with `ALLOWED_HOSTS = ['*']` and `USE_X_FORWARDED_HOST = True` (`settings/base.py:29,35`), so the application trusts any forwarded host value. Sending `Host: evil.com` on an HTTP URL can produce a redirect to `https://evil.com/<path>`.
+- **Host Header Injection (unauthenticated):** BunkerWeb (the reverse proxy) performs the HTTP→HTTPS redirect using the incoming `Host` header. Django is configured with `ALLOWED_HOSTS = ['*']` and `USE_X_FORWARDED_HOST = True` (`settings/production.py:29` and `settings/base.py:35`), so the application trusts any forwarded host value. Sending `Host: evil.com` on an HTTP URL can produce a redirect to `https://evil.com/<path>`.
 - **Advertisement click redirect:** `/advertisement/click/<uuid>/` redirects to the ad's stored `target_url` with no domain validation, and works **before** the ad is approved ("Pending Review").
 
-The Host-header vector is also a **password-reset poisoning** primitive when `SITE_URL` is empty (the default): reset links are built from the request host via `request.build_absolute_uri()`, so a poisoned `Host` header sends the victim's reset token to the attacker's domain.
+The Host-header vector also introduces a potential password-reset poisoning risk. The actual password-reset link generation and subsequent account compromise have not been demonstrated by the provided PoC.
 
 # Exploitation
 
@@ -16,7 +16,7 @@ The Host-header vector is also a **password-reset poisoning** primitive when `SI
 
 # PoC
 
-**1. Host Header Injection (no auth, every endpoint):**
+**1. Host Header Injection (unauthenticated, observed on the tested endpoints):**
 
 ```http
 GET /account/password-reset-request HTTP/1.1
@@ -42,11 +42,11 @@ POST /advertisement/click/a5d36db2-…/  →  HTTP 302 Location: https://evil.co
 
 | Dimension | Impact |
 |-----------|--------|
-| Confidentiality | Password-reset link poisoning → reset token sent to `https://evil.com/...` → account takeover. |
-| Integrity | Legitimate-looking V.R.C links redirect victims to attacker phishing pages. |
+| Confidentiality | Potential exposure of sensitive account information through password-reset poisoning; account takeover has not been demonstrated. |
+| Integrity | Legitimate-looking V.R.C links may redirect users to untrusted external websites. |
 | Availability | None directly. |
 
-Overall severity: **High** — unauthenticated, universal across endpoints, defeats anti-phishing filters (source URL is the trusted domain).
+Overall severity: **High** — unauthenticated Host header injection and advertisement redirect abuse undermine trust in the application domain, with potential phishing and password-reset poisoning impacts.
 
 # Remediation
 
