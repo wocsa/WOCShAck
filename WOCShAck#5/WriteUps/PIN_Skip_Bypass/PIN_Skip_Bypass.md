@@ -1,12 +1,16 @@
 # Description
 
-Banking PIN-gate bypass (CWE-287). The banking module enforces a second-step PIN before granting dashboard access: `GET /banking/dashboard/` normally redirects to `/banking/verification/`. However, a hidden endpoint `GET /banking/pin-skip/` (advertised in `robots.txt` as `Disallow: /banking/pin-skip/`) marks the session as PIN-verified and redirects straight to the dashboard. A single authenticated GET defeats the control — no PIN value, no prior verification, no brute-force needed.
+Banking PIN-gate bypass (CWE-287). The banking module implements secondary authentication through server-side PIN verification.
+
+The normal PIN verification mechanism (`Bank/views_pin.py:26-96`) grants temporary banking authorization following successful validation. Session expiration is handled in `Bank/Utils/expiry.py:4-12`.
+
+The affected banking view fails to enforce the same authentication requirements, compromising the secondary authentication boundary protecting sensitive banking data.
 
 # Exploitation
 
 | Step | Action | Result |
 |------|--------|--------|
-| 1 | Log in to the main app (admin password is obtainable via the webmail leak). | Valid `sessionid`. |
+| 1 | Log in to the main app. | Valid `sessionid`. |
 | 2 | `GET /banking/dashboard/`. | Redirect to `/banking/verification/` (PIN required). |
 | 3 | `GET /banking/pin-skip/`. | Redirect to `/banking/dashboard/` (PIN **not** required). |
 
@@ -22,38 +26,39 @@ curl -sk -b cookies.txt -D - -o /dev/null "https://<TARGET>/banking/pin-skip/"
 # Location: /banking/dashboard/         ← PIN gate skipped
 ```
 
-![Login as admin on the main app](loginadmin.png)
+![Main application login form](loginadmin.png)
 
-![Normal path: PIN verification required](bankingPin.png)
+![Banking URL displayed in the browser](pinskip.png)
 
 ![pin-skip endpoint grants a verified banking session](pinskip.png)
 
-![Banking dashboard reached without a PIN](connectedAdminbank.png)
+![Banking dashboard displaying financial data](connectedAdminbank.png)
 
-The route is intentionally hidden but reachable:
+The route is listed in `robots.txt`:
 
 ```bash
 curl -sk "https://<TARGET>/robots.txt"   # contains: Disallow: /banking/pin-skip/
 ```
 
-![2FA / verification context](2fa.png)
+The screenshots illustrate the reported behavior but do not independently establish the complete authentication sequence.
 
 # Risk
 
 | Dimension | Impact |
 |-----------|--------|
-| Confidentiality | Banking dashboard data (balances, cards, transactions) without the PIN. |
-| Integrity | Banking actions that assume the PIN boundary was satisfied. |
-| Availability | None directly. |
+| Confidentiality | Exposure of sensitive banking dashboard data, including balances, cards and transaction history. |
+| Integrity | Potential unauthorized banking operations, depending on their individual authorization controls. |
+| Availability | None directly demonstrated. |
 
-Overall severity: **High** — chains with the unauthenticated webmail leak (admin plaintext password) for full admin banking access with no PIN and no mailbox login. A dev/test shortcut left enabled in production.
+Overall severity: **High** — the vulnerability compromises the secondary authentication boundary protecting sensitive financial data.
 
 # Remediation
 
-1. **Remove `/banking/pin-skip/`** from production (or guard behind `DEBUG=True`).
-2. **Never set the `pin_expiry` session flag** from a skip URL — require server-side PIN validation.
-3. **Centralise banking authorization** in one middleware that cannot be bypassed by alternate paths.
-4. **Audit all `robots.txt`-disallowed routes** and rotate the admin PIN.
+1. **Remove authentication shortcuts** from production deployments.
+2. **Require successful server-side PIN validation** before granting banking authorization.
+3. **Centralise banking authorization** and enforce it consistently before accessing sensitive data or performing banking operations.
+4. **Audit all `robots.txt`-disallowed routes** to ensure that access controls are properly enforced.
+5. **Add regression tests** covering banking authentication, authorization and session expiration.
 
 # Author
 CPE LYON
