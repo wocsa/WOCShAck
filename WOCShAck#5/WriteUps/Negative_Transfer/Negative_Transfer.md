@@ -20,21 +20,24 @@ curl -sk -b cookies.txt -X POST "http://<TARGET>/banking/quick-transfer/" \
 
 The `quick_transfer` endpoint (`Bank/views.py:421-440`) parses the JSON body and calls `cli.send(payload)` without checking the `amount` field. Whether the reversed transfer succeeds depends on the banking backend's own validation. Note: the standard form-based transfer at `/banking/dashboard/` correctly rejects `amount <= 0`.
 
+No backend response or balance change is documented in this PoC. The actual financial impact therefore remains unverified.
+
 # Risk
 
 | Dimension | Impact |
 |-----------|--------|
 | Confidentiality | None directly. |
-| Integrity | Attacker can pull funds from arbitrary recipients / credit themselves unlimited balance. |
+| Integrity | Potential unauthorised modification of account balances, depending on the banking backend's validation. |
 | Availability | None directly. |
 
-Overall severity: **High (integrity)** — the `quick_transfer` endpoint has no input validation; actual impact depends on the banking backend's handling of negative amounts.
+Overall severity: **High (integrity)** — improper input validation in the quick-transfer endpoint; actual financial impact depends on the banking backend's validation and has not been independently demonstrated.
 
 # Remediation
 
-1. **Validate `amount` server-side**: enforce `amount > 0` and an upper bound, reject non-numeric/negative values before processing.
-2. **Re-check the sender's balance** server-side within the transfer transaction.
+1. **Validate `amount` server-side**: enforce a strictly positive, finite numeric amount and an appropriate upper bound at both the Django application and banking backend levels.
+2. **Re-check the sender's balance** server-side within the transfer transaction and ensure atomic balance updates.
 3. **Never rely on client-side constraints** (`min`, `max`, `type=number`) for security.
+4. **Add regression tests** to verify that invalid amounts are rejected and that rejected transactions leave account balances unchanged.
 
 # Author
 Scoubi'Hack
