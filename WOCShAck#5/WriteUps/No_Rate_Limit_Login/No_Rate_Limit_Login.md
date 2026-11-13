@@ -1,15 +1,17 @@
 # Description
 
-Missing restriction of excessive authentication attempts (CWE-307) on `POST /account/login/`, potentially exposing accounts to brute-force and credential-stuffing attacks — especially serious given the platform exposes a banking section and API keys.
+Missing restriction of excessive authentication attempts (CWE-307) in the login flow (`Account/views.py:570-609`), potentially exposing accounts to brute-force and credential-stuffing attacks.
 
-The application implements authentication audit logging through `LoginHistory` (`Account/models.py:207-271`) and dedicated rate limitin for password reset requests (`Account/models.py:442-485`). These mechanisms do not, by themselves, provide login throttling.
+The `login_view()` function implements authentication audit logging through `LoginHistory` (`Account/models.py:207-271`).
+
+The application also implements dedicated rate limiting for password reset requests (`Account/models.py:442-485`). These mechanisms do not, by themselves, provide login throttling.
 
 # Exploitation
 
 | Step | Action | Result |
 |------|--------|--------|
 | 1 | Send many failed logins for a target user. | Ten HTTP 200 responses reported. |
-| 2 | Observe no blocking, delay, or CAPTCHA. | No explicit blocking response reported. |
+| 2 | Review the recorded HTTP responses. | No HTTP error status reported. |
 
 # PoC
 
@@ -23,9 +25,9 @@ for i in $(seq 1 10); do
     -b cookies.txt -X POST https://<TARGET>/account/login/ \
     -d "csrfmiddlewaretoken=${CSRF}&username=admin&password=wrongpass$i"
 done
-# Attempt 1: HTTP 200 (no lockout)
+# Attempt 1: HTTP 200
 # ...
-# Attempt 10: HTTP 200 (no lockout)
+# Attempt 10: HTTP 200
 ```
 
 Ten consecutive HTTP 200 responses are reported, with no explicit blocking response. HTTP status codes alone do not establish the absence of throttling, progressive delays, or account lockout.
