@@ -1,8 +1,10 @@
 # Description
 
-Unsafe iframe sandbox configuration (CWE-693 — Protection Mechanism Failure). The chatbot widget is embedded site-wide via the `chat_widget.html` partial (`shared/templates/chat-bubble/chat_widget.html`): `<iframe src="/chatbot/widget/" sandbox="allow-scripts allow-forms allow-same-origin">`. The combination of `allow-scripts` **and** `allow-same-origin` is explicitly documented by the W3C/MDN as nullifying the sandbox: any JavaScript inside the iframe can reach `window.parent.document`, read the CSRF token from the parent DOM, and issue authenticated requests as the victim.
+Unsafe iframe sandbox configuration (CWE-693 — Protection Mechanism Failure). The chatbot widget is embedded via the `chat_widget.html` partial (`shared/templates/chat-bubble/chat_widget.html:68`).
 
-The whole point of sandboxing the chatbot — whose output can be influenced by adversarial input (see the prompt-injection finding) — is defeated.
+The current sandbox configuration weakens the intended isolation between the chatbot widget and its parent document. This represents a security hardening weakness that may increase the impact of a separate content-injection vulnerability.
+
+The relationship with the Prompt Injection finding requires separate validation. Prompt injection alone does not demonstrate browser-side JavaScript execution.
 
 # Exploitation
 
@@ -21,7 +23,7 @@ The dangerous iframe is present site-wide:
         sandbox="allow-scripts allow-forms allow-same-origin"></iframe>
 ```
 
-![Page source: iframe with allow-scripts + allow-same-origin](Screenshot_2026-05-23_at_17.50.31.png)
+![Parent document access observed during browser testing](Screenshot_2026-05-23_at_17.50.31.png)
 
 From the iframe context, the parent is fully reachable:
 
@@ -30,6 +32,7 @@ From the iframe context, the parent is fully reachable:
 console.log("parent cookies:", window.parent.document.cookie);
 console.log("CSRF:", window.parent.document.querySelector('[name=csrfmiddlewaretoken]')?.value);
 ```
+![Browser sandbox warning and parent document access observed during testing](parent_csrf_cookies.png)
 
 W3C HTML Living Standard (§ iframe sandbox): a page with both `allow-same-origin` and `allow-scripts` "could remove the sandbox attribute and then reload, running the original page's scripts again."
 
@@ -37,16 +40,18 @@ W3C HTML Living Standard (§ iframe sandbox): a page with both `allow-same-origi
 
 | Dimension | Impact |
 |-----------|--------|
-| Confidentiality | CSRF-token theft from the parent DOM and same-origin authenticated requests as the victim. The `sessionid` cookie is `HttpOnly` (not directly readable by JS), but the attacker can perform any action via `fetch()` from the trusted origin. |
-| Integrity | Authenticated requests issued via `window.parent` in the victim's session. |
-| Availability | None directly. |
+| Confidentiality | Potential exposure of sensitive parent-document data if an independent injection vulnerability exists. |
+| Integrity | Potential impact on authenticated user actions due to insufficient widget isolation. |
+| Availability | No direct availability impact demonstrated. |
 
-Overall severity: **Medium-High** — site-wide latent escalation surface; any current/future content-injection in the widget (e.g. the confirmed prompt injection → unescaped HTML) inherits a full session-theft path.
+Overall severity: **Medium-High** — insufficient iframe isolation that may increase the impact of an independent content-injection vulnerability. Session theft has not been demonstrated.
 
 # Remediation
 
-1. **Remove `allow-same-origin`** from the sandbox — `sandbox="allow-scripts allow-forms"`. The iframe then runs as a null origin: `window.parent.document` raises `SecurityError`. Note: this breaks the widget's `fetch('/chatbot/api/chat/')` calls (they become cross-origin); switch to a `postMessage`-based or token-based API design.
-2. **Add a Content-Security-Policy** with `frame-ancestors` controls and sanitise all widget output.
+1. **Enforce effective iframe isolation** by reviewing sandbox permissions and redesigning widget communication where necessary. Apply the principle of least privilege.
+2. **Serve untrusted widget content from an isolated origin**, where appropriate.
+3. **Apply a restrictive Content Security Policy** and sanitise all widget output. Use `frame-ancestors` separately to control authorised embedding.
+4. **Add regression tests** verifying the intended isolation between the widget and its parent document.
 
 # Author
 CHILL HUNT
