@@ -1,6 +1,6 @@
 # Description
 
-IDOR (CWE-639) on `POST /chatbot/api/flag/`. The endpoint lets any authenticated user "flag" (report for moderation) any chatbot message by `message_id`, without verifying that the target message belongs to the requester. A low-privilege account can flag arbitrary messages — including seed and admin-generated ones.
+IDOR (CWE-639) on `POST /chatbot/api/flag/`. The endpoint lets any authenticated user "flag" (report for moderation) any chatbot message by `message_id`, without verifying that the target message belongs to the requester. A low-privilege account can flag arbitrary messages belonging to other users. The endpoint also accepts anonymous (session-only) requests.
 
 The `200` (exists) vs `404` (not found) response difference also creates an **existence oracle**, allowing unauthorized enumeration of valid message IDs.
 
@@ -25,9 +25,13 @@ curl -X POST 'http://<TARGET>/chatbot/api/flag/' \
 # HTTP 200 {"status":"success","message":"Response has been flagged for review. Thank you for your feedback."}
 ```
 
-Message id `11` belongs to another user, yet the flag succeeds.
+Over HTTPS, Django's CSRF check also requires a same-origin `Referer` header for this `curl` request (add `-H 'Referer: https://<TARGET>/chatbot/'`); without it the response is `403 CSRF verification failed`. Browsers send it automatically, so the in-page `fetch` loop below is unaffected.
 
-![Authenticated flag request on a non-owned message](Capture_d_cran_2026-05-23_153257.png)
+Replace `11` with the id of a message that belongs to another user (message ids depend on the instance); the flag still succeeds. Repeating the same flag returns `409` ("already flagged"), and an unknown id returns `404`.
+
+![HTTP response statuses observed during testing](Capture_d_cran_2026-05-23_153257.png)
+
+The HTTP 429 responses come from the endpoint's own rate limit: `flag_response` allows 10 flags per user (or per session for anonymous users) per hour (`Chatbot/views_moderation.py:853-873`). The message lookup runs first (`:842-847`), so once the limit is reached, existing ids return `429` while missing ids still return `404`. The existence oracle therefore keeps working after the rate limit is hit.
 
 **Bulk enumeration via the 200/404 oracle** maps the live message-id set:
 
@@ -38,31 +42,34 @@ for (const id of [...Array(30).keys()].map(i=>i+1)) {
     body:JSON.stringify({message_id:id, reason:'other', description:''})});
   console.log(id, r.status);
 }
-// 200 → exists (flaggable), 404 → non-existent
+// 200 → exists (flaggable), 404 → non-existent, 429 → exists (rate limit reached)
 ```
 
-![Flag attempts against ids the attacker does not own](Capture_d_cran_2026-05-23_161453.png)
+![Account settings of the test user](Capture_d_cran_2026-05-23_161453.png)
 
-![console.table of 200/404 results — existence oracle](Capture_d_cran_2026-05-23_161607.png)
+![Chatbot conversation and reporting interface](Capture_d_cran_2026-05-23_161607.png)
 
-![Single non-owned flag request/response detail](Capture_d_cran_2026-05-23_161822.png)
+![JSON response to a normal chatbot question](Capture_d_cran_2026-05-23_161822.png)
 
 # Risk
 
 | Dimension | Impact |
 |-----------|--------|
-| Confidentiality | Existence oracle enumerates the moderation history (valid message ids) without authorization. |
-| Integrity | Pollution of the moderation queue; mass-flagging of legitimate/system messages degrades the moderation signal. |
-| Availability | Moderators forced to triage attacker-generated noise. |
+| Confidentiality | Limited disclosure of message existence; no disclosure of conversation contents has been demonstrated. |
+| Integrity | Potential pollution of the moderation queue and degradation of moderation quality. |
+| Availability | Increased moderation workload; no direct service disruption demonstrated. |
 
-Secondary chain: the free-text `description` field is stored server-side — if rendered to moderators without escaping, it becomes a stored-XSS vector against privileged sessions. Overall severity: **Medium**.
+The potential stored XSS impact mentioned in the original report has not been demonstrated: `flag.description` is auto-escaped by the Django templates that render it (`flag_detail.html`, `edit_response.html`).
+
+Overall severity: **Medium**.
 
 # Remediation
 
 1. **Server-side ownership check** — only allow flagging messages where `message.user == request.user`, else `404`.
-2. If "any user may flag any message" is intentional, **return a constant response** regardless of id validity to suppress the oracle, and dedupe flags per user.
+2. If "any user may flag any message" is intentional, **return a constant response** regardless of id validity (including when the rate limit is reached) to suppress the oracle. Duplicate flags per user are already rejected with `409`.
 3. **HTML-escape `description`** in every administrative rendering path.
 4. **Audit all object-level endpoints** for missing ownership checks.
+5. **Add regression tests** covering message ownership, reporting permissions, duplicate flags, and safe rendering of user-provided descriptions.
 
 # Author
 CPE LYON
