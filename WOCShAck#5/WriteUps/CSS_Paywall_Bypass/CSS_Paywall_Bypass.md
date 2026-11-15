@@ -1,6 +1,6 @@
 # Description
 
-Missing authorization on the legacy CSS endpoint (CWE-862). The primary download endpoint `POST /api/css/<uuid>/download/` (`Api/views.py:827-830`) correctly verifies purchase ownership. However, the legacy endpoint `GET /api/css/legacy/` (`Api/views.py:911-924`) returns **all** CSS files — including paid ones — with **no authentication** and no purchase check. Any anonymous user retrieves every paid CSS source for free.
+Missing authorization on the legacy CSS endpoint (CWE-862). The primary download endpoint `POST /api/css/<uuid>/download/` (`Api/views.py:827-830`) correctly verifies ownership or purchase. However, the legacy endpoint `GET /api/css/legacy/` (`Api/views.py:911-924`) returns **all** CSS files — including paid ones — with **no authentication** and no purchase check. Any anonymous user retrieves every paid CSS source for free.
 
 # Exploitation
 
@@ -22,17 +22,17 @@ for item in d.get('data',d.get('css_files',[])):
 # Returns all CSS files including paid ones, fully unauthenticated
 ```
 
-The legacy endpoint at `Api/views.py:911-924` returns all CSS content without any purchase or authentication check, while the primary `/api/css/<uuid>/download/` endpoint correctly enforces ownership.
+The legacy endpoint at `Api/views.py:911-924` returns all CSS content without any purchase or authentication check, while the primary `/api/css/<uuid>/download/` endpoint correctly enforces ownership or purchase verification.
 
 # Risk
 
 | Dimension | Impact |
 |-----------|--------|
 | Confidentiality | Paid CSS source (IP) disclosed to non-buyers. |
-| Integrity | Marketplace payment model bypassed; sellers uncompensated. |
+| Integrity | None directly. |
 | Availability | None directly. |
 
-Overall severity: **High** — direct revenue loss and asset theft for every paid product.
+Overall severity: **High** — unauthorized disclosure of paid CSS assets, bypassing the marketplace's purchase requirements and potentially causing revenue loss.
 
 # Remediation
 
