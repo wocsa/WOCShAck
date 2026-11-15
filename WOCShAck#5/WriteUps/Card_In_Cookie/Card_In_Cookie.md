@@ -1,17 +1,17 @@
 # Description
 
-Cleartext storage of sensitive information (CWE-312). After a payment, the `payment()` view in `Shopping/views.py` stores the user's full card number (PAN) in a cookie named `last_card`, set **without `HttpOnly`** (readable by JavaScript) and **without `Secure`** (transmitted over plain HTTP). The 16-digit PAN is therefore exposed to any XSS on the origin and to network interception.
+Cleartext storage of sensitive information in a cookie (CWE-315). During payment processing, the `payment()` view in `Shopping/views.py` stores the user's full card number (PAN) in a cookie named `last_card`, set **without `HttpOnly`** and **without `Secure`**. These missing attributes increase the exposure of sensitive information to client-side scripts and potentially unencrypted HTTP communications.
 
 # Exploitation
 
 | Step | Action | Result |
 |------|--------|--------|
-| 1 | Log in and complete a purchase with a card. | `last_card` cookie set. |
+| 1 | Payment processing is initiated. | `last_card` cookie set before payment completion. |
 | 2 | Inspect cookies (DevTools) or read `document.cookie`. | Full PAN in cleartext. |
 
 # PoC
 
-The PAN is visible in plain text in the cookie jar and on every subsequent request:
+The PAN is visible in plain text in the cookie jar.
 
 ```http
 GET /banking/verification/ HTTP/1.1
@@ -21,23 +21,23 @@ Cookie: csrftoken=…; sessionid=…; last_card=7219208256090561
 
 ![last_card cookie holding the PAN in cleartext](Capture_d_cran_du_2026-05-24_00-17-21.png)
 
-Because the cookie lacks `HttpOnly`, any stored/reflected XSS on the origin can exfiltrate it with `document.cookie`.
+The absence of the `HttpOnly` attribute increases the exposure of the cookie to client-side scripts.
 
 # Risk
 
 | Dimension | Impact |
 |-----------|--------|
-| Confidentiality | Full card number disclosed to JavaScript and to anyone on the network path. |
-| Integrity | Enables financial fraud with the stolen PAN. |
+| Confidentiality | Full card number stored in a client-side cookie without appropriate security attributes. |
+| Integrity | Potential financial misuse; no actual fraud demonstrated. |
 | Availability | None directly. |
 
-Overall severity: **Medium-High** — a PCI-DSS violation; combines directly with the platform's XSS findings for card theft.
+Overall severity: **Medium-High (provisional)** — exposure of sensitive card information through insecure client-side storage. Actual impact depends on the deployment configuration and the nature of the stored card data.
 
 # Remediation
 
-1. **Do not store the PAN client-side at all.** If a "last card" hint is needed, store only a masked suffix (`**** 0561`) server-side.
-2. **Set `HttpOnly`, `Secure`, and `SameSite`** on any sensitive cookie.
-3. **Serve the site over HTTPS only** (HSTS).
+1. **Do not store the full PAN in client-side cookies.** If a "last card" hint is needed, use a masked card reference.
+2. **Set `HttpOnly`, `Secure`, and an appropriate `SameSite` attribute** on cookies requiring protection.
+3. **Serve the site over HTTPS only** and enforce HSTS.
 
 # Author
 CESI-ROUEN
