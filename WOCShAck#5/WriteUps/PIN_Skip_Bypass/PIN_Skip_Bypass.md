@@ -2,9 +2,11 @@
 
 Banking PIN-gate bypass (CWE-287). The banking module implements secondary authentication through server-side PIN verification.
 
-The normal PIN verification mechanism (`Bank/views_pin.py:26-96`) grants temporary banking authorization following successful validation. Session expiration is handled in `Bank/Utils/expiry.py:4-12`.
+The banking dashboard correctly enforces the PIN verification requirement (`Bank/views.py:160-161`).
 
-The affected banking view fails to enforce the same authentication requirements, compromising the secondary authentication boundary protecting sensitive banking data.
+The vulnerability originates from improper management of the banking authorization state (`Bank/views.py:402-405`), which allows authorization to be established without successful PIN validation.
+
+The normal PIN verification mechanism (`Bank/views_pin.py:26-96`) grants temporary banking authorization following successful validation. Session expiration is handled in `Bank/Utils/expiry.py:4-12`.
 
 # Exploitation
 
@@ -26,9 +28,9 @@ curl -sk -b cookies.txt -D - -o /dev/null "https://<TARGET>/banking/pin-skip/"
 # Location: /banking/dashboard/         ← PIN gate skipped
 ```
 
-![Main application login form](loginadmin.png)
+![Login as admin on the main app](loginadmin.png)
 
-![Banking URL displayed in the browser](pinskip.png)
+![Normal path: PIN verification required](bankingPin.png)
 
 ![pin-skip endpoint grants a verified banking session](pinskip.png)
 
@@ -40,7 +42,15 @@ The route is listed in `robots.txt`:
 curl -sk "https://<TARGET>/robots.txt"   # contains: Disallow: /banking/pin-skip/
 ```
 
-The screenshots illustrate the reported behavior but do not independently establish the complete authentication sequence.
+![2FA / verification context](2fa.png)
+
+Live testing confirmed the vulnerability on a fresh authenticated session with an associated bank account.
+
+The vulnerability was also confirmed through BunkerWeb over HTTP and HTTPS with CRS 4.26 operating in detection mode.
+
+No CRS rule was triggered, and the anomaly score remained at 0. The reverse proxy did not prevent the demonstrated authentication failure.
+
+Blocking mode was not tested.
 
 # Risk
 
@@ -54,8 +64,8 @@ Overall severity: **High** — the vulnerability compromises the secondary authe
 
 # Remediation
 
-1. **Remove authentication shortcuts** from production deployments.
-2. **Require successful server-side PIN validation** before granting banking authorization.
+1. **Remove the `pin_skip` view and its associated URL mapping** from production deployments.
+2. **Require successful server-side PIN validation** before granting banking authorization. Ensure that `pin_expiry` is established exclusively following successful validation by `verify_pin`.
 3. **Centralise banking authorization** and enforce it consistently before accessing sensitive data or performing banking operations.
 4. **Audit all `robots.txt`-disallowed routes** to ensure that access controls are properly enforced.
 5. **Add regression tests** covering banking authentication, authorization and session expiration.
