@@ -1,17 +1,22 @@
 # Description
 
-Missing Access Control (CWE-306 / CWE-639) in the TrackBox webmail API (`API.py:101-139`). The endpoint exposes email contents without enforcing authentication or mailbox-level authorisation. Additional manual validation on the challenge instance confirmed unauthenticated access.
+Missing Access Control (CWE-306 / CWE-639) on the TrackBox webmail endpoint `GET /api/emails` (`API.py:101-139`).
 
-The V.R.C welcome system includes plaintext login credentials in welcome emails. The reported vulnerability therefore exposes sensitive authentication information. Additional manual validation confirmed the compromise of the test account named `admin` on the main V.R.C application.
+The endpoint exposes all stored mailboxes without enforcing authentication or mailbox-level authorisation. Unauthenticated access has been confirmed both directly and through BunkerWeb.
+
+The V.R.C welcome system includes plaintext login credentials in welcome emails. These messages expose sensitive authentication information, including credentials associated with seeded accounts.
+
+The exposed credentials of the seeded `admin` superuser were confirmed to be valid, resulting in demonstrated administrative account compromise on the main V.R.C application.
+
+Account-activation tokens are also present in the exposed email contents.
 
 # Exploitation
 
-| Step | Observation | Result |
-|------|-------------|--------|
-| 1 | Authentication controls evaluated. | Unauthenticated access confirmed. |
-| 2 | Mailbox isolation evaluated. | Cross-account data exposure confirmed. |
-| 3 | Exposed email contents reviewed. | Sensitive authentication information disclosed. |
-| 4 | Account security impact evaluated. | Test account compromise confirmed on the main V.R.C application. |
+| Step | Action | Result |
+|------|--------|--------|
+| 1 | Call `GET /api/emails` directly — no signup or login needed. | All emails of all users returned (endpoint has no auth check). |
+| 2 | (Optional) Sign up at `/signup` and log in at `/connect`. | Not required — the endpoint is fully unauthenticated. |
+| 3 | Extract the admin welcome email's password; log in to the main app. | Credential harvest complete; Admin takeover. |
 
 # PoC
 
@@ -22,7 +27,11 @@ fetch('/api/emails', {credentials:'include'}).then(r=>r.json()).then(console.log
 // {"count":28,"emails":[...all users...],"status":"success"}
 ```
 
-![Mailbox contents returned during testing](dump_email.png)
+![Cross-account mailbox disclosure](dump_email.png)
+
+The response contains 28 email messages belonging to multiple users in the tested instance. The number of returned messages depends on the stored mailbox contents.
+
+Runtime testing confirmed that no authenticated session is required to access the stored mailbox contents.
 
 **2. Exposure of sensitive authentication information:**
 
@@ -31,26 +40,37 @@ GET /api/emails?user=admin HTTP/1.1
 Host: webmail.<TARGET>
 Cookie: Id=<any_valid_session>
 
-{"count":1,"emails":[{"content":"...Password: X#9kLm$P2v@nQ8w!ZjRe...","destination":"admin@tbox.traced"}]}
+{"count":1,"emails":[{"content":"...Password: [REDACTED]...","destination":"admin@tbox.traced"}]}
 ```
 
-![Sensitive account information exposed during testing](admin_creds.png)
+![Plaintext administrative credentials exposed in a welcome email — password redacted](admin_credentials.png)
 
-**3. Confirmed account compromise on the main V.R.C application:**
+The exposed welcome email contains plaintext login credentials associated with the seeded V.R.C superuser. The password value has been redacted from the evidence.
 
-![Authenticated session on the main V.R.C application](VRC_admin_connected.png)
+**3. Confirmed administrative account compromise:**
 
-Additional manual validation confirmed unauthenticated access and cross-account mailbox exposure. All tests were performed on the WOCShAck#5 challenge instance.
+![Authenticated admin session in TrackBox](connected_admin.png)
+
+![Authenticated admin session on the main V.R.C application](VRC_admin_connected.png)
+
+Administrative account compromise was confirmed on the main V.R.C application.
+The exposed email contents also include account-activation tokens for pending registrations.
+
+Runtime testing through BunkerWeb confirmed the same unauthenticated disclosure over HTTP and HTTPS.
+
+ModSecurity with CRS 4.26 was operating in detection mode. No rules were triggered during the reported tests, including outbound data-leak detection, and the anomaly score remained at 0.
+
+Blocking mode was not tested.
 
 # Risk
 
 | Dimension | Impact |
 |-----------|--------|
-| Confidentiality | Unauthorised disclosure of private email contents and sensitive authentication information. |
-| Integrity | Account compromise confirmed during manual validation on the challenge instance. |
-| Availability | Potential impact following account compromise; no direct service disruption demonstrated. |
+| Confidentiality | Unauthenticated disclosure of all stored mailbox contents, including plaintext login credentials and account-activation tokens. |
+| Integrity | Demonstrated compromise of the seeded V.R.C superuser account and exposure of other accounts to unauthorised access. |
+| Availability | Administrative account compromise enables privileged actions that may affect service availability. No direct service disruption was demonstrated. |
 
-Overall severity: **Critical (business impact)** — unauthorised disclosure of sensitive mailbox contents and demonstrated account compromise.
+Overall severity: **Critical** — unauthenticated disclosure of sensitive mailbox contents leading to demonstrated administrative account compromise on the main V.R.C application.
 
 # Remediation
 
