@@ -1,12 +1,12 @@
 # Description
 
-Prompt injection / LLM context disclosure (CWE-1427) in the support chatbot (`POST /chatbot/api/chat/`). While the chatbot does use Ollama's `system` field for role separation (the system prompt is separate from user input), the LLM can still be coerced into revealing its system instructions and RAG context fragments through adversarial user prompts. No output filtering or guardrails prevent the model from echoing its internal instructions when asked.
+Prompt injection / LLM context disclosure (CWE-1427) in the support chatbot (`POST /chatbot/api/chat/`). While the chatbot does use Ollama's `system` field for role separation (the system prompt is separate from user input), the LLM can still be coerced into revealing its system instructions and RAG context fragments through adversarial user prompts. Input validation and HTML escaping are implemented, but they do not address the confidentiality of model-generated responses.
 
 # Exploitation
 
 | Step | Action | Result |
 |------|--------|--------|
-| 1 | Open the support chatbot. | Authenticated chat session. |
+| 1 | Open the support chatbot. | Chat session established. |
 | 2 | Send an injection asking it to echo prior text / quote its context. | System prompt and context leaked. |
 
 # PoC
@@ -28,23 +28,26 @@ Prompt injection / LLM context disclosure (CWE-1427) in the support chatbot (`PO
 
 ![Context topic enumeration](Capture_d_cran_2026-05-23_180128.png)
 
-![Further raw-context extraction](Capture_d_cran_2026-05-23_181010.png)
+![Additional evidence of internal instruction disclosure](Capture_d_cran_2026-05-23_181010.png)
 
 # Risk
 
 | Dimension | Impact |
 |-----------|--------|
 | Confidentiality | Disclosure of the system prompt and raw context — a map of the assistant's internal structure. |
-| Integrity | The model can be steered off-policy; foundation for more targeted injections and phishing-style output. |
+| Integrity | Reduced reliability of instruction enforcement. No unauthorized modification of application data was demonstrated. |
 | Availability | None directly. |
 
-Overall severity: **Medium** — no other user's data or secrets were reachable in this test, but the leakage weakens the guardrails and aids further attacks (and chains with the chatbot iframe sandbox misconfiguration).
+Overall severity: **Medium** — no disclosure of other users' data or secrets was demonstrated. The disclosure of internal information affects the confidentiality of the chatbot's instructions and context.
 
 # Remediation
 
-1. **Add output filtering** to detect and block responses that echo the system prompt or raw context data. Role separation via the `system` field is already in place but insufficient against adversarial prompts.
-2. **Block meta-requests** (`print context`, `quote exact text`, `system prompt`, `hidden prompt`) and add output filtering against raw-context echo.
-3. **Keep secrets/sensitive data out** of the model-accessible context.
+1. **Maintain system and user input separation.** Preserve Ollama's dedicated `system` field for system instructions and keep user-controlled messages separate. Role separation alone must not be considered a reliable security boundary.
+2. **Implement output filtering and validation.** Add a response-validation layer in `Chatbot/rag_engine.py` and enforce it in `Chatbot/views.py` (`chat_api()`) before storing the generated response in `ChatMessage` or returning it through `JsonResponse`. Detect unintended disclosure of protected system instructions and restricted RAG context. Reject or replace non-compliant responses with a safe fallback message.
+3. **Implement defense-in-depth guardrails.** Apply input validation and detection of requests targeting protected internal information. Combine these controls with output validation rather than relying exclusively on keyword-based filtering, which cannot reliably prevent prompt injection.
+4. **Enforce access controls on RAG context.** Classify knowledge base entries according to their sensitivity and enforce authorization before including restricted information in the model-accessible context. Public support information may remain accessible to all chatbot users.
+5. **Keep secrets and sensitive data out of the model-accessible context.** Never include credentials, API keys, authentication tokens, or confidential user data in system instructions or unrestricted knowledge base entries.
+6. **Add security logging and regression tests.** Record rejected responses and suspected policy violations without logging sensitive context or secrets. Add automated tests using synthetic protected information to verify instruction confidentiality, context access restrictions, safe fallback behavior, and legitimate chatbot functionality.
 
 # Author
 DaVinciCode
