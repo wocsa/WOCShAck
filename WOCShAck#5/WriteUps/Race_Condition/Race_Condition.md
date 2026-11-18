@@ -4,6 +4,10 @@ Race condition / double-spend (CWE-362) on the checkout finalisation endpoint `P
 
 A buyer obtains multiple paid orders from a single checkout session. Each parallel request independently calls the banking backend for payment; the exact financial outcome depends on the bank's handling of concurrent debits, but multiple COMPLETED orders are created from one `payment_info` session.
 
+The observed behaviour demonstrates a loss of transactional integrity between checkout processing and payment records.
+
+The exact behaviour of the banking backend has not been independently confirmed.
+
 # Exploitation
 
 | Step | Action | Result |
@@ -39,6 +43,8 @@ The wallet balance suggests the bank did not debit all eight orders at full pric
 
 ![Balance after race — multiple orders from one payment](shop-race-single-debit-balance.png)
 
+The observed wallet balance is inconsistent with the recorded orders, demonstrating a loss of transactional integrity. The exact internal cause has not been independently confirmed.
+
 # Risk
 
 | Dimension | Impact |
@@ -47,14 +53,16 @@ The wallet balance suggests the bank did not debit all eight orders at full pric
 | Integrity | Multiple COMPLETED orders created from one checkout session; order history / accounting desynchronised with actual bank debits. |
 | Availability | None directly. |
 
-Overall severity: **High** — direct financial/marketplace-integrity impact; scales with product value and balance.
+Overall severity: **High** — significant impact on transactional integrity, with potential financial losses and accounting inconsistencies.
 
 # Remediation
 
-1. **Make `/shop/payment/complete/` idempotent** — one pending checkout yields at most one order.
-2. **Lock the pending checkout/cart row** while finalising.
-3. **Re-check balance and create the order inside one DB transaction**; invalidate the pending payment atomically.
-4. **Add a unique constraint** binding one payment attempt to one order.
+1. **Enforce checkout idempotency** — ensure that each payment attempt produces at most one order and that repeated finalisation requests do not generate additional orders or payments.
+2. **Apply database-level concurrency controls** — use `transaction.atomic()` and appropriate row-level locking, such as `select_for_update()` on supported database backends, to protect checkout state transitions.
+3. **Enforce database-level integrity constraints** — add a unique constraint linking each payment attempt to at most one order.
+4. **Ensure banking-side transaction integrity** — perform balance validation and debit operations atomically within the banking backend, independently of the Django application transaction.
+5. **Ensure payment and order consistency** — only mark an order as `COMPLETED` after successful payment confirmation, and implement appropriate failure handling and reconciliation between the application and the banking backend.
+6. **Add regression tests** — verify checkout idempotency, transactional integrity, database constraints and payment consistency under concurrent operations.
 
 # Author
 Hackrapovic
