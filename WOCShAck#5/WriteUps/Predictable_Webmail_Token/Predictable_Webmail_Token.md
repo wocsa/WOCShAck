@@ -2,6 +2,8 @@
 
 Deterministic session token (CWE-340 / CWE-330) on the TrackBox webmail. The authentication cookie `Id` is set to `SHA256(f"{username} + {stored_password_hash}")` (`Backend.py:136-140`) at login time — a deterministic value derived from the username and the stored SHA-256 password hash, not a random one. The token never expires, has no server-side session store, and logout only deletes the client cookie.
 
+The authentication cookie has a client-side lifetime of 20 minutes (`Pages.py:85,141-142,171-172`). Client-side cookie expiration and deletion do not replace server-side session expiration and revocation.
+
 An attacker who obtains the stored password hash (available via the unauthenticated `GET /api/users` endpoint) can compute a valid `Id` cookie without knowing the plaintext password.
 
 # Exploitation
@@ -60,6 +62,9 @@ Overall severity: **Critical** — deterministic, non-expiring token forgeable f
 1. **Replace the deterministic SHA256 token with a CSPRNG value** generated at login.
 2. **Store sessions server-side** (DB / Redis) bound to the authenticated account.
 3. **Rotate the session ID** on every auth-state change (login, logout, password change).
+4. **Enforce server-side session expiration and revocation**, including idle and absolute timeouts.
+5. **Invalidate server-side sessions on logout and password change.**
+6. **Add regression tests** covering session randomness, expiration, rotation and invalidation.
 
 # Author
 TéléHack
