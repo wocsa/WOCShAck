@@ -71,20 +71,13 @@ Overall severity: **Medium** — the sink is persistent and reaches every shop v
 
 # Remediation
 
-1. Escape the description on input, consistent with the other text fields in the view. In `Shopping/views.py:1306`:
-   ```python
-   from django.utils.html import escape
-   description = escape(request.POST.get('description', '').strip()[:5000])
-   ```
-   Escaping on input is defence in depth only; the output-side fix below is the primary control.
-2. Remove the `|safe` filter from `Shopping/templates/shop.html:313` so Django's auto-escaping applies:
-   ```django
-   {% if css.description %}<p class="article-description">{{ css.description }}</p>{% endif %}
-   ```
-   If plain-text output is needed, also strip or escape any existing stored values in the database (one-off data migration), since escaping on input alone does not fix rows already written.
-3. If rich-text descriptions are required, render them through a real sanitiser such as `bleach.clean()` with a strict tag and attribute allow-list, not a regex-based filter.
-4. Add a `Content-Security-Policy` header with `script-src 'self'` (and no `'unsafe-inline'`) so injected inline event handlers such as `onerror` are blocked even if a bypass is found.
-5. Consider setting `HttpOnly` and `SameSite` on session cookies so a successful injection cannot read the session token from `document.cookie`.
+1. **Restore Django's automatic HTML escaping** — remove the `|safe` filter from the article description rendering in `Shopping/templates/shop.html` and rely on Django's default auto-escaping (`{{ css.description }}`).
+2. **Enforce server-side input validation** — validate the description type and maximum length in `Shopping/views.py` and preserve plain-text values without unnecessary HTML encoding before database storage.
+3. **Ensure consistent output encoding** — review all rendering contexts of `Css.description` and ensure that existing and newly stored descriptions are rendered safely. Apply context-appropriate output encoding wherever required.
+4. **Use HTML sanitisation only if rich-text descriptions are required** — use a maintained, parser-based HTML sanitisation library such as `nh3.clean()` with explicit allow-lists of permitted tags, attributes and URL schemes.
+5. **Implement a restrictive Content-Security-Policy (CSP)** — configure `CONTENT_SECURITY_POLICY` in `docker-compose.yml` and update `REMOVE_HEADERS` to preserve the policy in the final HTTP response. Avoid `unsafe-inline`. CSP must remain a defence-in-depth measure.
+6. **Maintain secure session cookie settings** — preserve `SESSION_COOKIE_HTTPONLY = True` and configure appropriate `Secure` and `SameSite` attributes according to deployment requirements. Cookie hardening is not a substitute for XSS prevention.
+7. **Add regression tests** — extend `Shopping/tests.py` to verify that article descriptions are rendered as escaped text, existing stored descriptions remain safe, and legitimate description content is displayed correctly.
 
 # Author
 WOCSA
