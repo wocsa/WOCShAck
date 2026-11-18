@@ -20,7 +20,7 @@ curl -s "http://<TARGET>/banking/webhook/" -b "sessionid=<S>" -X POST \
 # {"status":"tested","code":200,"body":"<!DOCTYPE html>...<title>Log in | Django site admin</title>..."}
 ```
 
-![Internal Django admin fetched via SSRF](ssrf-internal-api.png)
+![Internal API and user list reachable](ssrf-django-admin.png)
 
 **2. Confirm outbound SSRF (server's public IP):**
 
@@ -33,7 +33,7 @@ curl -s "http://<TARGET>/banking/webhook/" -b "sessionid=<S>" -X POST \
 
 **3. Reach the internal API / user list:**
 
-![Internal API and user list reachable](ssrf-django-admin.png)
+![Internal Django admin fetched via SSRF](ssrf-internal-api.png)
 
 | Target | Result |
 |--------|--------|
@@ -46,18 +46,21 @@ curl -s "http://<TARGET>/banking/webhook/" -b "sessionid=<S>" -X POST \
 
 | Dimension | Impact |
 |-----------|--------|
-| Confidentiality | Reads internal-only services, network topology, server IP; full response body exfiltrated. |
-| Integrity | Pivot to internal admin / services; chainable with internal default creds. |
-| Availability | Endpoint usable as an internal port scanner. |
+| Confidentiality | Unauthorised disclosure of internal application information and service responses. |
+| Integrity | Potential impact on internal services, depending on their functionality and access controls. |
+| Availability | No direct impact demonstrated. |
 
-Overall severity: **High** — combined with the path-traversal leak of `OLLAMA_BASE_URL`, the internal LLM service is also reachable.
+Overall severity: **High** — significant potential impact on the confidentiality of internal services and the effectiveness of network security boundaries.
 
 # Remediation
 
-1. **Allow-list trusted external domains**; reject all others.
-2. **Block private/reserved ranges** (`127.0.0.0/8`, `10/8`, `172.16/12`, `192.168/16`, `169.254/16`, IPv6 equivalents) and non-HTTP(S) schemes.
-3. **Resolve DNS then re-check the resolved IP** against the blocklist (anti-rebinding).
-4. **Do not return the response body**; return only a status, and rate-limit the endpoint.
+1. **Enforce a strict destination allow-list** — restrict webhook requests to explicitly authorised external destinations and validate URL schemes, hostnames and ports before initiating outbound connections.
+2. **Validate destination IP addresses** — reject private, loopback, link-local and other non-approved address ranges, including IPv4 and IPv6 addresses.
+3. **Enforce DNS resolution integrity** — ensure that the actual connection destination complies with the validated destination policy throughout the request lifecycle.
+4. **Disable automatic HTTP redirects** — configure the HTTP client with `allow_redirects=False` to prevent requests from following unvalidated destinations.
+5. **Restrict outbound network access** — implement deny-by-default network policies and appropriate network segmentation to restrict the webhook functionality to authorised destinations.
+6. **Limit response exposure and resource consumption** — do not return remote response bodies to users. Return a minimal status, enforce appropriate timeouts and response size limits, and apply rate limiting.
+7. **Add regression tests** — verify destination validation, DNS resolution integrity, redirect handling, network restrictions and response confidentiality.
 
 # Author
 Hackrapovic
