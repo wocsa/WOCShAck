@@ -25,6 +25,8 @@ path('preview/', views.ad_preview, name='ad_preview'),
 
 The view has no `@login_required`, no `@require_GET`, no length limit, and no allow-list of tags. The view is mounted under the `advertisement/` prefix, so the reachable URL is `GET /advertisement/preview/?template=<payload>`.
 
+Django's template engine is not designed to safely render templates supplied by untrusted users. Template source and user-controlled data must remain strictly separated.
+
 Why this is dangerous:
 
 - `Template(...)` on user input means the attacker controls the template itself, not just a variable. Tags, variables and filters in the input are all evaluated.
@@ -131,12 +133,13 @@ Overall severity: **High**. The endpoint is unauthenticated and any visitor can 
 
 # Remediation
 
-1. Do not pass user input to `Template()`. Replace the preview with a fixed template chosen by the server, and treat user-supplied content as data (for example escaped text or Markdown rendered through a sanitiser, as is done for `body_html`).
-2. If a DTL preview is a real requirement, use a restricted engine and remove the request from the context: `Engine(libraries={}, builtins=[])` with an explicit tag/filter allow-list, and render against a context that contains only the fields the preview needs. Never place `request` in the context.
-3. Add `@login_required` and a staff check (`request.user.is_staff`) to `ad_preview` at `Advertisement/views.py:781`, and restrict the route to the team that creates ad content. Add `@require_GET` as well.
-4. Enforce a hard length cap on `template` and reject input containing `{%` or `{{` outside an explicit allow-list.
-5. Keep `DEBUG = False` in production (already the default in `settings/base.py:27` and `settings/production.py:24`) and confirm it in the deployed environment, so `{% debug %}` does not disclose context.
-6. Remove the unused `log` tag payload from the developer catalog or implement it deliberately, so documentation matches the code.
+1. **Separate template source from user-controlled data** — use a fixed, server-controlled Django template for the advertisement preview. Never compile untrusted input using `Template()`. Render user-supplied content as data with appropriate output escaping and sanitisation where required.
+2. **Minimise the rendering context** — provide only the explicitly required preview fields. Avoid exposing request objects, session information or other sensitive application objects to the rendering context.
+3. **Use a dedicated restricted rendering mechanism if custom formatting is required** — do not rely on Django's `Engine` configuration as a security sandbox for untrusted templates.
+4. **Enforce authentication and authorisation** — restrict advertisement management and preview functionality to users with the appropriate permissions. Enforce the expected HTTP method using `@require_GET` where applicable.
+5. **Enforce input and resource limits** — apply appropriate input length limits, rate limiting and resource consumption controls to the preview functionality.
+6. **Maintain secure production settings** — ensure that `DEBUG = False` remains enforced in the deployed environment and that detailed rendering errors are not exposed to clients.
+7. **Add regression tests** — verify that user-controlled content is treated exclusively as data, that sensitive context information is not exposed, and that preview access controls and input limits are correctly enforced.
 
 # Author
 WOCSA
