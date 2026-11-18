@@ -90,9 +90,10 @@ Overall severity: **High**. This matches the dev catalog CVSS 3.1 score of 7.4 (
 1. Replace `generate_sid()` with a cryptographically random token, for example `secrets.token_urlsafe(32)` or `secrets.token_hex(32)`, in `djangoWocshack_5/Bank/Utils/generate.py`. Remove the time-based derivation entirely.
 2. Stop accepting client-chosen SIDs. The backend should mint the SID in `create_session` and return it, and the Django side should use only that value. Do not let `sescr` accept a SID from the request.
 3. In `quick_transfer` (`djangoWocshack_5/Bank/views.py:431`), do not allow request data to override `sid`. Build the payload from the server-side SID and whitelist the permitted client-supplied fields.
-4. Bind each SID to the Django user and client IP at the backend, so that a SID cannot be replayed from another context.
+4. Bind each SID to the authenticated user and enforce server-side authorization for every banking operation. Client IP restrictions may provide additional protection but must not replace user-level authorization.
 5. Rotate SIDs on privilege boundaries (for example after PIN verification) and invalidate them on logout.
-6. Shorten the 300-second idle TTL in `parser.py` for banking sessions, and remove the SID from logs (`Activity/Logger.py:88-93`).
+6. Review the 300-second idle TTL in `parser.py`, enforce appropriate session expiration and invalidation policies, and remove sensitive session identifiers from logs (`Activity/Logger.py:88-94`).
+7. Add regression tests covering SID randomness, session ownership, server-side authorization, session expiration and invalidation.
 
 # Author
 WOCSA
