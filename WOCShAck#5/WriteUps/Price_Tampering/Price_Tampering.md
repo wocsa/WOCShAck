@@ -45,7 +45,9 @@ Overall severity: **High (integrity)** — affects every authenticated user and 
 
 1. **Recompute the total server-side** from the cart's database rows at payment time; never trust a client-supplied `total`.
 2. **Reject any request** whose submitted total ≠ the server-computed total.
-3. **Validate amount bounds** (`> 0`) before entering the payment pipeline.
+3. **Validate amount bounds and monetary precision** against server-side pricing and discount rules before entering the payment pipeline.
+4. **Ensure payment consistency** between the server-computed cart total, the recorded order amount and the actual banking charges.
+5. **Add regression tests** covering server-side price calculation, amount validation and consistency between order records and banking transactions.
 
 # Author
 CHILL HUNT
