@@ -1,9 +1,13 @@
 # Description
 
-Use of unsalted SHA-256 for password storage (CWE-916 / CWE-759) on the TrackBox webmail. Passwords are stored as raw, unsalted SHA-256 hashes, exposed in full by the unauthenticated `GET /api/users`. Two compounding flaws:
+Use of unsalted SHA-256 for password storage (CWE-916 / CWE-759) on the TrackBox webmail.
 
-1. **No salt** — identical passwords produce identical hashes, so reuse is visible at a glance and rainbow tables apply.
-2. **Fast hash** — SHA-256 runs at billions of guesses/second on commodity GPUs (vs ~hundreds for bcrypt/argon2).
+The password storage mechanism presents two distinct weaknesses:
+
+1. **Missing salt** — password hashes are generated without a unique random salt.
+2. **Insufficient computational cost** — SHA-256 is a general-purpose cryptographic hash function and is not designed for secure password storage.
+
+These weaknesses reduce the protection of stored credentials in the event of unauthorised disclosure.
 
 # Exploitation
 
@@ -55,9 +59,12 @@ Overall severity: **High** — chains with the unauthenticated `/api/users` expo
 
 # Remediation
 
-1. **Replace SHA-256 with argon2id / bcrypt / scrypt** (slow, auto-salted).
-2. **Invalidate all sessions and force a password reset** — all existing hashes are compromised.
-3. **Restrict `/api/users`** so hashes are never returned to any client.
+1. **Replace unsalted SHA-256 with Argon2id** — add `argon2-cffi` to `tools/Webmail/src/requirements.txt` and replace the existing password hashing implementation with `argon2.PasswordHasher`. Use at least `memory_cost=19456`, `time_cost=2` and `parallelism=1`, with automatically generated unique random salts. Benchmark the parameters according to deployment requirements.
+2. **Update password creation and verification** — use `PasswordHasher.hash()` for password storage, `verify()` for authentication and `check_needs_rehash()` to upgrade hashing parameters when necessary. Update registration, account provisioning and password reset functionality consistently.
+3. **Update database storage** — ensure that the password hash field supports complete encoded Argon2id hashes, including the algorithm identifier, version, parameters and salt. Do not truncate stored hashes.
+4. **Revoke compromised credentials** — enforce password resets for affected accounts, invalidate existing sessions and remove legacy SHA-256 password hashes. Require password replacement across affected services where credential reuse has occurred.
+5. **Prevent password hash disclosure** — protect `GET /api/users` in `tools/Webmail/src/API.py` with appropriate authentication and authorisation. Remove `password_hash` from all API responses, regardless of the caller's privileges.
+6. **Add regression tests** — verify Argon2id password storage, unique salt generation, password verification, hash parameter upgrades, legacy credential invalidation and the absence of password hashes in API responses.
 
 # Author
 CHILL HUNT
