@@ -22,7 +22,7 @@ Weak password requirements (CWE-521) in the password-change flow of `POST /accou
 
 **Inconsistency**
 
-The same account can hold a password that would be rejected by the signup and reset flows. Django's `AUTH_PASSWORD_VALIDATORS` (`djangoWocshack_5/settings/base.py:112-117`) is configured, but `set_password()` does not run those validators. Only form-level validation runs them, and this view does not use a form. The policy is therefore enforced on two of the three paths that set a password, and bypassed on the third. An attacker who is logged in can use the bypass to weaken their own account, which makes the account easier to brute-force.
+The same account can hold a password that would be rejected by the signup and reset flows. Django's `AUTH_PASSWORD_VALIDATORS` (`djangoWocshack_5/settings/base.py:112-117`) is configured, but `set_password()` does not run those validators. Django's password validators are not automatically enforced by `set_password()`. Custom password-setting workflows must explicitly call `validate_password()` or use Django's built-in password validation forms. The policy is therefore enforced on two of the three paths that set a password, and bypassed on the third. An attacker who is logged in can use the bypass to weaken their own account, which makes the account easier to brute-force.
 
 # Exploitation
 
@@ -85,9 +85,12 @@ Overall severity: **Medium** — the flaw needs an authenticated session and onl
 
 # Remediation
 
-1. Call `check_password_strength(new)` in the `settings()` password-change branch, before `set_password()`, and return an error if it fails. Example: `if check_password_strength(new) is not True: messages.error(request, "Password is not strong enough."); else: ...`.
-2. Run Django's `validate_password(new, user=target_user)` in the same branch. This applies the existing `AUTH_PASSWORD_VALIDATORS` (`djangoWocshack_5/settings/base.py:112-117`) to every password change.
-3. Move the policy into one place (a shared helper or a form) that all password-setting paths call: signup, reset, and settings. Add a test that changing a password to `a` through `/account/settings/` is rejected.
+1. **Enforce password validation during password changes** — update the password-change branch of `settings()` in `Account/views.py` to call `django.contrib.auth.password_validation.validate_password(new, user=target_user)` before `set_password()`. Catch `django.core.exceptions.ValidationError`, return the validation errors and prevent any password update if validation fails.
+2. **Centralise password requirements** — use the existing `AUTH_PASSWORD_VALIDATORS` configuration in `djangoWocshack_5/settings/base.py` as the single source of truth. Integrate or replace `check_password_strength()` in `Account/Utils/Register.py` to eliminate inconsistent password policies.
+3. **Apply validation consistently** — ensure that `register()`, `password_reset()` and `settings()` use the same server-side password validation mechanism. Prefer Django's built-in `PasswordChangeForm` where compatible with the existing settings workflow.
+4. **Strengthen the existing password policy** — review `MinimumLengthValidator` and configure its `OPTIONS.min_length` according to NIST SP 800-63B-4 recommendations. Maintain an appropriate blocklist of common and compromised passwords rather than relying on mandatory character composition rules.
+5. **Preserve authentication and session security** — retain current-password verification, password confirmation and CSRF protection. Use `update_session_auth_hash()` after a successful password change if the current authenticated session must remain active.
+6. **Add regression tests** — extend `Account/tests.py` to verify consistent password validation across registration, password reset and password change. Ensure that rejected passwords do not modify stored credentials and that valid passwords are accepted.
 
 # Author
 WOCSA
