@@ -49,6 +49,14 @@ curl -s -o /dev/null -w "%{http_code}\n" http://localhost:8000/api/users/
 # 200
 ```
 
+**Browser-side validation (local environment):**
+
+The following screenshot shows the JSON response returned by the user-list API in the local test environment.
+
+<p align="center">
+  <img src="users_list.png" width="350" alt="User-list API JSON response in the local environment">
+</p>
+
 # Risk
 
 | Dimension | Impact |
@@ -61,11 +69,12 @@ Overall severity: **Medium** — the endpoint leaks the full user roster and ban
 
 # Remediation
 
-1. Require authentication on the view. Apply `@login_required` (or the project's API-key/DRF permission class) to `user_list` in `Api/views.py`, or enforce authentication globally for `/api/` routes.
-2. If a public user directory is genuinely required, return only the minimum fields. Remove `bid` from the response, and do not expose usernames in bulk.
-3. Remove the endpoint if it has no legitimate consumer. The `Disallow` entry in robots.txt should not be relied on as an access control.
-4. Add rate limiting and pagination to any remaining user-enumeration endpoints (including `/api/check-user/`), so enumeration is slowed even when authentication is present.
-5. Add a regression test asserting that an anonymous `GET /api/users/` returns `302`/`401`/`403` and not `200`.
+1. **Enforce authentication and authorisation** — protect the `user_list` view in `Api/views.py` using Django's `@login_required` and appropriate permission checks, such as `@permission_required` or `request.user.has_perm()`. Apply equivalent controls if the functionality uses API-based authentication.
+2. **Apply the principle of least privilege** — restrict access to user information according to the caller's permissions and legitimate functional requirements. Deny access by default.
+3. **Minimise exposed data** — remove `bid` from public responses and explicitly allow-list the fields required by each authorised consumer. If a public user directory is required, expose only information intended for public access.
+4. **Remove unnecessary functionality** — remove the user-list endpoint if it has no legitimate consumer. Do not rely on `robots.txt` as an access control mechanism.
+5. **Enforce pagination and rate limiting** — apply appropriate response size limits and request rate limits to remaining user-list functionality. These controls must complement authentication and authorisation.
+6. **Add regression tests** — extend `Api/tests.py` to verify that anonymous and authenticated but unauthorised users cannot access protected data, that authorised users receive only permitted fields, and that pagination and rate limits are correctly enforced.
 
 # Author
 WOCSA
