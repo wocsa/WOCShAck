@@ -60,10 +60,12 @@ Overall severity: **Medium** — unauthenticated, machine-readable, no rate-limi
 
 # Remediation
 
-1. **Require authentication / move the check behind the CSRF-protected signup & reset flows** that legitimately need it.
-2. **Return a uniform, non-committal response** for all states.
-3. **Rate-limit per IP and add CAPTCHA** on the flows that use this check internally.
-4. **Audit login/reset/resend-verification** for the same observable-discrepancy anti-pattern.
+1. **Remove public account-existence disclosure** — remove unnecessary public account-existence checks. Perform required account validation internally within the legitimate registration and account recovery workflows.
+2. **Enforce authentication and authorisation where required** — restrict any retained private account lookup functionality using Django's authentication and permission mechanisms. Only disclose account information to explicitly authorised callers.
+3. **Return uniform responses** — ensure that public registration, login, password reset and verification workflows provide consistent response bodies, HTTP status codes and processing times without disclosing account existence.
+4. **Implement abuse prevention controls** — enforce appropriate server-side rate limiting and introduce CAPTCHA or equivalent automated-abuse protections where justified. Maintain Django's CSRF protection independently for state-changing requests.
+5. **Audit related authentication workflows** — review account registration, authentication, password recovery and verification functionality for inconsistent disclosure of sensitive account information.
+6. **Add regression tests** — extend the relevant Django API and account tests to verify response consistency, access controls, account information confidentiality and rate-limiting enforcement.
 
 # Author
 Hackrapovic
