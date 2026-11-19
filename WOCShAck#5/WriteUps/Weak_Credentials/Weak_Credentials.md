@@ -75,15 +75,20 @@ curl -s -b user.cookies -c user.cookies -X POST \
 | Integrity | Full administrative control of the platform: modify or delete any user or content, change configuration, and create stored-XSS articles (see M3). |
 | Availability | Admin access allows deleting users, accounts, or content, and disabling the service. |
 
-Overall severity: **Critical**. CVSS 3.1 `AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H` (9.8). The credentials are static and public to anyone who can read the repository or image, need no interaction, and grant full admin rights across three services. The password is reused for the admin site, main login, and webmail, which multiplies the blast radius.
+Overall severity: **Critical** — hard-coded, shared and exposed credentials significantly weaken authentication security and may compromise privileged accounts across affected services.
+
+CVSS 3.1: **9.8 (Critical)** — as recorded in the developer catalog, subject to confirmation of the documented attack prerequisites and impact metrics.
 
 # Remediation
 
-1. Remove all literal credentials from `setup/setup_database.py`, `setup/setup_webmail.py`, and `setup/users.csv`. Generate random passwords at setup time (e.g. `secrets.token_urlsafe(24)`) or require them as environment variables or from a secrets manager.
-2. Rotate the `admin` password and every seeded user password immediately, and invalidate existing sessions and API keys printed in the setup output.
-3. Stop printing credentials and API keys in the setup summary (`setup_database.py:514-545`) and stop emailing cleartext passwords (`setup_webmail.py:90-105`); send a one-time password-reset link instead.
-4. Exclude `setup/` and any secret-bearing files from the container image (`.dockerignore`, and avoid `COPY . .` of secrets in `Dockerfile:21`), and never reuse one password across services.
-5. Enforce a strong password policy, unique credentials per service, account lockout after repeated failures, and MFA on the admin account.
+1. **Remove hard-coded credentials** — remove literal passwords and shared default credentials from `setup/setup_database.py`, `setup/setup_webmail.py` and `setup/users.csv`. Use `secrets.token_urlsafe()` when random credentials are required, or retrieve provisioning secrets from a dedicated secrets manager.
+2. **Secure Docker secret management** — configure runtime secrets through Docker Compose `secrets` or an external secrets manager. Exclude secret-bearing files using `.dockerignore` and avoid embedding credentials in Dockerfile `ARG`, `ENV` instructions or image layers. Preserve only the secret-free setup scripts required for application initialisation.
+3. **Secure account provisioning** — separate development seed data from production account provisioning. Use Django's `set_password()` for password storage and `validate_password()` with `AUTH_PASSWORD_VALIDATORS` where applicable. Ensure that repeated setup execution cannot restore insecure default credentials.
+4. **Eliminate credential disclosure** — remove password and API key output from `setup/setup_database.py` and stop transmitting cleartext passwords through `send_welcome_email()` in `setup/setup_webmail.py`. Use secure, single-use, time-limited enrolment or password reset links.
+5. **Revoke exposed credentials** — rotate all affected passwords and API keys, invalidate existing sessions and exposed activation tokens, and require secure credential replacement across Django and TrackBox webmail.
+6. **Enforce secure authentication policies** — require unique credentials across independent services, enforce MFA for privileged accounts, apply server-side authentication rate limiting and reject commonly used or compromised passwords.
+7. **Remediate historical secret exposure** — review repository history, container images, setup logs, backups and historical emails for sensitive authentication material. Remove or restrict exposed artefacts according to incident response and retention requirements.
+8. **Add regression tests and secret scanning** — verify that setup scripts do not create shared default credentials, expose authentication secrets or reset existing credentials unexpectedly. Integrate secret detection into the CI/CD pipeline using a tool such as Gitleaks.
 
 # Author
 WOCSA
