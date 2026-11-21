@@ -13,7 +13,7 @@ The leak directly compromises the main V.R.C application: the welcome emails car
 |------|--------|--------|
 | 1 | `GET /api/users` (no auth). | Dumps every username + SHA-256 hash. |
 | 2 | `GET /api/emails` (no auth). | Dumps every mailbox, including cleartext passwords. |
-| 3 | Reuse the harvested credentials on `/account/login/`. | Cross-service account takeover, including `admin`. |
+| 3 | Reuse the harvested credentials on `/account/login/` (the login form accepts the username **or** the email address, e.g. `admin` or `john.doe@tbox.traced`). | Cross-service account takeover, including `admin`. |
 
 # PoC
 
@@ -21,7 +21,7 @@ The leak directly compromises the main V.R.C application: the welcome emails car
 
 ```bash
 curl -sk http://webmail.<TARGET>/api/users | python3 -m json.tool | head
-# {"count":30,"status":"success","users":[
+# {"count":15,"status":"success","users":[   (15 seeded accounts on a fresh instance; grows with signups)
 #   {"password_hash":"74842c85...ccc47c","username":"admin@tbox.traced"}, ... ]}
 ```
 
@@ -42,11 +42,11 @@ python3 -c "import hashlib;print(hashlib.sha256(b'!Arthur894').hexdigest())"
 GET /api/emails  →  admin welcome mail: "Username: admin / Password: X#9kLm$P2v@nQ8w!ZjRe"
 ```
 
-14 seeded users share `Tr@c3d!7BxN#m9Kw2YpL`.
+14 seeded users share `Tr@c3d!7BxN#m9Kw2YpL`. Both values re-hash to the leaked `/api/users` hashes (`74842c85...ccc47c` for admin, `26c93e3b...1a516f` for the 14 others). The welcome mail prints the mail prefix (e.g. `john.doe`) as the username; on the main app log in with the email `john.doe@tbox.traced` (the Django username is `johndoe`).
 
 ![Admin credentials leaked in welcome email](webmail-api-emails-admin-credentials-leak.png)
 
-**4. Activation tokens are leaked too** (future-signup hijack):
+**4. Activation links are leaked too.** Every Django signup mails `/account/activate/?username=<u>&token=<md5(email)>` to the webmail inbox, so an attacker can read (`GET /api/emails?user=<victim>`) and use the link of any pending account — including one they registered themselves with an `@tbox.traced` address they do not own:
 
 ```
 http://<TARGET>/account/activate/?username=arthur&token=3eca0c12e705686c034855322ea55faa
@@ -63,17 +63,21 @@ http://<TARGET>/account/activate/?username=arthur&token=3eca0c12e705686c03485532
 | Dimension | Impact |
 |-----------|--------|
 | Confidentiality | Every mailbox, every cleartext password, every unsalted hash, every activation token — unauthenticated. |
-| Integrity | Full account takeover of all users including `admin`; future signups hijackable via leaked activation tokens. |
+| Integrity | Full account takeover of all seeded users including `admin`; any pending signup can be activated by a third party via the leaked activation links. |
 | Availability | Harvested admin access enables destructive admin-panel actions. |
 
-Overall severity: **Critical** — unauthenticated, internet-reachable, sub-minute full-platform compromise.
+Overall severity: **Critical** — significant exposure of sensitive authentication material and private communications, with potential consequences across interconnected application services.
 
 # Remediation
 
-1. **Require authentication** on `/api/users` and `/api/emails`; authenticated users must see only their own mailbox.
-2. **Never return password hashes** from any API, and **never email cleartext passwords** — use one-time activation links.
-3. **Replace unsalted SHA-256** with a slow salted hash (argon2id / bcrypt / scrypt).
-4. **Scope activation tokens** to single use with a short TTL; add rate-limiting and audit logging on all webmail routes.
+1. **Enforce authentication and authorisation** — protect `GET /api/users` and `GET /api/emails` in `tools/Webmail/src/API.py`. Use Flask-Login (`LoginManager`, `@login_required`, `current_user`) or an equivalent authentication mechanism. Restrict the user list to explicitly authorised administrators and enforce mailbox ownership checks for email access.
+2. **Minimise API responses** — remove `password_hash` from all API responses and use explicit response field allow-lists. Remove unnecessary administrative endpoints if they have no legitimate consumer.
+3. **Replace unsalted SHA-256 with Argon2id** — add `argon2-cffi` to `tools/Webmail/src/requirements.txt`. Use `argon2.PasswordHasher` with `hash()`, `verify()` and `check_needs_rehash()`. Apply OWASP's minimum Argon2id parameters (`memory_cost=19456`, `time_cost=2`, `parallelism=1`) with automatically generated unique salts.
+4. **Eliminate cleartext password transmission** — update `djangoWocshack_5/setup/setup_webmail.py` and welcome email templates to prevent passwords from being included in emails. Replace shared default credentials with secure account enrolment and user-defined passwords.
+5. **Secure account activation tokens** — use cryptographically secure tokens bound to the intended account and purpose, enforce single use and a short TTL, and invalidate tokens after successful activation.
+6. **Remediate previously exposed credentials** — enforce password resets across affected services, migrate legacy SHA-256 password records to Argon2id, invalidate exposed activation tokens and affected sessions, and remove sensitive credentials from historical emails.
+7. **Harden webmail access** — enforce HTTPS, secure Flask session configuration (`SESSION_COOKIE_HTTPONLY`, `SESSION_COOKIE_SECURE`, `SESSION_COOKIE_SAMESITE`), appropriate network restrictions, rate limiting and audit logging without recording authentication secrets.
+8. **Add regression tests** — use Flask's test client to verify authentication and authorisation, mailbox isolation, exclusion of password hashes from API responses, Argon2id password storage, token expiration and single-use enforcement.
 
 # Author
 Hackrapovic
