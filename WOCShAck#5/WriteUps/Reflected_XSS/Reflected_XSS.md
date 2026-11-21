@@ -5,9 +5,9 @@ Reflected Cross-Site Scripting (CWE-79) on the shop search endpoint `GET /shop/?
 The vulnerability is:
 - **Reflected** — the payload lives in the URL and runs on page load.
 - **Unauthenticated** — no session cookie is required to reach the endpoint.
-- **Undefended** — the application sends no `Content-Security-Policy`, `X-Content-Type-Options`, or `X-XSS-Protection`, so the browser has nothing to fall back on.
+- **Limited defense-in-depth** — no `Content-Security-Policy` or `X-XSS-Protection` header is sent, neither by Django directly (port 8000) nor through the BunkerWeb reverse proxy (which strips the remaining security headers via `REMOVE_HEADERS`).
 
-Because the `csrftoken` cookie is **not** marked `HttpOnly`, a successful injection can steal it and forge state-changing requests in the victim's session.
+Because the `csrftoken` cookie is **not** marked `HttpOnly`, a successful injection can read it and forge state-changing requests in the victim's session. The `sessionid` cookie **is** `HttpOnly`, so the session token itself cannot be read from `document.cookie`.
 
 # Exploitation
 
@@ -47,7 +47,8 @@ curl -s "http://<TARGET>/shop/?q=%3Cscript%3Ealert(1)%3C%2Fscript%3E" | grep "se
 
 ```bash
 curl -sI "http://<TARGET>/shop/?q=test" | grep -iE "content-security-policy|x-xss-protection|x-content-type-options"
-# (empty)
+# Through the BunkerWeb proxy: (empty)
+# Directly against Django (http://localhost:8000): only "X-Content-Type-Options: nosniff", which does not mitigate XSS.
 ```
 
 ![No security headers on the response](xss-shop-no-defense-headers.png)
@@ -65,17 +66,19 @@ curl -sI "http://<TARGET>/shop/?q=test" | grep -iE "content-security-policy|x-xs
 | Dimension | Impact |
 |-----------|--------|
 | Confidentiality | Theft of the non-`HttpOnly` `csrftoken` cookie and any DOM-accessible data. |
-| Integrity | Forged state-changing actions (purchases, profile/password changes, forum posts) in the victim's session. |
-| Availability | A fake login form injected on the trusted domain enables credential phishing. |
+| Integrity | Forged state-changing actions (purchases, profile changes, forum posts) in the victim's session. Password and e-mail changes require the current password, so they cannot be forged this way. |
+| Availability | No direct impact demonstrated. |
 
-Overall severity: **Medium** — unauthenticated, trivially exploitable, no defense-in-depth. Can be chained with the stored XSS in user biographies for self-propagation.
+Overall severity: **Medium** — potential compromise of user data confidentiality and application integrity.
 
 # Remediation
 
-1. **Remove the `|safe` filter** — render the query with Django's default auto-escaping (`{{ query }}`).
-2. **Add a Content-Security-Policy** (`default-src 'self'; script-src 'self'`) to block inline script execution as defense-in-depth.
-3. **Set `X-Content-Type-Options: nosniff`** on all responses.
-4. **Mark the CSRF cookie `HttpOnly`** (`CSRF_COOKIE_HTTPONLY = True`) so XSS cannot read it, and use `SameSite=Strict` on session cookies.
+1. **Restore Django's automatic HTML escaping** — remove the `|safe` filter from the search query rendering and rely on Django's default auto-escaping (`{{ query }}`).
+2. **Enforce context-appropriate output encoding** — ensure that user-controlled values are correctly escaped according to their rendering context.
+3. **Implement a restrictive Content-Security-Policy (CSP)** — configure `CONTENT_SECURITY_POLICY` in `docker-compose.yml`, restrict script execution to authorised resources, and avoid `unsafe-inline`. Use nonces or hashes where necessary. Validate the policy using `CONTENT_SECURITY_POLICY_REPORT_ONLY` before enforcement.
+4. **Preserve security headers at the reverse proxy level** — update `REMOVE_HEADERS` in `docker-compose.yml` to preserve `Content-Security-Policy`, `Content-Security-Policy-Report-Only` and `X-Content-Type-Options`. Ensure that `SECURE_CONTENT_TYPE_NOSNIFF` remains enabled alongside Django's existing `SecurityMiddleware`.
+5. **Maintain secure cookie settings** — preserve `HttpOnly` on session cookies and configure appropriate `Secure` and `SameSite` attributes according to deployment requirements. Cookie hardening is not a substitute for XSS prevention.
+6. **Add regression tests** — verify that user-controlled search values are rendered as escaped text and that the expected security headers are present in the final HTTP response.
 
 # Author
 Hackrapovic
