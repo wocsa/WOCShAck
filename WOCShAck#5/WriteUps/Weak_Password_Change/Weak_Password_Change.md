@@ -30,8 +30,8 @@ The same account can hold a password that would be rejected by the signup and re
 |------|--------|--------|
 | 1 | Log in as a normal user (for example `johndoe`) with a password that meets the policy. | Authenticated session. |
 | 2 | Open `/account/settings/` and load the CSRF token from the page. | The form includes `csrfmiddlewaretoken`. |
-| 3 | POST the password-change form with `old_password` set to the current password and `new_password` = `confirm_password` = `a`. | Server returns HTTP 302 and the flash message "Password updated successfully." No strength check runs. |
-| 4 | Log out, then log in as the same user with `username=johndoe` and `password=a`. | Login succeeds. The account now has a one-character password. |
+| 3 | POST the password-change form with `old_password` set to the current password and `new_password` = `confirm_password` = `a`. | Server returns HTTP 302 to `/account/settings/` and queues the message "Password updated successfully." No strength check runs. Because `update_session_auth_hash()` is called with the stale `request.user` instead of `target_user`, the current session is invalidated: the next request is redirected to `/account/login/?next=/account/settings/`. |
+| 4 | Log in again as the same user with `username=johndoe` and `password=a`. | Login succeeds (HTTP 302 to `/account/process/`). The account now has a one-character password. |
 
 # PoC
 
@@ -59,16 +59,16 @@ curl -s -c jar.txt -b jar.txt -X POST "$BASE/account/settings/" \
   --data-urlencode "old_password=$OLD" \
   --data-urlencode "new_password=a" \
   --data-urlencode "confirm_password=a" \
-  -o /dev/null -w "%{http_code}\n"
-# -> 302 (password changed)
+  -o /dev/null -w "%{http_code} %{redirect_url}\n"
+# -> 302 .../account/settings/ (password changed; this session is now invalidated)
 
 # 4. Verify: log in with the one-character password
-curl -s -D - -o /dev/null -b /dev/null -c /dev/null -X POST "$BASE/account/login/" \
+curl -s -D - -o /dev/null -b j2.txt -c j2.txt -X POST "$BASE/account/login/" \
   -H "Referer: $BASE/account/login/" \
   --data-urlencode "csrfmiddlewaretoken=$(curl -s -c j2.txt -b j2.txt $BASE/account/login/ | grep -oP 'csrfmiddlewaretoken" value="\K[^"]+' | head -1)" \
   --data-urlencode "username=$USER" \
   --data-urlencode "password=a" | grep -i '^HTTP\|^Location'
-# -> HTTP/1.1 302 Found, Location: /  (login succeeded with "a")
+# -> HTTP/1.1 302 Found, Location: /account/process/  (login succeeded with "a")
 ```
 
 The same request sent to `/account/register/` with a weak password returns the error "Password is not strong enough." The contrast shows the policy is applied in one place and not in the other.
