@@ -1,0 +1,93 @@
+{% extends 'base/base.html' %}
+{% block title %}Edit Listing - V.R.C{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dev-container { max-width: 800px; margin: 0 auto; padding: var(--vrc-spacing-xl); }
+    .form-card { background: var(--vrc-white); border-radius: var(--vrc-radius-lg); padding: var(--vrc-spacing-xl); box-shadow: var(--vrc-shadow-md); }
+    .form-card h1 { font-size: var(--vrc-font-size-2xl); font-weight: var(--vrc-font-weight-bold); margin-bottom: var(--vrc-spacing-lg); }
+    .form-group { margin-bottom: var(--vrc-spacing-lg); }
+    .form-group label { display: block; font-size: var(--vrc-font-size-sm); font-weight: var(--vrc-font-weight-medium); color: var(--vrc-gray-700); margin-bottom: var(--vrc-spacing-xs); }
+    .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 10px 14px; border: 1px solid var(--vrc-gray-300); border-radius: var(--vrc-radius-md); font-size: var(--vrc-font-size-base); font-family: var(--vrc-font-family); box-sizing: border-box; }
+    .form-group input:focus, .form-group textarea:focus, .form-group select:focus { outline: none; border-color: var(--vrc-primary); }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--vrc-spacing-md); }
+    .btn-primary { padding: 10px 24px; background: var(--vrc-gradient); color: white; border: none; border-radius: var(--vrc-radius-md); cursor: pointer; }
+    .btn-secondary { padding: 10px 24px; background: var(--vrc-gray-100); color: var(--vrc-gray-700); border: none; border-radius: var(--vrc-radius-md); text-decoration: none; font-size: var(--vrc-font-size-sm); }
+    .btn-row { display: flex; gap: var(--vrc-spacing-sm); margin-top: var(--vrc-spacing-lg); }
+    .rejection-box { background: var(--vrc-error-light); border: 1px solid var(--vrc-error); border-radius: var(--vrc-radius-md); padding: var(--vrc-spacing-md); margin-bottom: var(--vrc-spacing-lg); }
+    .rejection-box strong { color: var(--vrc-error); }
+    .back-link { display: inline-block; margin-bottom: var(--vrc-spacing-lg); color: var(--vrc-primary); text-decoration: none; font-size: var(--vrc-font-size-sm); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dev-container">
+    <a href="{% url 'developer_listings' %}" class="back-link">&larr; Back to Listings</a>
+    <div class="form-card">
+        <h1>Edit Listing</h1>
+
+        {% if listing.status == 'rejected' and listing.rejection_reason %}
+        <div class="rejection-box">
+            <strong>Rejection Reason:</strong>
+            <p>{{ listing.rejection_reason }}</p>
+        </div>
+        {% endif %}
+
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="title">Title</label>
+                <input type="text" id="title" name="title" value="{{ listing.title }}" maxlength="200" required>
+            </div>
+            <div class="form-group">
+                <label for="description">Description</label>
+                <textarea id="description" name="description" rows="4" maxlength="5000">{{ listing.description }}</textarea>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="license_type">License Type</label>
+                    <select id="license_type" name="license_type">
+                        <option value="personal" {% if listing.license_type == 'personal' %}selected{% endif %}>Personal</option>
+                        <option value="commercial" {% if listing.license_type == 'commercial' %}selected{% endif %}>Commercial</option>
+                        <option value="extended" {% if listing.license_type == 'extended' %}selected{% endif %}>Extended</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="visibility">Visibility</label>
+                    <select id="visibility" name="visibility">
+                        <option value="public" {% if listing.visibility == 'public' %}selected{% endif %}>Public</option>
+                        <option value="unlisted" {% if listing.visibility == 'unlisted' %}selected{% endif %}>Unlisted</option>
+                        <option value="private" {% if listing.visibility == 'private' %}selected{% endif %}>Private</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="tags">Tags</label>
+                <input type="text" id="tags" name="tags" value="{{ listing.tags }}" maxlength="500">
+            </div>
+            <div class="form-group">
+                <label for="demo_url">Demo URL</label>
+                <input type="url" id="demo_url" name="demo_url" value="{{ listing.demo_url }}">
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="thumbnail">Thumbnail</label>
+                    <input type="file" id="thumbnail" name="thumbnail" accept="image/*">
+                </div>
+                <div class="form-group">
+                    <label for="preview_gif">Preview GIF</label>
+                    <input type="file" id="preview_gif" name="preview_gif" accept="image/gif">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="documentation">Documentation</label>
+                <textarea id="documentation" name="documentation" rows="6" maxlength="10000">{{ listing.documentation }}</textarea>
+            </div>
+            <div class="btn-row">
+                <button type="submit" class="btn-primary">Save Changes</button>
+                <a href="{% url 'developer_set_pricing' listing_id=listing.id %}" class="btn-secondary">Set Pricing</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,259 @@
+{% extends "base/base_forum.html" %}
+{% load static %}
+
+
+{% block title %}Issue Warning to {{ target_user.username }} - V.R.C Forum{% endblock %}
+
+{% block extra_css %}
+<style>
+    .page-header {
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        color: white;
+        padding: 30px;
+        border-radius: 16px;
+        margin-bottom: 30px;
+    }
+    .page-header h1 {
+        font-size: 1.8rem;
+        margin-bottom: 5px;
+    }
+    .page-header p {
+        opacity: 0.9;
+    }
+
+    .form-card {
+        background: white;
+        border-radius: 12px;
+        padding: 30px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        margin-bottom: 30px;
+    }
+    .form-group {
+        margin-bottom: 20px;
+    }
+    .form-group label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 8px;
+        color: #333;
+    }
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        width: 100%;
+        padding: 12px 15px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        font-size: 1rem;
+    }
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+        outline: none;
+        border-color: #667eea;
+    }
+    .form-group textarea {
+        min-height: 120px;
+        resize: vertical;
+    }
+    .form-group small {
+        display: block;
+        margin-top: 5px;
+        color: #888;
+        font-size: 0.85rem;
+    }
+
+    .form-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+    }
+
+    .btn-submit {
+        padding: 12px 30px;
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: transform 0.2s ease;
+    }
+    .btn-submit:hover {
+        transform: translateY(-2px);
+    }
+    .btn-cancel {
+        padding: 12px 30px;
+        background: #f3f4f6;
+        color: #374151;
+        border: none;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+        margin-left: 10px;
+    }
+
+    .warning-history {
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    .history-header {
+        padding: 15px 20px;
+        background: #f8f9fa;
+        border-bottom: 1px solid #eee;
+        font-weight: 600;
+    }
+    .history-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 15px;
+        padding: 15px 20px;
+        border-bottom: 1px solid #eee;
+    }
+    .history-item:last-child {
+        border-bottom: none;
+    }
+    .history-badge {
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        flex-shrink: 0;
+    }
+    .badge-notice { background: #e0f2fe; color: #0369a1; }
+    .badge-warning { background: #fef3c7; color: #92400e; }
+    .badge-final { background: #fee2e2; color: #dc2626; }
+    .history-content {
+        flex: 1;
+    }
+    .history-reason {
+        color: #333;
+        margin-bottom: 5px;
+    }
+    .history-meta {
+        font-size: 0.85rem;
+        color: #888;
+    }
+
+    .stats-bar {
+        display: flex;
+        gap: 30px;
+        padding: 20px;
+        background: #fef3c7;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+    .stat {
+        text-align: center;
+    }
+    .stat-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #92400e;
+    }
+    .stat-label {
+        font-size: 0.85rem;
+        color: #78350f;
+    }
+
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Issue Warning to {{ target_user.username }}</h1>
+    <p>Document rule violations and issue formal warnings</p>
+</div>
+
+<div class="stats-bar">
+    <div class="stat">
+        <div class="stat-value">{{ active_warnings.count }}</div>
+        <div class="stat-label">Active Warnings</div>
+    </div>
+    <div class="stat">
+        <div class="stat-value">{{ warning_points }}</div>
+        <div class="stat-label">Warning Points</div>
+    </div>
+    <div class="stat">
+        <div class="stat-value">{{ warnings.count }}</div>
+        <div class="stat-label">Total Warnings</div>
+    </div>
+</div>
+
+<div class="form-card">
+    <form method="post">
+        {% csrf_token %}
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="severity">Severity</label>
+                <select name="severity" id="severity" required>
+                    <option value="notice">Notice - Informal reminder</option>
+                    <option value="warning" selected>Warning - Formal warning</option>
+                    <option value="final_warning">Final Warning - Last chance</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="points">Warning Points</label>
+                <input type="number" name="points" id="points" value="1" min="1" max="10" required>
+                <small>1-10 points based on severity</small>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="rule_violated">Rule Violated (Optional)</label>
+            <input type="text" name="rule_violated" id="rule_violated" placeholder="e.g., Community Guidelines Section 3.2">
+        </div>
+
+        <div class="form-group">
+            <label for="reason">Reason for Warning</label>
+            <textarea name="reason" id="reason" required placeholder="Provide a detailed explanation of the violation and why this warning is being issued..."></textarea>
+            <small>Minimum 10 characters. Be specific about what rule was violated and the content in question.</small>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="expires_days">Expires After (Days)</label>
+                <input type="number" name="expires_days" id="expires_days" placeholder="Leave empty for permanent">
+                <small>Warning will automatically expire after this many days</small>
+            </div>
+            <div class="form-group">
+                <label for="related_post_id">Related Post ID (Optional)</label>
+                <input type="text" name="related_post_id" id="related_post_id" placeholder="UUID of related post">
+            </div>
+        </div>
+
+        <div style="margin-top: 20px;">
+            <button type="submit" class="btn-submit">Issue Warning</button>
+            <a href="{% url 'forum_user_admin' username=target_user.username %}" class="btn-cancel">Cancel</a>
+        </div>
+    </form>
+</div>
+
+{% if warnings %}
+<div class="warning-history">
+    <div class="history-header">Warning History</div>
+    {% for warning in warnings %}
+    <div class="history-item">
+        <span class="history-badge {% if warning.severity == 'final_warning' %}badge-final{% elif warning.severity == 'warning' %}badge-warning{% else %}badge-notice{% endif %}">
+            {{ warning.get_severity_display }}
+        </span>
+        <div class="history-content">
+            <div class="history-reason">{{ warning.reason|truncatewords:30 }}</div>
+            <div class="history-meta">
+                {% if warning.rule_violated %}Rule: {{ warning.rule_violated }} | {% endif %}
+                Issued by {{ warning.issued_by.username }} on {{ warning.created_at|date:"M d, Y" }}
+                {% if warning.is_expired %} | <span style="color: #059669;">Expired</span>{% endif %}
+                {% if warning.is_acknowledged %} | <span style="color: #0369a1;">Acknowledged</span>{% endif %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+{% endblock %}

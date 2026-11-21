@@ -1,0 +1,109 @@
+{% extends "base/base.html" %}
+{% load static community_tags %}
+
+{% block title %}VRC — {{ tutorial.title }}: Step {{ step_number }}{% endblock %}
+
+{% block module_css %}
+<link rel="stylesheet" href="{% static 'community/css/content.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="main-container">
+<div class="step-wrapper">
+
+  <div class="step-header">
+    <nav class="vrc-breadcrumbs">
+      <a href="{% url 'community:index' %}">Community</a>
+      <span class="bc-sep">›</span>
+      <a href="{% url 'community:tutorial_list' %}">Tutorials</a>
+      <span class="bc-sep">›</span>
+      <a href="{% url 'community:tutorial_detail' tutorial.slug %}">{{ tutorial.title }}</a>
+      <span class="bc-sep">›</span>
+      <span class="bc-current">Step {{ step_number }} of {{ total_steps }}</span>
+    </nav>
+    <div class="step-progress-bar">
+      <div class="step-progress-fill" style="width: {% widthratio step_number total_steps 100 %}%"></div>
+    </div>
+  </div>
+
+  <div class="step-layout">
+
+    {# Step content #}
+    <main class="step-main">
+      <h1 class="step-title">{{ step.title }}</h1>
+      <div class="step-content">{{ step.content|markdownify }}</div>
+
+      {% if step.code_example %}
+      <div class="step-code-block">
+        <div class="step-code-header">
+          <span>Code</span>
+          <button class="copy-btn" onclick="navigator.clipboard.writeText(this.closest('.step-code-block').querySelector('code').innerText)">Copy</button>
+        </div>
+        <pre><code>{{ step.code_example }}</code></pre>
+      </div>
+      {% endif %}
+
+      {# Quiz #}
+      {% if quiz %}
+      <div class="step-quiz" id="quiz-block">
+        <h2 class="quiz-title">Knowledge Check</h2>
+        <p class="quiz-question">{{ quiz.question }}</p>
+
+        <form method="post" action="{% url 'community:tutorial_quiz' tutorial.slug step_number %}" id="quiz-form">
+          {% csrf_token %}
+          {% if quiz.question_type == 'multiple_choice' %}
+          <div class="quiz-options">
+            {% for option in quiz.options %}
+            <label class="quiz-option">
+              <input type="radio" name="answer" value="{{ option }}" required>
+              {{ option }}
+            </label>
+            {% endfor %}
+          </div>
+          {% elif quiz.question_type == 'true_false' %}
+          <div class="quiz-options">
+            <label class="quiz-option">
+              <input type="radio" name="answer" value="true" required> True
+            </label>
+            <label class="quiz-option">
+              <input type="radio" name="answer" value="false" required> False
+            </label>
+          </div>
+          {% else %}
+          <textarea name="answer" class="form-textarea" rows="3" placeholder="Write your answer…" required></textarea>
+          {% endif %}
+          <button type="submit" class="content-btn content-btn--primary">Submit answer</button>
+        </form>
+        {% if quiz.hint %}
+        <details class="quiz-hint">
+          <summary>Show hint</summary>
+          <p>{{ quiz.hint }}</p>
+        </details>
+        {% endif %}
+      </div>
+      {% endif %}
+    </main>
+
+  </div>
+
+  {# Navigation #}
+  <div class="step-nav">
+    {% if prev_step %}
+    <a href="{% url 'community:tutorial_step' tutorial.slug prev_step.order %}" class="content-btn">← {{ prev_step.title }}</a>
+    {% else %}
+    <a href="{% url 'community:tutorial_detail' tutorial.slug %}" class="content-btn">← Overview</a>
+    {% endif %}
+
+    {% if next_step %}
+    <a href="{% url 'community:tutorial_step' tutorial.slug next_step.order %}" class="content-btn content-btn--primary">{{ next_step.title }} →</a>
+    {% else %}
+    <form method="post" action="{% url 'community:tutorial_complete' tutorial.slug %}">
+      {% csrf_token %}
+      <button type="submit" class="content-btn content-btn--primary">Mark as Complete ✓</button>
+    </form>
+    {% endif %}
+  </div>
+
+</div>
+</div>
+{% endblock %}

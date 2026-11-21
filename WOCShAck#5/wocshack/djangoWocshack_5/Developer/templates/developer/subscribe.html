@@ -1,0 +1,60 @@
+{% extends 'base/base.html' %}
+{% block title %}Developer Plans - V.R.C{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dev-container { max-width: 1000px; margin: 0 auto; padding: var(--vrc-spacing-xl); }
+    .page-title { font-size: var(--vrc-font-size-3xl); font-weight: var(--vrc-font-weight-bold); text-align: center; margin-bottom: var(--vrc-spacing-sm); background: var(--vrc-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .page-subtitle { text-align: center; color: var(--vrc-gray-500); margin-bottom: var(--vrc-spacing-2xl); }
+    .plans-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--vrc-spacing-lg); }
+    .plan-card { background: var(--vrc-white); border-radius: var(--vrc-radius-lg); padding: var(--vrc-spacing-xl); box-shadow: var(--vrc-shadow-md); text-align: center; transition: transform var(--vrc-transition-normal); position: relative; }
+    .plan-card:hover { transform: translateY(-4px); box-shadow: var(--vrc-shadow-xl); }
+    .plan-card.featured { border: 2px solid var(--vrc-primary); }
+    .plan-card.featured::before { content: 'Popular'; position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: var(--vrc-gradient); color: white; padding: 2px 16px; border-radius: var(--vrc-radius-full); font-size: var(--vrc-font-size-xs); font-weight: var(--vrc-font-weight-semibold); }
+    .plan-name { font-size: var(--vrc-font-size-xl); font-weight: var(--vrc-font-weight-bold); color: var(--vrc-gray-800); }
+    .plan-price { font-size: var(--vrc-font-size-3xl); font-weight: var(--vrc-font-weight-bold); color: var(--vrc-primary); margin: var(--vrc-spacing-md) 0; }
+    .plan-price span { font-size: var(--vrc-font-size-sm); color: var(--vrc-gray-500); font-weight: normal; }
+    .plan-features { list-style: none; padding: 0; margin: var(--vrc-spacing-lg) 0; text-align: left; }
+    .plan-features li { padding: 6px 0; color: var(--vrc-gray-600); font-size: var(--vrc-font-size-sm); border-bottom: 1px solid var(--vrc-gray-100); }
+    .plan-features li::before { content: '\2713'; color: var(--vrc-success); margin-right: 8px; font-weight: bold; }
+    .btn-subscribe { display: block; width: 100%; padding: 12px; background: var(--vrc-gradient); color: white; border: none; border-radius: var(--vrc-radius-md); cursor: pointer; font-size: var(--vrc-font-size-base); font-weight: var(--vrc-font-weight-semibold); text-decoration: none; text-align: center; }
+    .btn-subscribe:hover { background: var(--vrc-gradient-hover); }
+    .btn-current { background: var(--vrc-gray-300); cursor: default; }
+    .back-link { display: inline-block; margin-bottom: var(--vrc-spacing-lg); color: var(--vrc-primary); text-decoration: none; font-size: var(--vrc-font-size-sm); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dev-container">
+    <a href="{% url 'developer_dashboard' %}" class="back-link">&larr; Back to Dashboard</a>
+    <h1 class="page-title">Developer Plans</h1>
+    <p class="page-subtitle">Choose a plan that fits your needs</p>
+
+    <div class="plans-grid">
+        {% for plan in plans %}
+        <div class="plan-card {% if plan.slug == 'professional' %}featured{% endif %}">
+            <div class="plan-name">{{ plan.name }}</div>
+            <div class="plan-price">{{ plan.price_monthly }} NE <span>/month</span></div>
+            <ul class="plan-features">
+                <li>{% if plan.css_limit == 0 %}Unlimited{% else %}{{ plan.css_limit }}{% endif %} CSS Projects</li>
+                <li>{% if plan.api_calls_limit == 0 %}Unlimited{% else %}{{ plan.api_calls_limit|floatformat:0 }}{% endif %} API Calls/mo</li>
+                <li>{% widthratio plan.commission_rate 1 100 %}% revenue share</li>
+                {% for key, value in plan.features.items %}
+                <li>{{ value }}</li>
+                {% endfor %}
+            </ul>
+            {% if current_sub and current_sub.plan.id == plan.id %}
+                <span class="btn-subscribe btn-current">Current Plan</span>
+            {% else %}
+                <form method="post" action="{% url 'developer_subscribe_plan' plan_slug=plan.slug %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-subscribe">Subscribe</button>
+                </form>
+            {% endif %}
+        </div>
+        {% empty %}
+        <p style="text-align: center; color: var(--vrc-gray-500); grid-column: 1 / -1;">No plans available yet. Check back soon!</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

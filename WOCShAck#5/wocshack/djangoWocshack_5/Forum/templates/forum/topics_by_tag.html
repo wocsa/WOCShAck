@@ -1,0 +1,174 @@
+{% extends "base/base_forum.html" %}
+{% load static %}
+
+
+{% block title %}Topics tagged "{{ tag.name }}" - V.R.C Forum{% endblock %}
+
+{% block extra_css %}
+<style>
+    .tag-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 30px;
+        border-radius: 16px;
+        margin-bottom: 20px;
+    }
+    .breadcrumb {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        margin-bottom: 10px;
+        font-size: 0.9rem;
+    }
+    .breadcrumb a {
+        color: rgba(255,255,255,0.8);
+        text-decoration: none;
+    }
+    .breadcrumb a:hover {
+        color: white;
+    }
+    .breadcrumb span {
+        opacity: 0.6;
+    }
+    .tag-header h1 {
+        font-size: 1.8rem;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .tag-badge-large {
+        background: rgba(255,255,255,0.2);
+        padding: 6px 16px;
+        border-radius: 20px;
+        font-size: 1rem;
+    }
+    .tag-description {
+        opacity: 0.9;
+        margin-top: 10px;
+    }
+
+    .topic-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    .topic-row {
+        background: white;
+        border-radius: 12px;
+        padding: 15px 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        text-decoration: none;
+        color: inherit;
+        transition: transform 0.2s ease;
+    }
+    .topic-row:hover {
+        transform: translateY(-2px);
+    }
+    .topic-row-title {
+        flex: 1;
+        font-weight: 500;
+        color: #333;
+    }
+    .topic-row-category {
+        background: #667eea;
+        color: white;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+    }
+    .topic-row-meta {
+        color: #888;
+        font-size: 0.85rem;
+        text-align: right;
+        min-width: 120px;
+    }
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: white;
+        border-radius: 12px;
+    }
+
+    .pagination-container {
+        display: flex;
+        justify-content: center;
+        margin-top: 30px;
+    }
+    .pagination {
+        display: flex;
+        gap: 5px;
+    }
+    .pagination a, .pagination span {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 40px;
+        height: 40px;
+        padding: 0 12px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 500;
+    }
+    .pagination a {
+        background: white;
+        color: #333;
+        border: 1px solid #ddd;
+    }
+    .pagination .current {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="tag-header">
+    <div class="breadcrumb">
+        <a href="{% url 'forum_index' %}">Forum</a>
+        <span>/</span>
+        <span>Tag</span>
+    </div>
+    <h1>
+        Topics tagged
+        <span class="tag-badge-large" style="background: {{ tag.color }}40; border: 1px solid {{ tag.color }};">{{ tag.name }}</span>
+    </h1>
+    {% if tag.description %}
+    <div class="tag-description">{{ tag.description }}</div>
+    {% endif %}
+</div>
+
+<div class="topic-list">
+    {% for topic in topics %}
+    <a href="{% url 'forum_topic' topic_id=topic.id %}" class="topic-row">
+        <span class="topic-row-category">{{ topic.category.name }}</span>
+        <span class="topic-row-title">{{ topic.title }}</span>
+        <span class="topic-row-meta">
+            by {{ topic.author.username }}<br>
+            {{ topic.created_at|timesince }} ago
+        </span>
+    </a>
+    {% empty %}
+    <div class="empty-state">
+        <h3>No topics with this tag</h3>
+        <p>Be the first to create a topic with the "{{ tag.name }}" tag.</p>
+    </div>
+    {% endfor %}
+</div>
+
+{% if page_obj.has_other_pages %}
+<div class="pagination-container">
+    <nav class="pagination">
+        {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}">&lsaquo; Previous</a>
+        {% endif %}
+        <span class="current">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+        {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}">Next &rsaquo;</a>
+        {% endif %}
+    </nav>
+</div>
+{% endif %}
+{% endblock %}

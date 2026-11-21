@@ -1,0 +1,203 @@
+{% extends "base/base_account.html" %}
+{% load static %}
+
+
+{% block title %}V.R.C - Processing Payment{% endblock %}
+
+{% block account_title %}Processing Payment{% endblock %}
+
+{% block account_subtitle %}
+<p class="account-subtitle">Please wait while we process your payment</p>
+{% endblock %}
+
+{% block account_content %}
+<div class="payment-loading-container">
+    <div class="payment-loading-content">
+        <div class="payment-loading-spinner">
+            <svg viewBox="0 0 24 24" width="64" height="64" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2v4"/>
+                <path d="M12 18v4"/>
+                <path d="M4.93 4.93l2.83 2.83"/>
+                <path d="M16.24 16.24l2.83 2.83"/>
+                <path d="M2 12h4"/>
+                <path d="M18 12h4"/>
+                <path d="M4.93 19.07l2.83-2.83"/>
+                <path d="M16.24 7.76l2.83-2.83"/>
+            </svg>
+        </div>
+        
+        <h3 class="payment-loading-title">Processing Your Payment</h3>
+        <p class="payment-loading-message">
+            We are securely processing your payment of <strong>{{ total }} Neuros</strong>.
+        </p>
+        <p class="payment-loading-message">
+            Please do not refresh or navigate away from this page.
+        </p>
+        
+        <div class="payment-loading-progress">
+            <div class="payment-loading-bar"></div>
+        </div>
+        
+        <p class="payment-loading-note">
+            This may take a few moments as we verify your transaction with the banking system.
+        </p>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .payment-loading-container {
+        max-width: 500px;
+        margin: 0 auto;
+        text-align: center;
+    }
+
+    .payment-loading-content {
+        padding: 2rem;
+    }
+
+    .payment-loading-spinner {
+        margin: 0 auto 1.5rem;
+        animation: spin 2s linear infinite;
+        color: var(--vrc-primary);
+    }
+
+    .payment-loading-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--vrc-gray-900);
+        margin: 0 0 0.75rem;
+    }
+
+    .payment-loading-message {
+        font-size: 1rem;
+        color: var(--vrc-gray-600);
+        margin: 0 0 1.5rem;
+        line-height: 1.6;
+    }
+
+    .payment-loading-message strong {
+        font-weight: 700;
+        color: var(--vrc-primary);
+    }
+
+    .payment-loading-progress {
+        height: 4px;
+        background: var(--vrc-gray-200);
+        border-radius: 2px;
+        margin: 2rem 0;
+        overflow: hidden;
+    }
+
+    .payment-loading-bar {
+        height: 100%;
+        background: var(--vrc-primary);
+        width: 100%;
+        animation: progress 3s ease-in-out infinite;
+    }
+
+    .payment-loading-note {
+        font-size: 0.875rem;
+        color: var(--vrc-gray-500);
+        font-style: italic;
+    }
+
+    @keyframes spin {
+        from {
+            transform: rotate(0deg);
+        }
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    @keyframes progress {
+        0% {
+            width: 0%;
+            opacity: 0.3;
+        }
+        50% {
+            width: 100%;
+            opacity: 1;
+        }
+        100% {
+            width: 100%;
+            opacity: 0.3;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Authentication already completed on payment form
+  // No popup needed - directly process payment
+  window.addEventListener('load', function () {
+    // Automatically submit payment after a short delay
+    setTimeout(function() {
+      completePayment();
+    }, 1000);
+  });
+
+  function completePayment() {
+    console.log('Starting payment completion...');
+    
+    // Get CSRF token from cookie
+    function getCookie(name) {
+      let cookieValue = null;
+      if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+          const cookie = cookies[i].trim();
+          if (cookie.substring(0, name.length + 1) === (name + '=')) {
+            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+            break;
+          }
+        }
+      }
+      return cookieValue;
+    }
+
+    const csrftoken = getCookie('csrftoken');
+    console.log('CSRF token:', csrftoken);
+
+    // Submit POST request to complete the order
+    console.log('Sending payment request...');
+    fetch('/account/store/complete_order/', {
+      method: 'POST',
+      headers: {
+        'X-CSRFToken': csrftoken,
+        'Content-Type': 'application/json',
+      },
+      credentials: 'same-origin'
+    })
+    .then(response => {
+      console.log('Response received:', response.status, response.statusText);
+      if (response.redirected) {
+        console.log('Redirecting to:', response.url);
+        window.location.href = response.url;
+      } else {
+        console.log('Response not redirected, parsing JSON...');
+        return response.json();
+      }
+    })
+    .then(data => {
+      console.log('Response data:', data);
+      if (data && data.error) {
+        console.error('Payment error:', data.error);
+        alert('Payment failed: ' + data.error);
+        window.location.href = '/account/store/';
+      } else {
+        console.log('Payment successful, redirecting to store');
+        window.location.href = '/account/store/';
+      }
+    })
+    .catch(error => {
+      console.error('Payment error:', error);
+      alert('An error occurred during payment processing.');
+      window.location.href = '/account/store/';
+    });
+  }
+</script>
+{% endblock %}

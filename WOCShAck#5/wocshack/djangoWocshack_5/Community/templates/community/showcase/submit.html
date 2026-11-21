@@ -1,0 +1,177 @@
+{% extends "base/base.html" %}
+{% load static %}
+
+{% block title %}VRC — Submit to Showcase{% endblock %}
+
+{% block module_css %}
+<link rel="stylesheet" href="{% static 'community/css/content.css' %}">
+<style>
+  #gif-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(10, 10, 20, 0.88);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+  }
+  #gif-overlay.active { display: flex; }
+  .gif-overlay-box {
+    background: #1a1a2e;
+    border: 1px solid #2a2a5e;
+    border-radius: 14px;
+    padding: 2.25rem 2.5rem;
+    max-width: 400px;
+    width: 90%;
+    text-align: center;
+    color: #e0e0f0;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.6);
+  }
+  .gif-overlay-icon { font-size: 2.8rem; margin-bottom: 0.6rem; animation: pulse 1.5s ease-in-out infinite; }
+  @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.12); } }
+  .gif-overlay-title { font-size: 1.2rem; font-weight: 600; color: #a0aaff; margin-bottom: 0.4rem; }
+  .gif-stage-label {
+    font-size: 0.85rem;
+    color: #8888bb;
+    min-height: 1.3em;
+    margin-bottom: 1rem;
+    transition: opacity 0.3s;
+  }
+  .gif-progress-track {
+    background: #2a2a4e;
+    border-radius: 8px;
+    height: 9px;
+    overflow: hidden;
+    margin-bottom: 0.8rem;
+  }
+  .gif-progress-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+    border-radius: 8px;
+    transition: width 0.6s ease;
+  }
+  .gif-overlay-hint { font-size: 0.75rem; color: #444466; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+{# GIF generation progress overlay — shown on form submit #}
+<div id="gif-overlay" role="dialog" aria-live="polite" aria-label="Generating GIF preview">
+  <div class="gif-overlay-box">
+    <div class="gif-overlay-icon">🎨</div>
+    <h2 class="gif-overlay-title">Generating GIF Preview…</h2>
+    <p id="gif-stage-label" class="gif-stage-label">Saving submission…</p>
+    <div class="gif-progress-track">
+      <div id="gif-progress-fill" class="gif-progress-fill"></div>
+    </div>
+    <p class="gif-overlay-hint">This usually takes around 20 seconds</p>
+  </div>
+</div>
+
+<script>
+(function () {
+  // Stage timeline derived from Api/gif_utils.py constants:
+  //   GIF_FRAMES=20, GIF_DURATION_S=2.0 → frame loop = 2.0 s
+  //   time.sleep(0.3) → initial wait
+  //   Chrome cold start ≈ 3–6 s on this machine → total ≈ 20 s observed
+  var STAGES = [
+    { at:     0, pct:  0, text: 'Saving submission\u2026' },
+    { at:   500, pct:  5, text: 'Starting headless browser\u2026' },
+    { at:  4000, pct: 25, text: 'Loading CSS page\u2026' },
+    { at:  5000, pct: 35, text: 'Capturing animation frames (20 \u00d7 100\u202fms)\u2026' },
+    { at: 17000, pct: 85, text: 'Encoding GIF\u2026' },
+    { at: 19000, pct: 95, text: 'Saving preview\u2026' },
+  ];
+
+  document.addEventListener('DOMContentLoaded', function () {
+    var form = document.querySelector('.content-form');
+    var submitBtn = form ? form.querySelector('[type="submit"]') : null;
+    var overlay = document.getElementById('gif-overlay');
+    var bar = document.getElementById('gif-progress-fill');
+    var stageLabel = document.getElementById('gif-stage-label');
+
+    if (!form || !overlay) return;
+
+    form.addEventListener('submit', function () {
+      // Disable the submit button to prevent double-submission
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Generating…';
+      }
+
+      // Show overlay
+      overlay.classList.add('active');
+
+      // Schedule stage updates
+      STAGES.forEach(function (stage) {
+        setTimeout(function () {
+          bar.style.width = stage.pct + '%';
+          stageLabel.style.opacity = '0';
+          setTimeout(function () {
+            stageLabel.textContent = stage.text;
+            stageLabel.style.opacity = '1';
+          }, 150);
+        }, stage.at);
+      });
+    });
+  });
+}());
+</script>
+
+<div class="main-container">
+<nav class="vrc-breadcrumbs">
+  <a href="{% url 'community:index' %}">Community</a>
+  <span class="bc-sep">›</span>
+  <a href="{% url 'community:showcase_list' %}">Showcase</a>
+  <span class="bc-sep">›</span>
+  <span class="bc-current">Submit</span>
+</nav>
+<div class="form-wrapper">
+
+  <div class="form-header">
+    <h1 class="form-title">Submit CSS to Showcase</h1>
+    <a href="{% url 'community:showcase_list' %}" class="content-btn">← Back to Gallery</a>
+  </div>
+
+  <p class="form-note">Your submission will be reviewed before appearing publicly.</p>
+
+  <form method="post" enctype="multipart/form-data" class="content-form">
+    {% csrf_token %}
+
+    <div class="form-group">
+      <label class="form-label">Title *</label>
+      <input type="text" name="title" class="form-input" required maxlength="255" placeholder="e.g. Neon Loader Animation">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Category</label>
+      <select name="category" class="form-select">
+        {% for val, label in categories %}
+        <option value="{{ val }}">{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Description</label>
+      <textarea name="description" class="form-textarea" rows="3" maxlength="1000"
+        placeholder="Briefly describe your CSS creation…"></textarea>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">CSS Code *</label>
+      <textarea name="demo_css" class="form-textarea form-textarea--code" rows="15" required
+        placeholder=".loader { ... }"></textarea>
+    </div>
+
+    <div class="form-actions">
+      <button type="submit" class="content-btn content-btn--primary">Submit for Review</button>
+      <a href="{% url 'community:showcase_list' %}" class="content-btn">Cancel</a>
+    </div>
+  </form>
+
+</div>
+</div>
+{% endblock %}

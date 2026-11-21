@@ -1,0 +1,100 @@
+{% extends 'base/base.html' %}
+{% block title %}API Keys - V.R.C{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dev-container { max-width: 1000px; margin: 0 auto; padding: var(--vrc-spacing-xl); }
+    .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--vrc-spacing-xl); }
+    .page-header h1 { font-size: var(--vrc-font-size-2xl); font-weight: var(--vrc-font-weight-bold); }
+    .section { background: var(--vrc-white); border-radius: var(--vrc-radius-lg); padding: var(--vrc-spacing-xl); box-shadow: var(--vrc-shadow-md); margin-bottom: var(--vrc-spacing-xl); }
+    .section h2 { font-size: var(--vrc-font-size-lg); font-weight: var(--vrc-font-weight-semibold); margin-bottom: var(--vrc-spacing-md); }
+    .key-item { display: flex; justify-content: space-between; align-items: center; padding: var(--vrc-spacing-md); border: 1px solid var(--vrc-gray-200); border-radius: var(--vrc-radius-md); margin-bottom: var(--vrc-spacing-sm); }
+    .key-name { font-weight: var(--vrc-font-weight-medium); }
+    .key-prefix { font-family: monospace; background: var(--vrc-gray-100); padding: 2px 8px; border-radius: var(--vrc-radius-sm); font-size: var(--vrc-font-size-sm); }
+    .key-meta { font-size: var(--vrc-font-size-xs); color: var(--vrc-gray-500); margin-top: 4px; }
+    .key-actions { display: flex; gap: 8px; }
+    .key-actions a { font-size: var(--vrc-font-size-xs); color: var(--vrc-primary); text-decoration: none; }
+    .btn-sm-danger { color: var(--vrc-error); font-size: var(--vrc-font-size-xs); background: none; border: none; cursor: pointer; }
+    .btn-sm-warning { color: var(--vrc-warning); font-size: var(--vrc-font-size-xs); background: none; border: none; cursor: pointer; }
+    .form-row { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: var(--vrc-spacing-md); align-items: end; }
+    .form-group { margin-bottom: var(--vrc-spacing-md); }
+    .form-group label { display: block; font-size: var(--vrc-font-size-sm); font-weight: var(--vrc-font-weight-medium); color: var(--vrc-gray-700); margin-bottom: 4px; }
+    .form-group input, .form-group select { width: 100%; padding: 8px 12px; border: 1px solid var(--vrc-gray-300); border-radius: var(--vrc-radius-md); font-size: var(--vrc-font-size-sm); box-sizing: border-box; }
+    .form-group input:focus { outline: none; border-color: var(--vrc-primary); }
+    .btn-primary { padding: 8px 20px; background: var(--vrc-gradient); color: white; border: none; border-radius: var(--vrc-radius-md); cursor: pointer; font-size: var(--vrc-font-size-sm); }
+    .badge-active { background: var(--vrc-success-light); color: var(--vrc-success); padding: 2px 8px; border-radius: var(--vrc-radius-full); font-size: var(--vrc-font-size-xs); }
+    .badge-inactive { background: var(--vrc-gray-200); color: var(--vrc-gray-600); padding: 2px 8px; border-radius: var(--vrc-radius-full); font-size: var(--vrc-font-size-xs); }
+    .back-link { display: inline-block; margin-bottom: var(--vrc-spacing-lg); color: var(--vrc-primary); text-decoration: none; font-size: var(--vrc-font-size-sm); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dev-container">
+    <a href="{% url 'developer_dashboard' %}" class="back-link">&larr; Back to Dashboard</a>
+    <div class="page-header">
+        <h1>API Keys</h1>
+    </div>
+
+    <div class="section">
+        <h2>Create New Key</h2>
+        <form method="post" action="{% url 'developer_create_api_key' %}">
+            {% csrf_token %}
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="name">Key Name</label>
+                    <input type="text" id="name" name="name" required placeholder="My Integration">
+                </div>
+                <div class="form-group">
+                    <label for="scopes">Scopes</label>
+                    <input type="text" id="scopes" name="scopes" value="read" placeholder="read,write">
+                </div>
+                <div class="form-group">
+                    <label for="expires_days">Expires In (days)</label>
+                    <input type="number" id="expires_days" name="expires_days" placeholder="Never" min="1">
+                </div>
+            </div>
+            <button type="submit" class="btn-primary">Create API Key</button>
+        </form>
+    </div>
+
+    {% if new_api_key %}
+    <div class="section" style="border: 2px solid var(--vrc-warning); background: #fffbeb;">
+        <h2 style="color: var(--vrc-warning);">Your New API Key</h2>
+        <p style="font-size: var(--vrc-font-size-sm); color: var(--vrc-gray-700); margin-bottom: 8px;">Copy this key now. It will not be shown again.</p>
+        <code style="display: block; padding: 12px; background: var(--vrc-gray-900); color: #22c55e; border-radius: var(--vrc-radius-md); font-size: var(--vrc-font-size-sm); word-break: break-all; user-select: all;">{{ new_api_key }}</code>
+    </div>
+    {% endif %}
+
+    <div class="section">
+        <h2>Your Keys</h2>
+        {% for key in api_keys %}
+        <div class="key-item">
+            <div>
+                <div class="key-name">{{ key.name }} <span class="key-prefix">{{ key.key_prefix }}...</span>
+                    {% if key.is_active %}<span class="badge-active">Active</span>{% else %}<span class="badge-inactive">Inactive</span>{% endif %}
+                </div>
+                <div class="key-meta">
+                    Scopes: {{ key.scopes|join:", " }} |
+                    Created: {{ key.created_at|date:"M d, Y" }}
+                    {% if key.last_used_at %} | Last used: {{ key.last_used_at|date:"M d, Y H:i" }}{% endif %}
+                    {% if key.expires_at %} | Expires: {{ key.expires_at|date:"M d, Y" }}{% endif %}
+                </div>
+            </div>
+            <div class="key-actions">
+                <a href="{% url 'developer_api_key_usage' key_id=key.id %}">Usage</a>
+                <form method="post" action="{% url 'developer_regenerate_api_key' key_id=key.id %}" style="display:inline;" onsubmit="return confirm('Regenerate this key? The old key will stop working.');">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-sm-warning">Regenerate</button>
+                </form>
+                <form method="post" action="{% url 'developer_delete_api_key' key_id=key.id %}" style="display:inline;" onsubmit="return confirm('Delete this API key?');">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-sm-danger">Delete</button>
+                </form>
+            </div>
+        </div>
+        {% empty %}
+        <p style="color: var(--vrc-gray-500);">No API keys yet.</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

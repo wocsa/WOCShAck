@@ -1,0 +1,73 @@
+{% extends "base/base.html" %}
+{% load static %}
+
+{# Used for login, register, 2FA, password reset, and other auth flows #}
+
+{% block body_class %}vrc-body auth-page{% endblock %}
+
+{% block main_class %}auth-main{% endblock %}
+
+{% block header %}
+{# Auth pages use a simpler header without login/register buttons #}
+{% include 'header/html/header_no_L_R.html' %}
+{% endblock %}
+
+{% block module_css %}
+<link rel="stylesheet" href="{% static 'account/css/auth.css' %}">
+{% endblock %}
+
+{% block content_wrapper_class %}auth-container{% endblock %}
+
+{% block content %}
+<div class="auth-card animate-fade-in-up">
+    {# Auth Icon/Logo #}
+    <div class="auth-icon">
+        {% block auth_icon %}
+        <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="8" r="4"/>
+            <path d="M20 21a8 8 0 0 0-16 0"/>
+        </svg>
+        {% endblock %}
+    </div>
+
+    {# Page Title #}
+    <h1 class="auth-title">{% block auth_title %}Welcome{% endblock %}</h1>
+
+    {# Subtitle/Description #}
+    {% block auth_subtitle %}{% endblock %}
+
+    {# Error Messages #}
+    {% if error %}
+    <div class="auth-error" role="alert">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        <span>{{ error }}</span>
+    </div>
+    {% endif %}
+
+    {# Success Messages #}
+    {% if success %}
+    <div class="auth-success" role="alert">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+            <polyline points="22 4 12 14.01 9 11.01"/>
+        </svg>
+        <span>{{ success }}</span>
+    </div>
+    {% endif %}
+
+    {# Form Content #}
+    {% block auth_form %}{% endblock %}
+
+    {# Additional Links #}
+    {% block auth_links %}{% endblock %}
+</div>
+{% endblock %}
+
+{% block footer %}
+{# Minimal footer for auth pages #}
+{% include 'footer/footer_auth.html' %}
+{% endblock %}

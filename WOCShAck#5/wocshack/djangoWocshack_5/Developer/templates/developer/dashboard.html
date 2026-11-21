@@ -1,0 +1,258 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Developer Dashboard - V.R.C{% endblock %}
+
+<!-- Builder zone: automated review is fine, automated rummaging without authorization is still rummaging. -->
+
+{% block extra_css %}
+<style>
+    .dev-container { max-width: 1200px; margin: 0 auto; padding: var(--vrc-spacing-xl); }
+    .dev-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--vrc-spacing-xl); }
+    .dev-header h1 { font-size: var(--vrc-font-size-3xl); font-weight: var(--vrc-font-weight-bold); background: var(--vrc-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .dev-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--vrc-spacing-lg); margin-bottom: var(--vrc-spacing-xl); }
+    .stat-card { background: var(--vrc-white); border-radius: var(--vrc-radius-lg); padding: var(--vrc-spacing-lg); box-shadow: var(--vrc-shadow-md); transition: transform var(--vrc-transition-normal); }
+    .stat-card:hover { transform: translateY(-2px); box-shadow: var(--vrc-shadow-lg); }
+    .stat-card .stat-label { font-size: var(--vrc-font-size-sm); color: var(--vrc-gray-500); text-transform: uppercase; letter-spacing: 0.05em; }
+    .stat-card .stat-value { font-size: var(--vrc-font-size-2xl); font-weight: var(--vrc-font-weight-bold); color: var(--vrc-gray-800); margin-top: var(--vrc-spacing-xs); }
+    .stat-card .stat-icon { width: 40px; height: 40px; border-radius: var(--vrc-radius-md); display: flex; align-items: center; justify-content: center; margin-bottom: var(--vrc-spacing-sm); font-size: 1.25rem; }
+    .icon-revenue { background: var(--vrc-success-light); color: var(--vrc-success); }
+    .icon-projects { background: var(--vrc-info-light); color: var(--vrc-info); }
+    .icon-listings { background: #ede9fe; color: #8b5cf6; }
+    .icon-sales { background: var(--vrc-warning-light); color: var(--vrc-warning); }
+    .dev-grid { display: grid; grid-template-columns: 2fr 1fr; gap: var(--vrc-spacing-xl); }
+    .dev-section { background: var(--vrc-white); border-radius: var(--vrc-radius-lg); padding: var(--vrc-spacing-lg); box-shadow: var(--vrc-shadow-md); }
+    .dev-section h2 { font-size: var(--vrc-font-size-xl); font-weight: var(--vrc-font-weight-semibold); margin-bottom: var(--vrc-spacing-md); color: var(--vrc-gray-800); }
+    .quick-actions { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--vrc-spacing-sm); }
+    .quick-action { display: flex; align-items: center; gap: var(--vrc-spacing-sm); padding: var(--vrc-spacing-md); border-radius: var(--vrc-radius-md); background: var(--vrc-gray-50); text-decoration: none; color: var(--vrc-gray-700); transition: all var(--vrc-transition-normal); font-size: var(--vrc-font-size-sm); }
+    .quick-action:hover { background: var(--vrc-gray-100); color: var(--vrc-primary); }
+    .project-item { display: flex; justify-content: space-between; align-items: center; padding: var(--vrc-spacing-sm) 0; border-bottom: 1px solid var(--vrc-gray-100); }
+    .project-item:last-child { border-bottom: none; }
+    .project-item a { color: var(--vrc-primary); text-decoration: none; font-weight: var(--vrc-font-weight-medium); }
+    .project-item a:hover { text-decoration: underline; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: var(--vrc-radius-full); font-size: var(--vrc-font-size-xs); font-weight: var(--vrc-font-weight-medium); }
+    .badge-draft { background: var(--vrc-gray-200); color: var(--vrc-gray-600); }
+    .badge-published { background: var(--vrc-success-light); color: var(--vrc-success); }
+    .badge-archived { background: var(--vrc-warning-light); color: var(--vrc-warning); }
+    .badge-pending { background: var(--vrc-warning-light); color: var(--vrc-warning); }
+    .badge-processing { background: var(--vrc-info-light); color: var(--vrc-info); }
+    .badge-completed { background: var(--vrc-success-light); color: var(--vrc-success); }
+    .badge-failed { background: #fee2e2; color: #dc2626; }
+    .badge-cancelled { background: var(--vrc-gray-200); color: var(--vrc-gray-600); }
+    .badge-refunded { background: #fef3c7; color: #d97706; }
+    .sub-info { padding: var(--vrc-spacing-md); background: var(--vrc-gray-50); border-radius: var(--vrc-radius-md); font-size: var(--vrc-font-size-sm); }
+    .sub-info .plan-name { font-weight: var(--vrc-font-weight-semibold); color: var(--vrc-primary); }
+    .payments-table { width: 100%; border-collapse: collapse; font-size: var(--vrc-font-size-sm); }
+    .payments-table th { text-align: left; padding: var(--vrc-spacing-sm); color: var(--vrc-gray-500); font-weight: var(--vrc-font-weight-medium); border-bottom: 2px solid var(--vrc-gray-100); }
+    .payments-table td { padding: var(--vrc-spacing-sm); border-bottom: 1px solid var(--vrc-gray-100); color: var(--vrc-gray-700); }
+    .payments-table tr:last-child td { border-bottom: none; }
+    .payments-subsection { margin-bottom: var(--vrc-spacing-md); }
+    .payments-subsection h3 { font-size: var(--vrc-font-size-base); font-weight: var(--vrc-font-weight-medium); color: var(--vrc-gray-600); margin-bottom: var(--vrc-spacing-sm); }
+    @media (max-width: 768px) {
+        .dev-grid { grid-template-columns: 1fr; }
+        .quick-actions { grid-template-columns: 1fr; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dev-container">
+    <nav class="vrc-breadcrumbs">
+        <a href="/">Home</a>
+        <span class="bc-sep">›</span>
+        <span class="bc-current">Developer Dashboard</span>
+    </nav>
+
+    <div class="dev-header">
+        <h1>Developer Dashboard</h1>
+        <a href="{% url 'developer_editor' %}" class="quick-action" style="background: var(--vrc-gradient); color: white; padding: 10px 20px; border-radius: var(--vrc-radius-md);">Open Editor</a>
+    </div>
+
+    <div class="dev-stats">
+        <div class="stat-card">
+            <div class="stat-icon icon-revenue">$</div>
+            <div class="stat-label">Monthly Revenue</div>
+            <div class="stat-value">{{ monthly_revenue }} NE</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon icon-projects">P</div>
+            <div class="stat-label">Projects</div>
+            <div class="stat-value">{{ projects_count }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon icon-listings">L</div>
+            <div class="stat-label">Published Listings</div>
+            <div class="stat-value">{{ published_count }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon icon-sales">S</div>
+            <div class="stat-label">Monthly Sales</div>
+            <div class="stat-value">{{ monthly_sales }}</div>
+        </div>
+    </div>
+
+    <div class="dev-grid">
+        <div>
+            {# Marketplace CSS Files — shows Api.Css files created by this developer #}
+            <div class="dev-section" style="margin-bottom: var(--vrc-spacing-xl);">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--vrc-spacing-sm);">
+                    <h2>Marketplace CSS Files ({{ api_css_count }})</h2>
+                    <a href="/shop/?author={{ user.username }}" class="quick-action" style="font-size:var(--vrc-font-size-sm);padding:6px 14px;">🛒 View in Shop</a>
+                </div>
+                {% if recent_css_files %}
+                    {% for css_file in recent_css_files %}
+                    <div class="project-item">
+                        <a href="{% url 'product_detail' css_file.id %}">{{ css_file.name }}</a>
+                        <span class="badge badge-published">{{ css_file.price }} NE</span>
+                    </div>
+                    {% endfor %}
+                    {% if api_css_count > 5 %}
+                    <div style="text-align: center; margin-top: var(--vrc-spacing-sm);">
+                        <a href="/shop/?author={{ user.username }}" style="color: var(--vrc-primary); text-decoration: none; font-size: var(--vrc-font-size-sm);">View all {{ api_css_count }} CSS files</a>
+                    </div>
+                    {% endif %}
+                {% else %}
+                    <p style="color: var(--vrc-gray-500); font-size: var(--vrc-font-size-sm);">No CSS files in the marketplace yet.</p>
+                {% endif %}
+            </div>
+
+            {# Developer Editor Projects — shows CssProject entries from the Developer module #}
+            <div class="dev-section" style="margin-bottom: var(--vrc-spacing-xl);">
+                <h2>Editor Projects</h2>
+                {% if recent_projects %}
+                    {% for project in recent_projects %}
+                    <div class="project-item">
+                        <a href="{% url 'developer_edit_project' project_id=project.id %}">{{ project.name }}</a>
+                        <span class="badge badge-{{ project.status }}">{{ project.get_status_display }}</span>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p style="color: var(--vrc-gray-500); font-size: var(--vrc-font-size-sm);">No editor projects yet. Create your first one!</p>
+                {% endif %}
+            </div>
+
+            {# Recent Payments — sales receipts and payout transfers #}
+            <div class="dev-section" style="margin-bottom: var(--vrc-spacing-xl);">
+                <h2>Recent Payments</h2>
+
+                <div class="payments-subsection">
+                    <h3>Sales Receipts</h3>
+                    {% if recent_sales %}
+                    <table class="payments-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Buyer</th>
+                                <th>Item</th>
+                                <th>Commission</th>
+                                <th>Coupon</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in recent_sales %}
+                            <tr>
+                                <td>{{ item.order.created_at|date:"M d, Y" }}</td>
+                                <td>{{ item.order.user.username|escape }}</td>
+                                <td>{{ item.css_name|escape }}</td>
+                                <td>{{ item.commission }} NE</td>
+                                <td>{% if item.order.coupon_code %}{{ item.order.coupon_code|escape }}{% else %}—{% endif %}</td>
+                                <td><span class="badge badge-{{ item.order.status }}">{{ item.order.get_status_display }}</span></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <p style="color: var(--vrc-gray-500); font-size: var(--vrc-font-size-sm);">No sales yet.</p>
+                    {% endif %}
+                </div>
+
+                <div class="payments-subsection">
+                    <h3>Payout Transfers</h3>
+                    {% if recent_payouts %}
+                    <table class="payments-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Amount</th>
+                                <th>Fee</th>
+                                <th>Net</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for payout in recent_payouts %}
+                            <tr>
+                                <td>{{ payout.requested_at|date:"M d, Y" }}</td>
+                                <td>{{ payout.amount }} NE</td>
+                                <td>{{ payout.fee }} NE</td>
+                                <td>{{ payout.net_amount }} NE</td>
+                                <td><span class="badge badge-{{ payout.status }}">{{ payout.get_status_display }}</span></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <p style="color: var(--vrc-gray-500); font-size: var(--vrc-font-size-sm);">No payouts yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="dev-section">
+                <h2>Quick Actions</h2>
+                <div class="quick-actions">
+                    <a href="{% url 'developer_create_project' %}" class="quick-action">+ New Project</a>
+                    <a href="{% url 'developer_projects' %}" class="quick-action">My Projects</a>
+                    <a href="{% url 'developer_listings' %}" class="quick-action">My Listings</a>
+                    <a href="{% url 'developer_analytics' %}" class="quick-action">Analytics</a>
+                    <a href="{% url 'developer_api_keys' %}" class="quick-action">API Keys ({{ api_keys_count }})</a>
+                    <a href="{% url 'developer_webhooks' %}" class="quick-action">Webhooks ({{ webhooks_count }})</a>
+                    <a href="{% url 'developer_payouts' %}" class="quick-action">Payouts</a>
+                    <a href="{% url 'developer_docs' %}" class="quick-action">Documentation</a>
+                    <a href="{% url 'developer_coupons' %}" class="quick-action">Coupons</a>
+                    <a href="{% url 'developer_create_coupon' %}" class="quick-action">+ New Coupon</a>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <div class="dev-section" style="margin-bottom: var(--vrc-spacing-xl);">
+                <h2>Balance</h2>
+                <div class="stat-card" style="box-shadow: none; padding: 0;">
+                    <div class="stat-label">Available</div>
+                    <div class="stat-value" style="color: var(--vrc-success);">{{ balance.available }} NE</div>
+                </div>
+                <div style="margin-top: var(--vrc-spacing-sm); font-size: var(--vrc-font-size-sm); color: var(--vrc-gray-500);">
+                    Pending: {{ balance.pending }} NE<br>
+                    Total Earned: {{ balance.total_earned }} NE
+                </div>
+                <a href="{% url 'developer_payouts' %}" class="quick-action" style="margin-top: var(--vrc-spacing-md); justify-content: center;">Request Payout</a>
+            </div>
+
+            <div class="dev-section" style="margin-bottom: var(--vrc-spacing-xl);">
+                <h2>Subscription</h2>
+                {% if subscription %}
+                <div class="sub-info">
+                    <div class="plan-name">{{ subscription.plan.name }}</div>
+                    <div>Status: {{ subscription.get_status_display }}</div>
+                    <div>Renews: {{ subscription.current_period_end|date:"M d, Y" }}</div>
+                </div>
+                <a href="{% url 'developer_subscribe' %}" class="quick-action" style="margin-top: var(--vrc-spacing-sm); justify-content: center;">Change Plan</a>
+                {% else %}
+                <p style="color: var(--vrc-gray-500); font-size: var(--vrc-font-size-sm);">No active subscription.</p>
+                <a href="{% url 'developer_subscribe' %}" class="quick-action" style="margin-top: var(--vrc-spacing-sm); justify-content: center;">View Plans</a>
+                {% endif %}
+            </div>
+
+            <div class="dev-section">
+                <h2>Profile</h2>
+                <p style="font-weight: var(--vrc-font-weight-medium);">{{ profile.display_name }}</p>
+                {% if profile.tagline %}
+                <p style="color: var(--vrc-gray-500); font-size: var(--vrc-font-size-sm);">{{ profile.tagline }}</p>
+                {% endif %}
+                <a href="{% url 'edit_developer_profile' %}" class="quick-action" style="margin-top: var(--vrc-spacing-sm); justify-content: center;">Edit Profile</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

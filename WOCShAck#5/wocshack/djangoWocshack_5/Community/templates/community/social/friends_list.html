@@ -1,0 +1,45 @@
+{% extends "base/base.html" %}
+{% load static %}
+{% block title %}VRC - Community Engagement - My Friends{% endblock %}
+{% block module_css %}
+<link rel="stylesheet" href="{% static 'community/css/community.css' %}">
+<link rel="stylesheet" href="{% static 'community/css/friend_list.css' %}">
+{% endblock %}
+{% block content %}
+
+<div class="friends-list-nav">
+    <a class="btn-nav" href="{% url 'community:friend_requests' %}">
+      📬 View Friend Requests
+    </a>
+    <a class="btn-nav" href="{% url 'community:add_friends' %}">
+      🔍 Search for Friends
+    </a>
+    <a class="btn-nav" href="{% url 'community:inbox' %}">
+      💬 My Messages{% if unread_message_count %} ({{ unread_message_count }}){% endif %}
+    </a>
+  </div>
+
+<div class="friends-list-container">
+  <h2 class="friends-list-title">My Friends</h2>
+
+<div class = "friend-list-scroll-box">
+  <ul class="friends-list">
+    {% for friend in friends %}
+      <li class="friend-item">
+        <span class="friend-item-username">{{ friend.username|capfirst }}</span>
+        <div class="friend-item-actions">
+          <a class="btn-message" href="{% url 'community:start_conversation' friend.id %}">
+            💬 Send a Message
+          </a>
+          <a class="btn-manage" href="{% url 'community:handle_friend' friend.id %}">
+            ⚙️ Manage
+          </a>
+        </div>
+      </li>
+    {% empty %}
+      <li class="friends-list-empty">No friends yet.</li>
+    {% endfor %}
+  </ul>
+</div>
+</div>
+{% endblock %}

@@ -1,0 +1,222 @@
+{% extends "base/base.html" %}
+{% load static %}
+
+
+{% block title %}Chatbot Moderation Dashboard - V.R.C{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'base/css/admin.css' %}">
+<style>
+  /* page-specific: quick-link nav grid (different layout from mod-links-grid) */
+  .quick-links { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 30px; }
+  .quick-link { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 20px; background: white; border-radius: 12px; text-decoration: none; color: #333; box-shadow: 0 2px 10px rgba(0,0,0,0.05); transition: all 0.2s ease; }
+  .quick-link:hover { transform: translateY(-3px); box-shadow: 0 5px 20px rgba(0,0,0,0.1); }
+  .quick-link svg { width: 30px; height: 30px; color: #6366f1; }
+  /* page-specific: two-panel section grid */
+  .section-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 25px; margin-bottom: 30px; }
+  @media (max-width: 768px) { .section-grid { grid-template-columns: 1fr; } }
+  /* page-specific: card header with link inside mod-table-card */
+  .section-header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; background: #f8f9fa; border-bottom: 1px solid #eee; font-weight: 600; }
+  .section-header a { color: #6366f1; text-decoration: none; font-size: 0.9rem; }
+  /* page-specific: flag/action/edit list row items */
+  .flag-item, .action-item, .edit-item { display: flex; align-items: center; gap: 15px; padding: 15px 20px; border-bottom: 1px solid #eee; text-decoration: none; color: inherit; transition: background 0.2s ease; }
+  .flag-item:last-child, .action-item:last-child, .edit-item:last-child { border-bottom: none; }
+  .flag-item:hover, .edit-item:hover { background: #f8f9fa; }
+  .flag-info, .action-info, .edit-info { flex: 1; }
+  .flag-type, .action-title, .edit-title { font-weight: 500; color: #333; }
+  .flag-meta, .action-meta, .edit-meta { font-size: 0.85rem; color: #888; }
+  /* page-specific: severity badge (4-level colour scale) */
+  .severity-badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; }
+  .severity-low { background: #e0f2fe; color: #0369a1; }
+  .severity-medium { background: #fef3c7; color: #92400e; }
+  .severity-high { background: #fed7aa; color: #c2410c; }
+  .severity-critical { background: #ef4444; color: white; }
+  /* page-specific: action icon with colour variants */
+  .action-icon { width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .action-icon.flag { background: #fef3c7; color: #92400e; }
+  .action-icon.edit { background: #e0e7ff; color: #4f46e5; }
+  .action-icon.resolve { background: #d1fae5; color: #059669; }
+  .action-icon.kb { background: #fce7f3; color: #be185d; }
+  .action-icon svg { width: 20px; height: 20px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="mod-hero">
+    <h1 class="mod-hero-title">Chatbot Moderation Dashboard</h1>
+    <p class="mod-hero-subtitle">Manage flagged responses, edit chatbot answers, and monitor quality</p>
+</div>
+
+<div class="mod-stats">
+    <div class="mod-stat-card">
+        <div class="mod-stat-accent mod-stat-accent--danger"></div>
+        <div class="mod-stat-body">
+            <div class="mod-stat-info">
+                <div class="mod-stat-label">Pending Flags</div>
+                <div class="mod-stat-value">{{ pending_flags_count }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="mod-stat-card">
+        <div class="mod-stat-accent mod-stat-accent--warning"></div>
+        <div class="mod-stat-body">
+            <div class="mod-stat-info">
+                <div class="mod-stat-label">Under Review</div>
+                <div class="mod-stat-value">{{ under_review_count }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="mod-stat-card">
+        <div class="mod-stat-accent"></div>
+        <div class="mod-stat-body">
+            <div class="mod-stat-info">
+                <div class="mod-stat-label">Pending Edits</div>
+                <div class="mod-stat-value">{{ pending_edits }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="mod-stat-card">
+        <div class="mod-stat-accent mod-stat-accent--success"></div>
+        <div class="mod-stat-body">
+            <div class="mod-stat-info">
+                <div class="mod-stat-label">Resolved Today</div>
+                <div class="mod-stat-value">{{ resolved_today }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="mod-stat-card">
+        <div class="mod-stat-accent mod-stat-accent--info"></div>
+        <div class="mod-stat-body">
+            <div class="mod-stat-info">
+                <div class="mod-stat-label">Total Messages</div>
+                <div class="mod-stat-value">{{ total_messages }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="mod-stat-card">
+        <div class="mod-stat-accent mod-stat-accent--info"></div>
+        <div class="mod-stat-body">
+            <div class="mod-stat-info">
+                <div class="mod-stat-label">KB Entries</div>
+                <div class="mod-stat-value">{{ total_kb_entries }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="quick-links">
+    <a href="{% url 'chatbot:flag_queue' %}" class="quick-link">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
+        </svg>
+        Flag Queue
+    </a>
+    <a href="{% url 'chatbot:edit_queue' %}" class="quick-link">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+        </svg>
+        Edit Queue
+    </a>
+    <a href="{% url 'chatbot:knowledge_base_admin' %}" class="quick-link">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+        </svg>
+        Knowledge Base
+    </a>
+    <a href="{% url 'chatbot:browse_messages' %}" class="quick-link">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+        </svg>
+        Browse Messages
+    </a>
+    <a href="{% url 'chatbot:admin_statistics' %}" class="quick-link">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+        </svg>
+        Statistics
+    </a>
+    <a href="{% url 'chatbot:action_log' %}" class="quick-link">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+        </svg>
+        Action Log
+    </a>
+</div>
+
+<div class="section-grid">
+    <div class="mod-table-card">
+        <div class="section-header">
+            <span>Pending Flags</span>
+            <a href="{% url 'chatbot:flag_queue' %}">View All</a>
+        </div>
+        {% for flag in pending_flags %}
+        <a href="{% url 'chatbot:flag_detail' flag_id=flag.id %}" class="flag-item">
+            <span class="severity-badge severity-{{ flag.severity }}">{{ flag.get_severity_display }}</span>
+            <div class="flag-info">
+                <div class="flag-type">{{ flag.get_reason_display }}</div>
+                <div class="flag-meta">
+                    Flagged {{ flag.created_at|timesince }} ago
+                    {% if flag.flagged_by %}by {{ flag.flagged_by.username }}{% endif %}
+                </div>
+            </div>
+        </a>
+        {% empty %}
+        <div class="mod-table-empty">No pending flags - all clear!</div>
+        {% endfor %}
+    </div>
+
+    <div class="mod-table-card">
+        <div class="section-header">
+            <span>Recent Actions</span>
+            <a href="{% url 'chatbot:action_log' %}">View All</a>
+        </div>
+        {% for action in recent_actions %}
+        <div class="action-item">
+            <div class="action-icon {% if 'flag' in action.action_type %}flag{% elif 'edit' in action.action_type %}edit{% elif 'kb' in action.action_type %}kb{% else %}resolve{% endif %}">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    {% if 'flag' in action.action_type %}
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
+                    {% elif 'edit' in action.action_type %}
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    {% else %}
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    {% endif %}
+                </svg>
+            </div>
+            <div class="action-info">
+                <div class="action-title">{{ action.get_action_type_display }}</div>
+                <div class="action-meta">
+                    by {{ action.actor_username }} | {{ action.created_at|timesince }} ago
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="mod-table-empty">No recent actions</div>
+        {% endfor %}
+    </div>
+</div>
+
+{% if pending_edit_list %}
+<div class="mod-table-card" style="margin-bottom: 30px;">
+    <div class="section-header">
+        <span>Pending Edits</span>
+        <a href="{% url 'chatbot:edit_queue' %}">View All</a>
+    </div>
+    {% for edit in pending_edit_list %}
+    <div class="edit-item">
+        <div class="action-icon edit">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+            </svg>
+        </div>
+        <div class="edit-info">
+            <div class="edit-title">Edit by {{ edit.edited_by.username }}</div>
+            <div class="edit-meta">
+                {{ edit.edit_reason|truncatewords:10 }} | {{ edit.created_at|timesince }} ago
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+{% endblock %}

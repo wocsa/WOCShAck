@@ -1,0 +1,110 @@
+{% extends "base/base.html" %}
+{% load static %}
+{% load community_tags %}
+
+{% block title %}VRC — {{ event.title }}{% endblock %}
+
+{% block module_css %}
+<link rel="stylesheet" href="{% static 'community/css/content.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="main-container">
+<nav class="vrc-breadcrumbs">
+  <a href="{% url 'community:index' %}">Community</a>
+  <span class="bc-sep">›</span>
+  <a href="{% url 'community:event_list' %}">Events</a>
+  <span class="bc-sep">›</span>
+  <span class="bc-current">{{ event.title }}</span>
+</nav>
+<div class="event-detail-wrapper">
+
+  <div class="event-detail-header">
+    <div class="event-detail-tags">
+      <span class="event-type-badge event-type-badge--{{ event.event_type }}">{{ event.get_event_type_display }}</span>
+      <span class="event-format-badge">{{ event.get_format_display }}</span>
+      {% if event.status == 'cancelled' %}<span class="event-cancelled-badge">Cancelled</span>{% endif %}
+    </div>
+    <h1 class="event-detail-title">{{ event.title }}</h1>
+    <div class="event-detail-meta">
+      <div class="event-meta-row">
+        <span class="event-meta-icon">🕐</span>
+        <span>{{ event.start_datetime|date:"F d, Y — H:i" }} – {{ event.end_datetime|date:"H:i" }} ({{ event.timezone }})</span>
+      </div>
+      <div class="event-meta-row">
+        <span class="event-meta-icon">👥</span>
+        <span>{{ attendees_count }} registered{% if event.capacity %} / {{ event.capacity }} spots{% endif %}</span>
+      </div>
+      <div class="event-meta-row">
+        <span class="event-meta-icon">👤</span>
+        <span>Organised by {{ event.organizer.username }}</span>
+      </div>
+      {% if event.meeting_link and event.format != 'in_person' %}
+      <div class="event-meta-row">
+        <span class="event-meta-icon">🔗</span>
+        <span><a href="{{ event.meeting_link }}" target="_blank" rel="noopener">Meeting link</a></span>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="event-detail-desc">
+    {{ event.description|markdownify }}
+  </div>
+
+  {# Registration action #}
+  {% if event.status != 'cancelled' and is_upcoming %}
+  <div class="event-registration-box">
+    {% if not request.user.is_authenticated %}
+    <p><a href="{% url 'login' %}" class="content-btn content-btn--primary">Log in to register</a></p>
+    {% elif registration and registration.status == 'registered' %}
+    <div class="event-registered-notice">
+      <span class="event-registered-badge">✓ You are registered</span>
+      <form method="post" action="{% url 'community:event_cancel' event.id %}">
+        {% csrf_token %}
+        <button type="submit" class="content-btn content-btn--sm content-btn--danger"
+          onclick="return confirm('Cancel your registration?')">Cancel registration</button>
+      </form>
+    </div>
+    {% elif registration and registration.status == 'cancelled' %}
+    {% if is_full %}
+    <span class="event-full-badge">Event is full</span>
+    {% else %}
+    <form method="post" action="{% url 'community:event_register' event.id %}">
+      {% csrf_token %}
+      <button type="submit" class="content-btn content-btn--primary">Re-register</button>
+    </form>
+    {% endif %}
+    {% elif is_full %}
+    <span class="event-full-badge">Event is full</span>
+    {% else %}
+    <form method="post" action="{% url 'community:event_register' event.id %}">
+      {% csrf_token %}
+      <button type="submit" class="content-btn content-btn--primary">Register for this event</button>
+    </form>
+    {% endif %}
+  </div>
+  {% elif event.status == 'cancelled' %}
+  <div class="event-cancelled-notice">This event has been cancelled.</div>
+  {% elif not is_upcoming %}
+  <div class="event-past-notice">This event has already taken place.</div>
+  {% endif %}
+
+  {% check_content_creator request.user as can_manage %}
+  {% if can_manage and event.organizer == request.user or request.user.is_staff %}
+  <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+    <a href="{% url 'community:event_edit' event.id %}" class="content-btn">Edit Event</a>
+    <form method="post" action="{% url 'community:event_delete' event.id %}" style="display: inline;">
+      {% csrf_token %}
+      <button type="submit" class="content-btn content-btn--danger" onclick="return confirm('Delete this event?')">Delete</button>
+    </form>
+  </div>
+  {% endif %}
+
+  <div class="post-detail-back">
+    <a href="{% url 'community:event_list' %}" class="content-btn">← Back to Events</a>
+  </div>
+
+</div>
+</div>
+{% endblock %}

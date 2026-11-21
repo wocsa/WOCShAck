@@ -1,0 +1,98 @@
+{% extends "base/base.html" %}
+{% load static %}
+
+{% block title %}V.R.C – Shopping Moderation{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'base/css/admin.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="mod-page">
+
+  <div class="mod-hero">
+    <div>
+      <h1 class="mod-hero-title">🛒 Shopping Moderation</h1>
+      <p class="mod-hero-subtitle">Manage products, orders and reviews</p>
+    </div>
+    <span class="mod-badge mod-badge--light">Staff Panel</span>
+  </div>
+
+  <!-- Stats -->
+  <div class="mod-stats">
+    <div class="mod-stat-card">
+      <div class="mod-stat-accent mod-stat-accent--info"></div>
+      <div class="mod-stat-body">
+        <div class="mod-stat-icon mod-stat-icon--info">⭐</div>
+        <div class="mod-stat-info">
+          <div class="mod-stat-label">Reviews</div>
+          <div class="mod-stat-value">{{ total_reviews }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mod-stat-card">
+      <div class="mod-stat-accent"></div>
+      <div class="mod-stat-body">
+        <div class="mod-stat-icon mod-stat-icon--primary">📦</div>
+        <div class="mod-stat-info">
+          <div class="mod-stat-label">Orders</div>
+          <div class="mod-stat-value">{{ total_orders }}</div>
+          {% for label, count in order_counts.items %}
+          <div style="display:flex;justify-content:space-between;font-size:var(--vrc-font-size-xs);color:var(--vrc-gray-500);margin-top:2px;">
+            <span style="text-transform:capitalize;">{{ label }}</span>
+            <span style="font-weight:600;color:var(--vrc-gray-700);">{{ count }}</span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div class="mod-stat-card">
+      <div class="mod-stat-accent mod-stat-accent--success"></div>
+      <div class="mod-stat-body">
+        <div class="mod-stat-icon mod-stat-icon--success">🎨</div>
+        <div class="mod-stat-info">
+          <div class="mod-stat-label">Active Products</div>
+          <div class="mod-stat-value">{{ active_products }}</div>
+          <div style="font-size:var(--vrc-font-size-xs);color:var(--vrc-gray-400);">/ {{ total_products }} total</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Links -->
+  <div class="mod-links-grid">
+    <div class="mod-link-card">
+      <div class="mod-link-card-header">
+        <span>⭐ Reviews</span>
+      </div>
+      <div class="mod-link-card-body">
+        <p>View and moderate all product reviews submitted by users.</p>
+        <a href="{% url 'shop_review_list' %}" class="mod-btn mod-btn--primary mod-btn--sm">Manage Reviews</a>
+      </div>
+    </div>
+
+    <div class="mod-link-card">
+      <div class="mod-link-card-header">
+        <span>📦 Orders</span>
+      </div>
+      <div class="mod-link-card-body">
+        <p>Browse all orders and update their fulfilment status.</p>
+        <a href="{% url 'shop_order_list' %}" class="mod-btn mod-btn--primary mod-btn--sm">Manage Orders</a>
+      </div>
+    </div>
+
+    <div class="mod-link-card">
+      <div class="mod-link-card-header">
+        <span>🎨 CSS Products</span>
+      </div>
+      <div class="mod-link-card-body">
+        <p>Inspect and suspend/restore CSS products in the marketplace.</p>
+        <a href="{% url 'shop_product_list' %}" class="mod-btn mod-btn--primary mod-btn--sm">Manage Products</a>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

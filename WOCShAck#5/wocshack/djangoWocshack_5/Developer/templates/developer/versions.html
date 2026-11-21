@@ -1,0 +1,59 @@
+{% extends 'base/base.html' %}
+{% block title %}Versions - {{ project.name }} - V.R.C{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dev-container { max-width: 800px; margin: 0 auto; padding: var(--vrc-spacing-xl); }
+    .section { background: var(--vrc-white); border-radius: var(--vrc-radius-lg); padding: var(--vrc-spacing-xl); box-shadow: var(--vrc-shadow-md); margin-bottom: var(--vrc-spacing-xl); }
+    .section h1, .section h2 { font-size: var(--vrc-font-size-xl); font-weight: var(--vrc-font-weight-bold); margin-bottom: var(--vrc-spacing-lg); }
+    .form-group { margin-bottom: var(--vrc-spacing-md); }
+    .form-group label { display: block; font-size: var(--vrc-font-size-sm); font-weight: var(--vrc-font-weight-medium); color: var(--vrc-gray-700); margin-bottom: 4px; }
+    .form-group input { width: 100%; padding: 10px 14px; border: 1px solid var(--vrc-gray-300); border-radius: var(--vrc-radius-md); font-size: var(--vrc-font-size-base); box-sizing: border-box; }
+    .form-group input:focus { outline: none; border-color: var(--vrc-primary); }
+    .btn-primary { padding: 10px 20px; background: var(--vrc-gradient); color: white; border: none; border-radius: var(--vrc-radius-md); cursor: pointer; }
+    .version-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--vrc-gray-100); }
+    .version-item:last-child { border-bottom: none; }
+    .version-current { background: var(--vrc-success-light); color: var(--vrc-success); padding: 2px 8px; border-radius: var(--vrc-radius-full); font-size: var(--vrc-font-size-xs); }
+    .back-link { display: inline-block; margin-bottom: var(--vrc-spacing-lg); color: var(--vrc-primary); text-decoration: none; font-size: var(--vrc-font-size-sm); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dev-container">
+    <a href="{% url 'developer_edit_project' project_id=project.id %}" class="back-link">&larr; Back to {{ project.name }}</a>
+
+    <div class="section">
+        <h2>Create New Version</h2>
+        <form method="post" action="{% url 'developer_create_version' project_id=project.id %}">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="version_number">Version Number</label>
+                <input type="text" id="version_number" name="version_number" placeholder="1.0.0" required maxlength="20">
+            </div>
+            <div class="form-group">
+                <label for="commit_message">Commit Message</label>
+                <input type="text" id="commit_message" name="commit_message" placeholder="What changed?" maxlength="500">
+            </div>
+            <input type="hidden" name="css_content" value="{% if project.current_version %}{{ project.current_version.css_content }}{% endif %}">
+            <input type="hidden" name="html_template" value="{% if project.current_version %}{{ project.current_version.html_template }}{% endif %}">
+            <button type="submit" class="btn-primary">Create Version</button>
+        </form>
+    </div>
+
+    <div class="section">
+        <h1>Version History</h1>
+        {% for v in versions %}
+        <div class="version-item">
+            <div>
+                <strong>v{{ v.version_number }}</strong>
+                {% if v.is_current %}<span class="version-current">Current</span>{% endif %}
+                <div style="color: var(--vrc-gray-500); font-size: var(--vrc-font-size-sm); margin-top: 2px;">{{ v.commit_message }}</div>
+            </div>
+            <span style="color: var(--vrc-gray-400); font-size: var(--vrc-font-size-sm);">{{ v.created_at|date:"M d, Y H:i" }}</span>
+        </div>
+        {% empty %}
+        <p style="color: var(--vrc-gray-500);">No versions yet.</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

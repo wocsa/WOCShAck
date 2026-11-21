@@ -1,0 +1,208 @@
+{
+    "version": "1.0",
+    "description": "V.R.C Platform Knowledge Base for Chatbot RAG System",
+    "categories": {
+        "general": "General platform questions",
+        "account": "Account and authentication related",
+        "banking": "Banking service questions",
+        "shopping": "E-commerce and shopping related",
+        "security": "Security and privacy questions",
+        "technical": "Technical support"
+    },
+    "qa_pairs": [
+        {
+            "id": 1,
+            "category": "general",
+            "question": "What is V.R.C?",
+            "answer": "V.R.C (Virtual Resource Center) is a unified platform that provides secure banking services, an e-commerce marketplace for CSS files, and advertising tools. It serves both individuals and businesses looking for integrated digital services.",
+            "keywords": ["vrc", "platform", "what", "about", "information"]
+        },
+        {
+            "id": 2,
+            "category": "general",
+            "question": "What services does V.R.C offer?",
+            "answer": "V.R.C offers three main services: 1) Banking - manage your finances, track transactions, and perform transfers. 2) E-Shop - browse and purchase CSS files and loaders. 3) Advertisement Center - create and manage advertising campaigns.",
+            "keywords": ["services", "offer", "features", "what", "provide"]
+        },
+        {
+            "id": 3,
+            "category": "account",
+            "question": "How do I create an account?",
+            "answer": "To create an account, click the 'Register' button in the top navigation bar. Fill in your username, email, and password. After registration, you may need to verify your email and set up two-factor authentication for enhanced security.",
+            "keywords": ["register", "create", "account", "signup", "sign up", "new"]
+        },
+        {
+            "id": 4,
+            "category": "account",
+            "question": "How do I reset my password?",
+            "answer": "To reset your password, go to the login page and click 'Forgot Password'. Enter your registered email address, and we will send you a password reset link. Follow the instructions in the email to create a new password.",
+            "keywords": ["password", "reset", "forgot", "change", "recover"]
+        },
+        {
+            "id": 5,
+            "category": "account",
+            "question": "What is two-factor authentication (2FA)?",
+            "answer": "Two-factor authentication (2FA) adds an extra layer of security to your account. After enabling 2FA, you will need to enter a code from your authenticator app (like Google Authenticator) in addition to your password when logging in.",
+            "keywords": ["2fa", "two factor", "authentication", "security", "totp", "authenticator"]
+        },
+        {
+            "id": 6,
+            "category": "account",
+            "question": "How do I enable 2FA?",
+            "answer": "To enable 2FA, log into your account and go to your profile settings. Look for the 'Security' or 'Two-Factor Authentication' section. Scan the QR code with your authenticator app (Google Authenticator, Authy, etc.) and enter the verification code to complete setup.",
+            "keywords": ["enable", "2fa", "setup", "activate", "turn on"]
+        },
+        {
+            "id": 7,
+            "category": "banking",
+            "question": "How do I access my bank account?",
+            "answer": "To access your bank account, log into V.R.C and navigate to the 'Banking' section from the main menu. You will need to enter your PIN to access your account dashboard where you can view your balance and transactions.",
+            "keywords": ["bank", "access", "login", "account", "banking"]
+        },
+        {
+            "id": 8,
+            "category": "banking",
+            "question": "How do I make a transfer?",
+            "answer": "To make a transfer, go to the Banking section, enter your PIN, and select 'Transfer' or 'Send Money'. Enter the recipient's account details and the amount you wish to transfer. Confirm the transaction details and authorize with your PIN.",
+            "keywords": ["transfer", "send", "money", "payment", "wire"]
+        },
+        {
+            "id": 9,
+            "category": "banking",
+            "question": "What is my PIN used for?",
+            "answer": "Your PIN (Personal Identification Number) is used to authorize banking transactions and access your account dashboard. Keep your PIN confidential and never share it with anyone. You can change your PIN in the account settings.",
+            "keywords": ["pin", "code", "number", "security", "authorization"]
+        },
+        {
+            "id": 10,
+            "category": "banking",
+            "question": "How do I check my balance?",
+            "answer": "To check your balance, navigate to the Banking section and enter your PIN. Your current balance will be displayed on the account dashboard along with recent transactions.",
+            "keywords": ["balance", "check", "view", "amount", "money", "funds"]
+        },
+        {
+            "id": 11,
+            "category": "shopping",
+            "question": "What can I buy in the E-Shop?",
+            "answer": "The E-Shop offers a variety of CSS files and loaders created by our community of developers. These include animated loaders, spinners, buttons, and other CSS components that you can use in your web projects.",
+            "keywords": ["buy", "shop", "purchase", "css", "products", "loaders"]
+        },
+        {
+            "id": 12,
+            "category": "shopping",
+            "question": "How do I add items to my cart?",
+            "answer": "Browse the E-Shop and click on any CSS file you are interested in. On the product page, click 'Add to Cart'. You can view your cart at any time by clicking the cart icon in the navigation bar.",
+            "keywords": ["cart", "add", "shopping", "basket", "items"]
+        },
+        {
+            "id": 13,
+            "category": "shopping",
+            "question": "How do I complete a purchase?",
+            "answer": "After adding items to your cart, click on the cart to review your selections. Click 'Checkout' or 'Proceed to Payment'. Select your payment method and confirm the purchase. Your CSS files will be available for download after payment.",
+            "keywords": ["purchase", "buy", "checkout", "payment", "complete", "order"]
+        },
+        {
+            "id": 14,
+            "category": "shopping",
+            "question": "Can I get a refund?",
+            "answer": "Digital products like CSS files are generally non-refundable after download. However, if you experience technical issues or the product is significantly different from its description, please contact our support team to discuss your situation.",
+            "keywords": ["refund", "return", "money back", "cancel", "dispute"]
+        },
+        {
+            "id": 15,
+            "category": "security",
+            "question": "Is my data secure?",
+            "answer": "We take security seriously at V.R.C. Your data is protected using industry-standard encryption. We recommend enabling two-factor authentication and using a strong, unique password for your account.",
+            "keywords": ["secure", "security", "data", "privacy", "safe", "protection"]
+        },
+        {
+            "id": 16,
+            "category": "security",
+            "question": "What should I do if I suspect unauthorized access?",
+            "answer": "If you suspect unauthorized access to your account, immediately change your password and PIN. Review your recent transactions and activity. Enable 2FA if not already active. Contact our support team to report the suspicious activity.",
+            "keywords": ["unauthorized", "access", "hacked", "suspicious", "breach", "compromised"]
+        },
+        {
+            "id": 17,
+            "category": "technical",
+            "question": "The website is not loading properly. What should I do?",
+            "answer": "If the website is not loading properly, try these steps: 1) Clear your browser cache and cookies. 2) Try a different browser. 3) Check your internet connection. 4) Disable browser extensions that might interfere. If the problem persists, contact support.",
+            "keywords": ["loading", "error", "problem", "issue", "not working", "broken"]
+        },
+        {
+            "id": 18,
+            "category": "technical",
+            "question": "Which browsers are supported?",
+            "answer": "V.R.C supports all modern web browsers including Chrome, Firefox, Safari, and Edge. For the best experience, we recommend using the latest version of your preferred browser. Internet Explorer is not supported.",
+            "keywords": ["browser", "supported", "chrome", "firefox", "safari", "edge"]
+        },
+        {
+            "id": 19,
+            "category": "general",
+            "question": "How do I contact support?",
+            "answer": "You can contact our support team through multiple channels: 1) Use this chatbot for quick answers. 2) Email us at support@vrc.local. 3) Visit our support center at /support/. Our team typically responds within 24 hours.",
+            "keywords": ["contact", "support", "help", "assistance", "reach", "email"]
+        },
+        {
+            "id": 20,
+            "category": "general",
+            "question": "What are your operating hours?",
+            "answer": "Our automated services like banking and shopping are available 24/7. Customer support is available Monday through Friday, 9 AM to 6 PM (UTC). The chatbot is always available for common questions.",
+            "keywords": ["hours", "operating", "available", "when", "time", "support hours"]
+        },
+        {
+            "id": 21,
+            "category": "account",
+            "question": "How do I delete my account?",
+            "answer": "To delete your account, please contact our support team. Account deletion is permanent and will remove all your data, including purchase history and saved items. Make sure to download any CSS files you have purchased before requesting deletion.",
+            "keywords": ["delete", "account", "remove", "close", "deactivate"]
+        },
+        {
+            "id": 22,
+            "category": "account",
+            "question": "How do I update my profile information?",
+            "answer": "To update your profile, log in and navigate to your account settings. Here you can update your email, username, profile picture, and other personal information. Some changes may require email verification.",
+            "keywords": ["update", "profile", "edit", "change", "information", "settings"]
+        },
+        {
+            "id": 23,
+            "category": "shopping",
+            "question": "How do I become a CSS seller?",
+            "answer": "To become a CSS seller, you need to register for a developer account. Go to your profile settings and apply for seller status. Once approved, you can upload your CSS files to the marketplace and set your own prices.",
+            "keywords": ["seller", "sell", "developer", "upload", "creator", "vendor"]
+        },
+        {
+            "id": 24,
+            "category": "banking",
+            "question": "What are the transfer limits?",
+            "answer": "Transfer limits depend on your account type and verification level. Standard accounts have a daily limit of 1000 units. Verified accounts can transfer up to 10000 units per day. Contact support to request higher limits.",
+            "keywords": ["limit", "transfer", "maximum", "daily", "restriction"]
+        },
+        {
+            "id": 25,
+            "category": "general",
+            "question": "Hello",
+            "answer": "Hello! Welcome to V.R.C Support. How can I help you today? You can ask me about our services, account management, banking, shopping, or any technical issues you might be experiencing.",
+            "keywords": ["hello", "hi", "hey", "greetings", "good morning", "good afternoon"]
+        },
+        {
+            "id": 26,
+            "category": "general",
+            "question": "Thank you",
+            "answer": "You're welcome! If you have any more questions, feel free to ask. I'm here to help you with any V.R.C related queries.",
+            "keywords": ["thank", "thanks", "appreciate", "grateful"]
+        },
+        {
+            "id": 27,
+            "category": "general",
+            "question": "Goodbye",
+            "answer": "Goodbye! Thank you for using V.R.C Support. If you need help in the future, don't hesitate to come back. Have a great day!",
+            "keywords": ["bye", "goodbye", "see you", "later", "exit", "quit"]
+        }
+    ],
+    "fallback_responses": [
+        "I'm sorry, I don't have information about that specific topic. Could you try rephrasing your question or ask about our services, accounts, banking, or shopping?",
+        "I couldn't find a direct answer to your question. You might want to contact our support team at support@vrc.local for more specific assistance.",
+        "That's a great question, but it's outside my current knowledge base. Please try asking about V.R.C services, account management, or technical support."
+    ]
+}

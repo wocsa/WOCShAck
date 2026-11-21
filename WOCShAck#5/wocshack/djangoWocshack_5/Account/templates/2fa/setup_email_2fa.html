@@ -1,0 +1,370 @@
+{% extends "base/base_account.html" %}
+{% load static %}
+
+
+{% block title %}V.R.C - Setup Email 2FA{% endblock %}
+
+{% block account_title %}Setup Email Two-Factor Authentication{% endblock %}
+
+{% block account_subtitle %}
+<p class="account-subtitle">Receive verification codes via email when you sign in</p>
+{% endblock %}
+
+{% block account_content %}
+<div class="email-2fa-container">
+    <div class="info-card">
+        <div class="info-icon">
+            <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                <polyline points="22,6 12,13 2,6"/>
+            </svg>
+        </div>
+        <h3>How Email 2FA Works</h3>
+        <p>When enabled, you'll receive a verification code to your email address each time you log in. This adds an extra layer of security to your account.</p>
+    </div>
+
+    <div class="email-display">
+        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+            <polyline points="22,6 12,13 2,6"/>
+        </svg>
+        <span>Verification codes will be sent to: <strong>{{ email }}</strong></span>
+    </div>
+
+    {% if not code_sent %}
+    <!-- Step 1: Request verification code -->
+    <div class="step-card">
+        <div class="step-header">
+            <span class="step-number">1</span>
+            <h3>Verify Your Email</h3>
+        </div>
+        <p>Click the button below to receive a verification code at your email address.</p>
+        <form method="POST" action="{% url 'setup_email_2fa' %}">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="send_code">
+            <button type="submit" class="send-code-btn">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="22" y1="2" x2="11" y2="13"/>
+                    <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                </svg>
+                Send Verification Code
+            </button>
+        </form>
+    </div>
+    {% else %}
+    <!-- Step 2: Enter verification code -->
+    <div class="step-card">
+        <div class="step-header">
+            <span class="step-number active">2</span>
+            <h3>Enter Verification Code</h3>
+        </div>
+        <p>We've sent a 6-character code to your email. Enter it below to enable email 2FA.</p>
+        <form method="POST" action="{% url 'setup_email_2fa' %}" class="verify-form">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="verify_code">
+            <div class="form-group">
+                <label for="code">Verification Code</label>
+                <input type="text"
+                       id="code"
+                       name="code"
+                       class="code-input"
+                       placeholder="XXXXXX"
+                       required
+                       maxlength="6"
+                       pattern="[A-Za-z0-9]{6}"
+                       autocomplete="one-time-code"
+                       autofocus>
+            </div>
+            <button type="submit" class="verify-btn">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                    <polyline points="22 4 12 14.01 9 11.01"/>
+                </svg>
+                Enable Email 2FA
+            </button>
+        </form>
+        <div class="resend-section">
+            <p>Didn't receive the code?</p>
+            <form method="POST" action="{% url 'setup_email_2fa' %}">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="send_code">
+                <button type="submit" class="resend-btn">Resend Code</button>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="note-card">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="16" x2="12" y2="12"/>
+            <line x1="12" y1="8" x2="12.01" y2="8"/>
+        </svg>
+        <p>For stronger security, we recommend using an authenticator app instead of email 2FA. <a href="{% url 'setup_2fa' %}">Setup Authenticator App</a></p>
+    </div>
+
+    <div class="back-link">
+        <a href="{% url 'manage_2fa' %}">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="19" y1="12" x2="5" y2="12"/>
+                <polyline points="12 19 5 12 12 5"/>
+            </svg>
+            Back to 2FA Settings
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .email-2fa-container {
+        max-width: 550px;
+        margin: 0 auto;
+    }
+
+    .info-card {
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+        border-radius: var(--vrc-radius-xl);
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        text-align: center;
+    }
+
+    .info-icon {
+        color: var(--vrc-primary);
+        margin-bottom: 1rem;
+    }
+
+    .info-card h3 {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--vrc-gray-900);
+        margin-bottom: 0.5rem;
+    }
+
+    .info-card p {
+        color: var(--vrc-gray-600);
+        font-size: 0.9rem;
+        line-height: 1.5;
+        margin: 0;
+    }
+
+    .email-display {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.75rem;
+        padding: 1rem;
+        background: var(--vrc-gray-50);
+        border: 1px solid var(--vrc-gray-200);
+        border-radius: var(--vrc-radius-lg);
+        margin-bottom: 1.5rem;
+        color: var(--vrc-gray-700);
+        font-size: 0.9rem;
+    }
+
+    .email-display svg {
+        color: var(--vrc-gray-500);
+    }
+
+    .email-display strong {
+        color: var(--vrc-gray-900);
+    }
+
+    .step-card {
+        background: var(--vrc-white);
+        border: 1px solid var(--vrc-gray-200);
+        border-radius: var(--vrc-radius-xl);
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .step-header {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+    }
+
+    .step-number {
+        width: 28px;
+        height: 28px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--vrc-gray-200);
+        color: var(--vrc-gray-600);
+        font-weight: 700;
+        border-radius: 50%;
+        font-size: 0.85rem;
+    }
+
+    .step-number.active {
+        background: var(--vrc-gradient);
+        color: white;
+    }
+
+    .step-header h3 {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--vrc-gray-900);
+        margin: 0;
+    }
+
+    .step-card > p {
+        font-size: 0.9rem;
+        color: var(--vrc-gray-600);
+        margin-bottom: 1.25rem;
+        line-height: 1.5;
+    }
+
+    .send-code-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        width: 100%;
+        padding: 0.875rem 1.5rem;
+        font-size: 1rem;
+        font-weight: 600;
+        color: white;
+        background: var(--vrc-gradient);
+        border: none;
+        border-radius: var(--vrc-radius-lg);
+        cursor: pointer;
+        transition: all 0.2s ease;
+        box-shadow: var(--vrc-shadow-primary);
+    }
+
+    .send-code-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--vrc-shadow-primary-lg);
+    }
+
+    .verify-form .form-group {
+        margin-bottom: 1.25rem;
+    }
+
+    .verify-form label {
+        display: block;
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: var(--vrc-gray-700);
+        margin-bottom: 0.5rem;
+    }
+
+    .code-input {
+        width: 100%;
+        padding: 1rem;
+        font-size: 1.5rem;
+        font-weight: 600;
+        text-align: center;
+        letter-spacing: 0.5rem;
+        text-transform: uppercase;
+        border: 1px solid var(--vrc-gray-300);
+        border-radius: var(--vrc-radius-lg);
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .code-input:focus {
+        outline: none;
+        border-color: var(--vrc-primary);
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .verify-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        width: 100%;
+        padding: 0.875rem 1.5rem;
+        font-size: 1rem;
+        font-weight: 600;
+        color: white;
+        background: var(--vrc-gradient);
+        border: none;
+        border-radius: var(--vrc-radius-lg);
+        cursor: pointer;
+        transition: all 0.2s ease;
+        box-shadow: var(--vrc-shadow-primary);
+    }
+
+    .verify-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--vrc-shadow-primary-lg);
+    }
+
+    .resend-section {
+        margin-top: 1.5rem;
+        padding-top: 1rem;
+        border-top: 1px solid var(--vrc-gray-200);
+        text-align: center;
+    }
+
+    .resend-section p {
+        font-size: 0.85rem;
+        color: var(--vrc-gray-600);
+        margin-bottom: 0.5rem;
+    }
+
+    .resend-btn {
+        background: none;
+        border: none;
+        color: var(--vrc-primary);
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: underline;
+    }
+
+    .resend-btn:hover {
+        color: var(--vrc-primary-dark);
+    }
+
+    .note-card {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.75rem;
+        padding: 1rem;
+        background: rgba(251, 191, 36, 0.1);
+        border: 1px solid rgba(251, 191, 36, 0.3);
+        border-radius: var(--vrc-radius-lg);
+        margin-bottom: 1.5rem;
+    }
+
+    .note-card svg {
+        flex-shrink: 0;
+        color: #b45309;
+    }
+
+    .note-card p {
+        font-size: 0.85rem;
+        color: #92400e;
+        margin: 0;
+        line-height: 1.5;
+    }
+
+    .note-card a {
+        color: #b45309;
+        font-weight: 600;
+    }
+
+    .back-link {
+        text-align: center;
+    }
+
+    .back-link a {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: var(--vrc-primary);
+        text-decoration: none;
+        font-size: 0.9rem;
+    }
+
+    .back-link a:hover {
+        text-decoration: underline;
+    }
+</style>
+{% endblock %}

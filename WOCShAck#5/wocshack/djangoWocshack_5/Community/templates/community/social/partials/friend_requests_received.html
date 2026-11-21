@@ -1,0 +1,17 @@
+{% load static %}
+<ul class="friend-requests-list">
+  {% for req in requests_received %}
+    <li class="friend-request-item">
+      <span class="friend-request-username">{{ req.sender.username|capfirst }}</span>
+      <form method="post" action="{% url 'community:handle_friend_request' req.id %}">
+        {% csrf_token %}
+        <div class="friend-request-actions">
+          <button class="btn-accept" name="action" value="accepted">✓ Accept</button>
+          <button class="btn-reject" name="action" value="rejected">✕ Decline</button>
+        </div>
+      </form>
+    </li>
+  {% empty %}
+    <li class="friend-requests-empty">No received requests.</li>
+  {% endfor %}
+</ul>

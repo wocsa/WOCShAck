@@ -1,0 +1,392 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}CSS Editor - V.R.C{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/dracula.min.css">
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /*
+     * 
+     * CSS Editor — full-viewport layout below the fixed header.
+     *
+     * Uses position:fixed so the editor is independent of any parent
+     * wrappers (main, content-wrapper, ad banners) that base.html adds.
+     * The header is ~80px tall with z-index 9999.
+     */
+
+    /* Hide parent wrappers' padding/margins so nothing shifts the editor */
+    body.editor-page { overflow: hidden; }
+    body.editor-page > main { padding: 0 !important; margin: 0 !important; overflow: hidden; }
+    body.editor-page > main > .messages-container { position: fixed; top: 80px; left: 0; right: 0; z-index: 100; }
+    body.editor-page .ad-zone-wrap { display: none; }
+
+    .editor-wrapper {
+        position: fixed;
+        top: 80px;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: flex;
+        z-index: 1;
+    }
+
+    .editor-sidebar {
+        width: 250px;
+        background: var(--vrc-gray-800);
+        color: var(--vrc-gray-200);
+        padding: var(--vrc-spacing-md);
+        overflow-y: auto;
+        flex-shrink: 0;
+    }
+    .editor-sidebar h3 { font-size: var(--vrc-font-size-sm); text-transform: uppercase; letter-spacing: 0.1em; color: var(--vrc-gray-400); margin-bottom: var(--vrc-spacing-sm); }
+    .sidebar-project { display: block; padding: 8px 12px; border-radius: var(--vrc-radius-sm); color: var(--vrc-gray-300); text-decoration: none; font-size: var(--vrc-font-size-sm); margin-bottom: 2px; }
+    .sidebar-project:hover, .sidebar-project.active { background: var(--vrc-primary); color: white; }
+    .sidebar-project.published { border-left: 3px solid #22c55e; }
+    .published-label { display: inline-block; font-size: 10px; background: #22c55e; color: #fff; padding: 1px 6px; border-radius: 3px; margin-left: 6px; vertical-align: middle; }
+
+    .editor-main {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        min-height: 0;
+    }
+
+    .editor-toolbar { background: var(--vrc-gray-900); padding: 8px 16px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
+    .toolbar-left, .toolbar-right { display: flex; gap: 8px; align-items: center; }
+    .toolbar-btn { padding: 6px 14px; background: var(--vrc-gray-700); color: var(--vrc-gray-200); border: none; border-radius: var(--vrc-radius-sm); cursor: pointer; font-size: var(--vrc-font-size-sm); transition: background var(--vrc-transition-fast); }
+    .toolbar-btn:hover { background: var(--vrc-gray-600); }
+    .toolbar-btn.primary { background: var(--vrc-primary); color: white; }
+    .toolbar-btn.primary:hover { background: var(--vrc-primary-dark); }
+
+    .editor-tabs { display: flex; background: var(--vrc-gray-800); flex-shrink: 0; }
+    .editor-tab { padding: 8px 16px; color: var(--vrc-gray-400); cursor: pointer; font-size: var(--vrc-font-size-sm); border-bottom: 2px solid transparent; }
+    .editor-tab.active { color: var(--vrc-gray-100); border-bottom-color: var(--vrc-primary); }
+
+    .editor-panels {
+        flex: 1;
+        display: flex;
+        min-height: 0;   /* critical: lets this flex child shrink */
+        overflow: hidden;
+    }
+
+    /* Code panel wrapper — holds both css-panel and html-panel */
+    .editor-code-wrap {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        min-width: 0;
+        overflow: hidden;
+    }
+    .editor-code-wrap > div {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        overflow: hidden;
+    }
+
+    /* CodeMirror: fill its container and let CM handle scrolling internally */
+    .CodeMirror {
+        height: 100% !important;
+        flex: 1;
+        font-size: 14px;
+    }
+
+    /* Preview pane */
+    .preview-panel {
+        width: 40%;
+        border-left: 2px solid var(--vrc-gray-700);
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+    }
+    .panel-label { background: var(--vrc-gray-800); color: var(--vrc-gray-400); padding: 4px 12px; font-size: var(--vrc-font-size-xs); text-transform: uppercase; letter-spacing: 0.1em; flex-shrink: 0; }
+    .preview-frame {
+        flex: 1;
+        background: white;
+        border: none;
+        width: 100%;
+        min-height: 0;
+    }
+
+    .version-info { color: var(--vrc-gray-400); font-size: var(--vrc-font-size-xs); }
+
+    @media (max-width: 768px) {
+        .editor-wrapper { flex-direction: column; top: 70px; }
+        .editor-sidebar { width: 100%; max-height: 150px; flex-shrink: 0; }
+        .editor-panels { flex-direction: column; }
+        .preview-panel { width: 100%; min-height: 250px; flex: 0 0 250px; border-left: none; border-top: 2px solid var(--vrc-gray-700); }
+    }
+</style>
+{% endblock %}
+
+{% block body_class %}vrc-body editor-page{% endblock %}
+{% block main_class %}{% endblock %}
+{% block content_wrapper_class %}{% endblock %}
+
+{% block content %}
+<div class="editor-wrapper">
+    <div class="editor-sidebar">
+        <h3>Projects</h3>
+        {% for p in projects %}
+        <a href="{% url 'developer_editor' %}?project={{ p.id }}" class="sidebar-project {% if project and project.id == p.id %}active{% endif %}">{{ p.name }}</a>
+        {% empty %}
+        <p style="font-size: var(--vrc-font-size-xs); color: var(--vrc-gray-500);">No projects yet.</p>
+        {% endfor %}
+        <a href="{% url 'developer_create_project' %}" class="sidebar-project" style="color: var(--vrc-primary); margin-top: var(--vrc-spacing-sm);">+ New Project</a>
+
+        {% if project and version %}
+        <h3 style="margin-top: var(--vrc-spacing-lg);">Version</h3>
+        <div class="version-info">v{{ version.version_number }}</div>
+        <div class="version-info">{{ version.commit_message }}</div>
+        {% endif %}
+
+        {% if api_css_files %}
+        <h3 style="margin-top: var(--vrc-spacing-lg);">Marketplace CSS</h3>
+        {% for c in api_css_files %}
+        <a href="{% url 'developer_editor' %}?css={{ c.id }}" class="sidebar-project published {% if api_css and api_css.id == c.id %}active{% endif %}">{{ c.name }}</a>
+        {% endfor %}
+        {% endif %}
+    </div>
+
+    <div class="editor-main">
+        <div class="editor-toolbar">
+            <div class="toolbar-left">
+                {% if edit_mode == 'project' %}
+                <span style="color: var(--vrc-gray-300); font-size: var(--vrc-font-size-sm); font-weight: 600;">{{ project.name }}</span>
+                {% elif edit_mode == 'api_css' %}
+                <span style="color: var(--vrc-gray-300); font-size: var(--vrc-font-size-sm); font-weight: 600;">{{ api_css.name }}</span>
+                <span class="published-label">Published</span>
+                {% else %}
+                <span style="color: var(--vrc-gray-500); font-size: var(--vrc-font-size-sm);">Select or create a project</span>
+                {% endif %}
+            </div>
+            <div class="toolbar-right">
+                {% if edit_mode %}
+                <button class="toolbar-btn" onclick="toolAction('minify')">Minify</button>
+                <button class="toolbar-btn" onclick="toolAction('beautify')">Beautify</button>
+                <button class="toolbar-btn" onclick="toolAction('validate')">Validate</button>
+                <button class="toolbar-btn" onclick="toolAction('prefix')">Prefix</button>
+                <button class="toolbar-btn primary" id="save-btn" onclick="saveProject()">Save</button>
+                {% if edit_mode == 'project' %}
+                <a href="{% url 'developer_publish' project_id=project.id %}" class="toolbar-btn" style="background: #22c55e; color: white; text-decoration: none;">Publish</a>
+                {% endif %}
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="editor-tabs">
+            <div class="editor-tab active" onclick="showTab('css')">CSS</div>
+            <div class="editor-tab" onclick="showTab('html')">HTML Template</div>
+        </div>
+
+        <div class="editor-panels">
+            <div class="editor-code-wrap">
+                <div id="css-panel">
+                    <textarea id="css-editor">{% if edit_mode == 'api_css' %}{{ api_css.css_content }}{% elif version %}{{ version.css_content }}{% endif %}</textarea>
+                </div>
+                <div id="html-panel" style="display: none;">
+                    <textarea id="html-editor">{% if edit_mode == 'api_css' %}{{ api_css.html_template|default:'<div class="loader"></div>' }}{% elif version %}{{ version.html_template }}{% else %}<div class="loader"></div>{% endif %}</textarea>
+                </div>
+            </div>
+            <div class="preview-panel">
+                <div class="panel-label">Live Preview</div>
+                <iframe id="preview-frame" class="preview-frame"></iframe>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block footer %}{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/css/css.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/htmlmixed/htmlmixed.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/xml/xml.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/javascript/javascript.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/matchbrackets.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/closebrackets.min.js"></script>
+<script>
+(function() {
+    // CSS editor with live preview
+    // CodeMirror instances -- scrolling is handled by CM itself when the
+    // wrapper has a definite height (height: 100% set in CSS above).
+    var cssEditor = CodeMirror.fromTextArea(document.getElementById('css-editor'), {
+        mode: 'css',
+        theme: 'dracula',
+        lineNumbers: true,
+        lineWrapping: true,
+        matchBrackets: true,
+        autoCloseBrackets: true,
+        tabSize: 2,
+    });
+
+    var htmlEditor = CodeMirror.fromTextArea(document.getElementById('html-editor'), {
+        mode: 'htmlmixed',
+        theme: 'dracula',
+        lineNumbers: true,
+        lineWrapping: true,
+        matchBrackets: true,
+        autoCloseBrackets: true,
+        tabSize: 2,
+    });
+
+    // --- Preview rendering --------------------------------------------------
+    // Uses srcdoc to render preview content inside a
+    // sandboxed iframe.  srcdoc is supported by all modern browsers and avoids
+    // cross-origin issues that can cause a blank preview pane.
+    var defaultHtml = '<div class="loader"></div>';
+
+    function updatePreview() {
+        var frame = document.getElementById('preview-frame');
+        var css = cssEditor.getValue();
+        var html = htmlEditor.getValue() || defaultHtml;
+        var fullDoc = '<!DOCTYPE html><html><head><meta charset="utf-8">' +
+            '<style>body{margin:0;display:flex;align-items:center;justify-content:center;' +
+            'min-height:100vh;background:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%);}' +
+            css + '</style></head>' +
+            '<body>' + html + '</body></html>';
+
+        // Use srcdoc for safe, synchronous rendering
+        frame.srcdoc = fullDoc;
+    }
+
+    // Debounce preview updates so rapid typing does not cause excessive reflows
+    var previewTimer = null;
+    function schedulePreview() {
+        clearTimeout(previewTimer);
+        previewTimer = setTimeout(updatePreview, 150);
+    }
+
+    cssEditor.on('change', schedulePreview);
+    htmlEditor.on('change', schedulePreview);
+
+    // Initial render once the layout has settled and CM has painted
+    setTimeout(function() {
+        cssEditor.refresh();
+        htmlEditor.refresh();
+        updatePreview();
+    }, 200);
+
+    // --- Tab switching ------------------------------------------------------
+    window.showTab = function(tab) {
+        document.querySelectorAll('.editor-tab').forEach(function(t) { t.classList.remove('active'); });
+        if (tab === 'css') {
+            document.getElementById('css-panel').style.display = '';
+            document.getElementById('html-panel').style.display = 'none';
+            document.querySelectorAll('.editor-tab')[0].classList.add('active');
+            setTimeout(function() { cssEditor.refresh(); }, 0);
+        } else {
+            document.getElementById('css-panel').style.display = 'none';
+            document.getElementById('html-panel').style.display = '';
+            document.querySelectorAll('.editor-tab')[1].classList.add('active');
+            setTimeout(function() { htmlEditor.refresh(); }, 0);
+        }
+    };
+
+    // --- Save ---------------------------------------------------------------
+    window.saveProject = function() {
+        var btn = document.getElementById('save-btn');
+        if (!btn) return;
+
+        {% if edit_mode == 'api_css' %}
+        btn.textContent = 'Saving...';
+        btn.disabled = true;
+        var formData = new FormData();
+        formData.append('css_content', cssEditor.getValue());
+        formData.append('html_template', htmlEditor.getValue());
+        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+        fetch('{% url "developer_save_api_css" css_id=api_css.id %}', {
+            method: 'POST',
+            body: formData,
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.status === 'success') {
+                btn.textContent = 'Saved!';
+                setTimeout(function() { btn.textContent = 'Save'; btn.disabled = false; }, 1500);
+            } else {
+                alert(data.message || 'Save failed.');
+                btn.textContent = 'Save';
+                btn.disabled = false;
+            }
+        })
+        .catch(function() { alert('Save failed. Check your connection.'); btn.textContent = 'Save'; btn.disabled = false; });
+
+        {% elif project %}
+        var formData = new FormData();
+        formData.append('css_content', cssEditor.getValue());
+        formData.append('html_template', htmlEditor.getValue());
+        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+        fetch('{% url "developer_save_project" project_id=project.id %}', {
+            method: 'POST',
+            body: formData,
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.status === 'success') {
+                btn.textContent = 'Saved!';
+                setTimeout(function() { btn.textContent = 'Save'; }, 1500);
+            } else {
+                alert(data.message || 'Save failed.');
+            }
+        })
+        .catch(function() { alert('Save failed. Check your connection.'); });
+        {% endif %}
+    };
+
+    // --- Tool actions (minify, beautify, validate, prefix) ------------------
+    window.toolAction = function(action) {
+        var formData = new FormData();
+        formData.append('css', cssEditor.getValue());
+        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+        var urls = {
+            minify: '{% url "developer_minify" %}',
+            beautify: '{% url "developer_beautify" %}',
+            validate: '{% url "developer_validate" %}',
+            prefix: '{% url "developer_prefix" %}',
+        };
+
+        fetch(urls[action], { method: 'POST', body: formData })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (action === 'validate') {
+                var msg = '';
+                if (data.errors && data.errors.length) msg += 'Errors:\n' + data.errors.join('\n') + '\n\n';
+                if (data.warnings && data.warnings.length) msg += 'Warnings:\n' + data.warnings.join('\n');
+                if (!msg) msg = 'CSS is valid! No errors or warnings.';
+                alert(msg);
+            } else if (data.result !== undefined) {
+                cssEditor.setValue(data.result);
+                if (data.savings !== undefined) {
+                    alert('Minified! Saved ' + data.savings + '% (' + data.original_size + ' \u2192 ' + data.minified_size + ' bytes)');
+                }
+            } else if (data.error) {
+                alert(data.error);
+            }
+        })
+        .catch(function() { alert('Tool action failed.'); });
+    };
+
+    // --- Keyboard shortcut: Ctrl/Cmd+S to save ------------------------------
+    document.addEventListener('keydown', function(e) {
+        if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+            e.preventDefault();
+            saveProject();
+        }
+    });
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,45 @@
+{% extends 'base/base.html' %}
+{% block title %}Payout History - V.R.C{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dev-container { max-width: 1000px; margin: 0 auto; padding: var(--vrc-spacing-xl); }
+    .section { background: var(--vrc-white); border-radius: var(--vrc-radius-lg); padding: var(--vrc-spacing-xl); box-shadow: var(--vrc-shadow-md); }
+    .section h1 { font-size: var(--vrc-font-size-xl); font-weight: var(--vrc-font-weight-bold); margin-bottom: var(--vrc-spacing-lg); }
+    .payout-table { width: 100%; border-collapse: collapse; }
+    .payout-table th { background: var(--vrc-gray-50); padding: 10px 14px; text-align: left; font-size: var(--vrc-font-size-sm); color: var(--vrc-gray-500); border-bottom: 1px solid var(--vrc-gray-200); }
+    .payout-table td { padding: 10px 14px; border-bottom: 1px solid var(--vrc-gray-100); font-size: var(--vrc-font-size-sm); }
+    .badge { padding: 2px 10px; border-radius: var(--vrc-radius-full); font-size: var(--vrc-font-size-xs); }
+    .badge-pending { background: var(--vrc-warning-light); color: var(--vrc-warning); }
+    .badge-processing { background: var(--vrc-info-light); color: var(--vrc-info); }
+    .badge-completed { background: var(--vrc-success-light); color: var(--vrc-success); }
+    .badge-failed { background: var(--vrc-error-light); color: var(--vrc-error); }
+    .back-link { display: inline-block; margin-bottom: var(--vrc-spacing-lg); color: var(--vrc-primary); text-decoration: none; font-size: var(--vrc-font-size-sm); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dev-container">
+    <a href="{% url 'developer_payouts' %}" class="back-link">&larr; Back to Payouts</a>
+    <div class="section">
+        <h1>Payout History</h1>
+        {% if payouts %}
+        <table class="payout-table">
+            <thead><tr><th>Amount</th><th>Status</th><th>Requested</th><th>Processed</th></tr></thead>
+            <tbody>
+                {% for p in payouts %}
+                <tr>
+                    <td>{{ p.amount }} NE</td>
+                    <td><span class="badge badge-{{ p.status }}">{{ p.get_status_display }}</span></td>
+                    <td>{{ p.requested_at|date:"M d, Y" }}</td>
+                    <td>{{ p.processed_at|date:"M d, Y"|default:"-" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p style="color: var(--vrc-gray-500);">No payout history.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,119 @@
+{% extends "base/base_forum.html" %}
+{% load static %}
+
+{% block title %}Bulk Moderation - V.R.C Forum{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'base/css/admin.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="mod-page">
+
+  <div class="mod-section-header">
+    <div>
+      <p class="mod-section-subtitle"><a href="{% url 'forum_admin_dashboard' %}">Moderation</a> › Bulk</p>
+      <h1 class="mod-section-title">🔧 Bulk Moderation</h1>
+    </div>
+    <span class="mod-badge mod-badge--gray">{{ page_obj.paginator.count }} posts</span>
+  </div>
+
+  <!-- Filters -->
+  <form method="get">
+    <div class="mod-filter-bar">
+      <select name="category" class="mod-filter-select">
+        <option value="">All categories</option>
+        {% for cat in categories %}
+        <option value="{{ cat.slug }}" {% if category_filter == cat.slug %}selected{% endif %}>{{ cat.name }}</option>
+        {% endfor %}
+      </select>
+      <input type="text" name="author" class="mod-filter-input"
+             placeholder="Filter by author…" value="{{ author_filter|escape }}">
+      <button type="submit" class="mod-btn mod-btn--primary mod-btn--sm">Filter</button>
+      {% if category_filter or author_filter %}
+      <a href="{% url 'forum_bulk_admin' %}" class="mod-btn mod-btn--ghost mod-btn--sm">Clear</a>
+      {% endif %}
+    </div>
+  </form>
+
+  {% if page_obj.object_list %}
+  <form method="post" action="{% url 'forum_bulk_action' %}">
+    {% csrf_token %}
+
+    <div style="margin-bottom:12px;display:flex;gap:8px;align-items:center;">
+      <select name="action" class="mod-filter-select" style="max-width:200px;">
+        <option value="">— Action —</option>
+        <option value="hide">Hide selected</option>
+        <option value="delete">Delete selected</option>
+      </select>
+      <button type="submit" class="mod-btn mod-btn--warning mod-btn--sm">Apply</button>
+    </div>
+
+    <div class="mod-table-card">
+      <div class="mod-table-scroll">
+        <table class="mod-table">
+          <thead>
+            <tr>
+              <th style="width:30px;"><input type="checkbox" id="select-all"></th>
+              <th>Post</th>
+              <th>Author</th>
+              <th>Topic</th>
+              <th>Category</th>
+              <th>Created</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for post in page_obj %}
+            <tr>
+              <td><input type="checkbox" name="post_ids" value="{{ post.id }}"></td>
+              <td><span class="mod-table-ellipsis">{{ post.content|escape|truncatechars:80 }}</span></td>
+              <td>{{ post.author.username|escape }}</td>
+              <td>
+                <a href="{% url 'forum_topic' post.topic.id %}" class="mod-table-link">
+                  {{ post.topic.title|escape|truncatechars:40 }}
+                </a>
+              </td>
+              <td><span class="mod-badge mod-badge--info">{{ post.topic.category.name }}</span></td>
+              <td style="color:var(--vrc-gray-400);font-size:var(--vrc-font-size-xs);">{{ post.created_at|date:"d M Y" }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </form>
+
+  {% if page_obj.has_other_pages %}
+  <div class="mod-pagination" aria-label="Pagination">
+    {% if page_obj.has_previous %}
+    <a class="mod-page-btn" href="?page={{ page_obj.previous_page_number }}{% if category_filter %}&category={{ category_filter }}{% endif %}{% if author_filter %}&author={{ author_filter }}{% endif %}">&laquo;</a>
+    {% endif %}
+    {% for num in page_obj.paginator.page_range %}
+      {% if page_obj.number == num %}
+      <span class="mod-page-btn mod-page-btn--active">{{ num }}</span>
+      {% elif num > page_obj.number|add:"-3" and num < page_obj.number|add:"3" %}
+      <a class="mod-page-btn" href="?page={{ num }}{% if category_filter %}&category={{ category_filter }}{% endif %}{% if author_filter %}&author={{ author_filter }}{% endif %}">{{ num }}</a>
+      {% endif %}
+    {% endfor %}
+    {% if page_obj.has_next %}
+    <a class="mod-page-btn" href="?page={{ page_obj.next_page_number }}{% if category_filter %}&category={{ category_filter }}{% endif %}{% if author_filter %}&author={{ author_filter }}{% endif %}">&raquo;</a>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {% else %}
+  <div class="mod-table-card">
+    <p class="mod-table-empty">No posts found matching your filters.</p>
+  </div>
+  {% endif %}
+
+</div>
+
+<script>
+document.getElementById('select-all').addEventListener('change', function() {
+  document.querySelectorAll('input[name="post_ids"]').forEach(function(cb) {
+    cb.checked = this.checked;
+  }.bind(this));
+});
+</script>
+{% endblock %}

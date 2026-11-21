@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% load static %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="{% block meta_description %}V.R.C - Virtual Reality Commerce Platform{% endblock %}">
+
+
+    {# Favicon #}
+    <link rel="icon" type="image/svg+xml" href="{% static 'img/favicon.svg' %}">
+
+    {# Base Styles - Shared across all modules #}
+    <link rel="stylesheet" href="{% static 'base/css/base.css' %}">
+    <link rel="stylesheet" href="{% static 'header/css/header.css' %}">
+
+    {# Module-specific CSS - Override in child templates #}
+    {% block module_css %}{% endblock %}
+
+    {# Page-specific CSS #}
+    {% block extra_css %}{% endblock %}
+
+    <title>{% block title %}V.R.C{% endblock %}</title>
+
+    {# Extra head content (meta tags, scripts, etc.) #}
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="{% block body_class %}vrc-body{% endblock %}">
+    {% csrf_token %}
+    {# Header Section - Conditional based on authentication state #}
+    {% block header %}
+    {% if user.is_authenticated %}
+        {% include 'header/html/header_account.html' %}
+    {% else %}
+        {% include 'header/html/header.html' %}
+    {% endif %}
+    {% endblock %}
+
+    {# Breadcrumb Navigation #}
+    {% block breadcrumbs %}{% endblock %}
+
+    {# Main Content Area #}
+    <main class="{% block main_class %}main-container{% endblock %}">
+        {# Flash Messages #}
+        {% if messages %}
+        <div class="messages-container" role="alert" aria-live="polite">
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}" role="alert">
+                {{ message }}
+                <button type="button" class="alert-close" aria-label="Close" onclick="this.parentElement.remove();">
+                    &times;
+                </button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {# Advertisement Banner #}
+        {% include 'advertisement/includes/ad_banner.html' %}
+
+        {# Page Content #}
+        <div class="{% block content_wrapper_class %}content-wrapper{% endblock %}">
+            {% block content %}
+            <p>Welcome to V.R.C</p>
+            {% endblock %}
+        </div>
+    </main>
+
+    {# Footer Section #}
+    {% block footer %}
+    {% include 'footer/footer.html' %}
+    {% endblock %}
+
+    {# Core JavaScript #}
+    <script src="{% static 'header/js/hamburger_menu.js' %}"></script>
+    {% if user.is_authenticated %}
+    <script src="{% static 'header/js/user_hamburger_menu.js' %}"></script>
+    <script src="{% static 'header/js/notification_bell.js' %}"></script>
+    {% endif %}
+
+    {# Module-specific JavaScript #}
+    {% block module_js %}{% endblock %}
+
+    {# Page-specific JavaScript #}
+    {% block extra_js %}{% endblock %}
+
+    {% comment %}
+    Floating chat widget for user support
+    Loaded at end of body for optimal page performance
+    {% endcomment %}
+    {% include 'chat-bubble/chat_widget.html' %}
+</body>
+</html>

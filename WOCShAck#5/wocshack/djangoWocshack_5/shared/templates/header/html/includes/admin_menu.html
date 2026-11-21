@@ -1,0 +1,16 @@
+{# Shared admin/staff menu links — included by both header_account.html and header_shop_account.html #}
+{% if user.is_superuser or user.is_staff %}
+<li><hr style="border-color: rgba(255,255,255,0.2); margin: 0.5rem 0;"></li>
+<li><a href="{% url 'admin_panel:dashboard' %}" style="color: #fbbf24;">⚑ Admin Hub</a></li>
+<li><a href="{% url 'forum_admin_dashboard' %}" style="color: #fbbf24;">Forum Admin</a></li>
+<li><a href="{% url 'chatbot:admin_dashboard' %}" style="color: #fbbf24;">Chatbot Admin</a></li>
+<li><a href="{% url 'shop_admin_dashboard' %}" style="color: #fbbf24;">Shop Admin</a></li>
+<li><a href="{% url 'community:admin_dashboard' %}" style="color: #fbbf24;">Community Admin</a></li>
+<li><a href="{% url 'advertisement_admin_dashboard' %}" style="color: #fbbf24;">Ad Admin</a></li>
+<li><a href="{% url 'developer_admin_dashboard' %}" style="color: #fbbf24;">Developer Admin</a></li>
+<li><a href="{% url 'account_admin_dashboard' %}" style="color: #fbbf24;">Account Admin</a></li>
+<li><a href="{% url 'banking_admin' %}" style="color: #fbbf24;">Banking Admin</a></li>
+{% endif %}
+{% if user.is_superuser %}
+<li><a href="/admin/" style="color: #ef4444;">Admin Panel</a></li>
+{% endif %}

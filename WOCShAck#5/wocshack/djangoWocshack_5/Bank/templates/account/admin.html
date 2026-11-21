@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% load static %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>V.R.C - Banking Admin</title>
+    <link rel="stylesheet" href="{% static 'css/account/account.css' %}">
+    <link rel="icon" type="image/svg+xml" href="{% static 'img/favicon.svg' %}">
+    <link rel="stylesheet" href="{% static 'header/css/header.css' %}">
+    <style>
+        body { padding-top: 70px; }
+        .admin-container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+            position: relative;
+            z-index: 1;
+        }
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+        .status-card {
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(102, 126, 234, 0.1);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.1);
+        }
+        a.status-card {
+            display: block;
+            text-decoration: none;
+            color: inherit;
+            transition: all 0.2s ease;
+        }
+        a.status-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.2);
+            border-color: rgba(102, 126, 234, 0.3);
+        }
+        .status-card h3 {
+            margin: 0 0 1rem 0;
+            color: #333;
+            font-size: 1.125rem;
+        }
+        .status-value {
+            font-size: 2rem;
+            font-weight: bold;
+            margin: 0.5rem 0;
+        }
+        .status-connected {
+            color: #10b981;
+        }
+        .status-error {
+            color: #ef4444;
+        }
+        .status-warning {
+            color: #f59e0b;
+        }
+        .status-info {
+            color: #667eea;
+        }
+        .nav-back {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            margin-bottom: 2rem;
+        }
+        .nav-back:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+            color: white;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    {% if user.is_authenticated %}
+        {% include 'header/html/header_account.html' %}
+    {% else %}
+        {% include 'header/html/header.html' %}
+    {% endif %}
+
+    <div class="admin-container">
+        <a href="{% url 'bank_account' %}" class="nav-back">
+            ← Back to Banking
+        </a>
+
+        <h1 style="color: #333; margin-bottom: 1rem;">Banking System Administration</h1>
+        <p style="color: #666; margin-bottom: 2rem;">System status and overview for staff members.</p>
+
+        <!-- Management sections navigation -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+            <a href="{% url 'banking_admin_accounts' %}" style="display: flex; align-items: center; gap: 0.75rem; padding: 1rem 1.25rem; background: rgba(255,255,255,0.9); border: 1px solid rgba(102,126,234,0.15); border-radius: 12px; text-decoration: none; transition: all 0.2s; box-shadow: 0 2px 8px rgba(102,126,234,0.08);">
+                <span style="font-size: 1.5rem;">👥</span>
+                <div>
+                    <div style="font-weight: 600; color: #333;">Accounts</div>
+                    <div style="font-size: 0.8rem; color: #888;">View all bank accounts</div>
+                </div>
+            </a>
+            <a href="{% url 'banking_admin_transactions' %}" style="display: flex; align-items: center; gap: 0.75rem; padding: 1rem 1.25rem; background: rgba(255,255,255,0.9); border: 1px solid rgba(102,126,234,0.15); border-radius: 12px; text-decoration: none; transition: all 0.2s; box-shadow: 0 2px 8px rgba(102,126,234,0.08);">
+                <span style="font-size: 1.5rem;">📊</span>
+                <div>
+                    <div style="font-weight: 600; color: #333;">Transactions</div>
+                    <div style="font-size: 0.8rem; color: #888;">Browse transaction log</div>
+                </div>
+            </a>
+            <a href="{% url 'banking_admin_apps' %}" style="display: flex; align-items: center; gap: 0.75rem; padding: 1rem 1.25rem; background: rgba(255,255,255,0.9); border: 1px solid rgba(102,126,234,0.15); border-radius: 12px; text-decoration: none; transition: all 0.2s; box-shadow: 0 2px 8px rgba(102,126,234,0.08);">
+                <span style="font-size: 1.5rem;">💻</span>
+                <div>
+                    <div style="font-weight: 600; color: #333;">Banking Client</div>
+                    <div style="font-size: 0.8rem; color: #888;">Manage VRC Bank Clients</div>
+                </div>
+            </a>
+        </div>
+
+        <div class="status-grid">
+            <div class="status-card">
+                <h3>Backend Connection</h3>
+                <div class="status-value {% if 'Connected' in backend_status %}status-connected{% elif 'Error' in backend_status %}status-error{% else %}status-warning{% endif %}">
+                    {{ backend_status }}
+                </div>
+                <p style="color: #666; font-size: 0.875rem; margin: 0;">TCP Banking Backend (172.28.0.2:7051)</p>
+            </div>
+
+            <div class="status-card">
+                <h3>Client Status</h3>
+                <div class="status-value {% if client_status == 'Connected' %}status-connected{% else %}status-error{% endif %}">
+                    {{ client_status }}
+                </div>
+                <p style="color: #666; font-size: 0.875rem; margin: 0;">Django Banking Client</p>
+            </div>
+
+            <a href="/admin/auth/user/" class="status-card">
+                <h3>Total Users</h3>
+                <div class="status-value status-info">
+                    {{ total_users }}
+                </div>
+                <p style="color: #666; font-size: 0.875rem; margin: 0;">Registered users in the system</p>
+            </a>
+
+            <a href="/admin/Bank/bankcard/" class="status-card">
+                <h3>Bank Cards</h3>
+                <div class="status-value status-info">
+                    {{ total_cards }}
+                </div>
+                <p style="color: #666; font-size: 0.875rem; margin: 0;">{{ active_cards }} active cards</p>
+            </a>
+
+            <a href="/admin/Bank/transaction/" class="status-card">
+                <h3>Transaction Records</h3>
+                <div class="status-value status-info">
+                    {{ total_transactions }}
+                </div>
+                <p style="color: #666; font-size: 0.875rem; margin: 0;">Total audit trail entries</p>
+            </a>
+        </div>
+
+        <div style="background: rgba(255, 255, 255, 0.9); border: 1px solid rgba(102, 126, 234, 0.1); border-radius: 12px; padding: 1.5rem; margin-top: 2rem;">
+            <h3 style="margin: 0 0 1rem 0; color: #333;">System Information</h3>
+            <ul style="list-style: none; padding: 0; margin: 0;">
+                <li style="padding: 0.5rem 0; border-bottom: 1px solid rgba(0,0,0,0.05);">
+                    <strong>Banking Backend IP:</strong> 172.28.0.2:7051
+                </li>
+                <li style="padding: 0.5rem 0; border-bottom: 1px solid rgba(0,0,0,0.05);">
+                    <strong>Django Integration:</strong> Bank/Utils/client.py
+                </li>
+                <li style="padding: 0.5rem 0; border-bottom: 1px solid rgba(0,0,0,0.05);">
+                    <strong>Security Model:</strong> PIN-based session authentication
+                </li>
+                <li style="padding: 0.5rem 0; border-bottom: 1px solid rgba(0,0,0,0.05);">
+                    <strong>Admin Access:</strong> Staff-only viewing and monitoring
+                </li>
+                <li style="padding: 0.5rem 0;">
+                    <strong>VRC Banking Client:</strong> Qt/C++ desktop client available for download
+                </li>
+            </ul>
+        </div>
+
+    </div>
+
+    <script src="{% static 'header/js/hamburger_menu.js' %}"></script>
+    <script src="{% static 'header/js/user_hamburger_menu.js' %}"></script>
+</body>
+</html>

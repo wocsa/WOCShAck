@@ -1,0 +1,20 @@
+<div id="cookie-banner" style="position: fixed; bottom: 0; left: 0; right: 0; background-color: #f8d7da; color: #721c24; padding: 30px; text-align: center; font-family: Arial, sans-serif; font-size: 22px; z-index: 9999;">
+    <p style="font-size: 14px; margin-top: 20px; color: #721c24;"><strong>We store everything.</strong> Your data, your browsing habits, your search history, your calendar invites, your emails, your shopping preferences, your deepest secrets—yes, even the things you didn't mean to click on. We know.</p>
+    <p style="font-size: 14px; margin-top: 20px; color: #721c24;">We track your every move, every click, every second you spend online. We know what you like, what you don't like, and what you're going to buy next, even before you do. We store every chat, every emoji you send, every word you type. And guess what? We'll never forget.</p>
+    <p style="font-size: 14px; margin-top: 20px; color: #721c24;"><strong>Your privacy is a myth.</strong> Forget it. It's not just cookies—we collect your thoughts, your dreams, and even your hopes for the future. All of it. And we store it forever. You're welcome.</p>
+    <p style="font-size: 14px; margin-top: 20px; color: #721c24;">But don't worry, we care about you… kind of. Mostly, we care about your data.<br>Feel free to contact us at</p>
+    <a href="/contact"><p style="font-size: 14px; margin-top: 20px; color: #721c24;">I do not consent</p></a>
+    <p style="font-size: 14px; margin-top: 20px; color: #721c24;">to remove your consent</p>
+
+    <p style="font-size: 12px; margin-top: 20px; color: #721c24;">
+        Just kidding. We do nothing with your data. But we might still store it in a database somewhere, just for fun. By accepting, you agree to have your every click, movement, and interaction monitored, logged, and used to personalize your experience (and ads) in ways that may not be entirely transparent. We reserve the right to change our privacy policy at any time without notifying you, because, well, it's a policy. And policies change. <br><br> You also agree to let us analyze your data forever, because why not? After all, you clicked "I Agree." Have a nice day.
+    </p>
+
+    <button id="cookie-accept" style="background-color: #721c24; color: white; border: none; padding: 10px 20px; cursor: pointer; font-weight: bold; font-size: 18px;">I Agree</button>
+</div>
+
+<script>
+    document.getElementById("cookie-accept").addEventListener("click", function() {
+        document.getElementById("cookie-banner").style.display = "none";
+    });
+</script>

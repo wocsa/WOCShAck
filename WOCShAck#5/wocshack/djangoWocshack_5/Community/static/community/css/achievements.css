@@ -1,0 +1,143 @@
+/* ── Achievements ─────────────────────────────────────────────── */
+.ach-wrapper {
+  max-width: 960px;
+  margin: var(--vrc-spacing-xl) auto;
+  padding: 0 var(--vrc-spacing-md);
+}
+
+.ach-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--vrc-spacing-xl);
+  gap: var(--vrc-spacing-md);
+}
+.ach-title    { font-size: 1.75rem; font-weight: 700; margin: 0 0 0.25rem; }
+.ach-subtitle { color: var(--vrc-gray-500); margin: 0; font-size: 0.95rem; }
+
+/* Ring */
+.ach-progress-ring { position: relative; width: 64px; height: 64px; }
+.ach-ring-svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.ach-ring-bg  { fill: none; stroke: var(--vrc-gray-200); stroke-width: 4; }
+.ach-ring-fill {
+  fill: none; stroke: var(--vrc-primary); stroke-width: 4;
+  stroke-dasharray: calc(2 * 3.14159 * 18);
+  stroke-dashoffset: calc(2 * 3.14159 * 18 * (1 - var(--pct) / var(--total)));
+  stroke-linecap: round;
+}
+.ach-ring-label {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 1rem;
+}
+
+/* Category */
+.ach-category { margin-bottom: var(--vrc-spacing-xl); }
+.ach-category-title {
+  font-size: 1.1rem; font-weight: 600; margin-bottom: 0.75rem;
+  color: var(--vrc-gray-700); border-bottom: 2px solid var(--vrc-gray-200); padding-bottom: 0.4rem;
+}
+
+/* Grid */
+.ach-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 0.75rem;
+}
+
+/* Card */
+.ach-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  background: var(--vrc-gray-50);
+  border: 1px solid var(--vrc-gray-200);
+  border-radius: var(--vrc-radius-lg);
+  padding: 0.85rem;
+  opacity: 0.55;
+  transition: opacity var(--vrc-transition-fast), box-shadow var(--vrc-transition-fast);
+  position: relative;
+}
+.ach-card--unlocked { opacity: 1; box-shadow: 0 1px 4px rgba(108,99,255,.1); }
+.ach-card--unlocked:hover { box-shadow: 0 4px 12px rgba(108,99,255,.15); }
+
+/* Rarity borders */
+.ach-card--common    { border-left: 4px solid var(--vrc-gray-400); }
+.ach-card--uncommon  { border-left: 4px solid #34d399; }
+.ach-card--rare      { border-left: 4px solid #60a5fa; }
+.ach-card--epic      { border-left: 4px solid #a78bfa; }
+.ach-card--legendary { border-left: 4px solid #fbbf24; }
+.ach-card--mythic    { border-left: 4px solid #f87171; }
+
+.ach-card-icon { font-size: 1.8rem; flex-shrink: 0; }
+.ach-card-body { flex: 1; min-width: 0; }
+.ach-card-name { display: block; font-weight: 600; font-size: 0.88rem; margin-bottom: 0.2rem; }
+.ach-card-desc { display: block; font-size: 0.78rem; color: var(--vrc-gray-500); margin-bottom: 0.35rem; }
+.ach-card-date { font-size: 0.72rem; color: var(--vrc-gray-400); }
+
+/* Progress bar */
+.ach-card-progress { margin-top: 0.35rem; }
+.ach-card-progress-bar {
+  height: 5px; background: var(--vrc-gray-200); border-radius: var(--vrc-radius-full); overflow: hidden; margin-bottom: 0.2rem;
+}
+.ach-card-progress-fill { height: 100%; background: var(--vrc-primary); border-radius: var(--vrc-radius-full); }
+.ach-card-progress-label { font-size: 0.72rem; color: var(--vrc-gray-400); }
+
+/* Meta */
+.ach-card-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 0.3rem; flex-shrink: 0; }
+.ach-card-tier {
+  font-size: 0.7rem; font-weight: 600; text-transform: uppercase; padding: 0.15rem 0.4rem;
+  border-radius: var(--vrc-radius-sm);
+}
+.ach-card-tier--bronze   { background: var(--vrc-warning-light); color: #92400e; }
+.ach-card-tier--silver   { background: var(--vrc-gray-100); color: var(--vrc-gray-600); }
+.ach-card-tier--gold     { background: #fef9c3; color: #854d0e; }
+.ach-card-tier--platinum { background: #ede9fe; color: #5b21b6; }
+.ach-card-tier--diamond  { background: #dbeafe; color: #1e40af; }
+
+.ach-card-pts { font-size: 0.75rem; color: var(--vrc-primary); font-weight: 600; }
+
+.ach-showcase-btn {
+  background: none; border: none; font-size: 1rem; cursor: pointer;
+  color: var(--vrc-gray-300); padding: 0; line-height: 1;
+}
+.ach-showcase-btn--active { color: #fbbf24; }
+
+/* Empty */
+.ach-empty { text-align: center; padding: 3rem; color: var(--vrc-gray-400); }
+.ach-empty-icon { font-size: 2.5rem; display: block; margin-bottom: 0.75rem; }
+
+/* ── Visual Enhancements ─────────────────────────────────────── */
+
+/* Rarity gradient borders */
+.ach-card--epic {
+  border-left: 4px solid #a78bfa;
+  background: linear-gradient(to right, rgba(167, 139, 250, 0.07) 0%, var(--vrc-gray-50) 100%);
+  box-shadow: 0 0 10px rgba(167, 139, 250, 0.18);
+}
+.ach-card--legendary {
+  border-left: 4px solid #fbbf24;
+  background: linear-gradient(to right, rgba(251, 191, 36, 0.07) 0%, var(--vrc-gray-50) 100%);
+  box-shadow: 0 0 12px rgba(251, 191, 36, 0.22);
+}
+.ach-card--mythic {
+  border-left: 4px solid #f87171;
+  background: linear-gradient(to right, rgba(248, 113, 113, 0.07) 0%, var(--vrc-gray-50) 100%);
+  box-shadow: 0 0 12px rgba(248, 113, 113, 0.2);
+}
+.ach-card--epic.ach-card--unlocked:hover {
+  box-shadow: 0 6px 20px rgba(167, 139, 250, 0.3);
+}
+.ach-card--legendary.ach-card--unlocked:hover {
+  box-shadow: 0 6px 20px rgba(251, 191, 36, 0.35);
+}
+
+/* Ring draw-in animation */
+@keyframes ringDrawIn {
+  from { stroke-dashoffset: calc(2 * 3.14159 * 18); }
+  to   { stroke-dashoffset: calc(2 * 3.14159 * 18 * (1 - var(--pct) / var(--total))); }
+}
+
+.ach-ring-fill {
+  animation: ringDrawIn 1s cubic-bezier(0.4, 0, 0.2, 1) both;
+}

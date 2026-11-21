@@ -1,0 +1,43 @@
+{% extends "base/base_account.html" %}
+{% load static %}
+
+
+{% block title %}V.R.C - Purchased Articles{% endblock %}
+
+{% block account_title %}Purchased Articles{% endblock %}
+
+{% block account_subtitle %}
+<p class="account-subtitle">View and manage your purchased articles</p>
+{% endblock %}
+
+{% block account_content %}
+<div class="purchased-articles-container">
+    {% if purchased_articles %}
+    <div class="purchased-articles-grid">
+        {% for purchase in purchased_articles %}
+        {% if purchase.css_file %}
+        <a href="{% url 'product_detail' purchase.css_file.id %}" class="purchased-article-card">
+            <div class="purchased-article-preview">
+                {% if purchase.css_file.preview_gif %}
+                <img src="{{ purchase.css_file.preview_gif.url }}" alt="Preview of {{ purchase.css_file.name }}" loading="lazy" draggable="false" oncontextmenu="return false;">
+                {% else %}
+                <span class="purchased-article-placeholder">Preview loading...</span>
+                {% endif %}
+            </div>
+            <div class="purchased-article-info">
+                <h4 class="purchased-article-name">{{ purchase.css_file.name }}</h4>
+                <span class="purchased-article-price">{{ purchase.price_paid }} Neuros</span>
+                <span class="purchased-article-date">Purchased on: {{ purchase.purchased_at|date:"M j, Y" }}</span>
+            </div>
+        </a>
+        {% endif %}
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="no-articles-message">
+        <p>You haven't purchased any articles yet.</p>
+        <a href="{% url 'store' %}" class="browse-store-button">Browse Store</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

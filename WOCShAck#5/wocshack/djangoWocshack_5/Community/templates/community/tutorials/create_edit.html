@@ -1,0 +1,281 @@
+{% extends "base/base.html" %}
+{% load static %}
+
+{% block title %}VRC — {{ action }} Tutorial{% endblock %}
+
+{% block module_css %}
+<link rel="stylesheet" href="{% static 'community/css/content.css' %}">
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.css">
+<style>
+    /* SimpleMDE overrides */
+    .CodeMirror {
+        border: 1px solid #ddd !important;
+        border-radius: 8px !important;
+    }
+    .editor-toolbar {
+        border: 1px solid #ddd !important;
+        border-bottom: none !important;
+        border-radius: 8px 8px 0 0 !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="main-container">
+<nav class="vrc-breadcrumbs">
+  <a href="{% url 'community:index' %}">Community</a>
+  <span class="bc-sep">›</span>
+  <a href="{% url 'community:tutorial_list' %}">Tutorials</a>
+  <span class="bc-sep">›</span>
+  <span class="bc-current">{{ action }} Tutorial</span>
+</nav>
+<div class="form-wrapper">
+
+  <div class="form-header">
+    <h1 class="form-title">{{ action }} Tutorial</h1>
+    <a href="{% url 'community:tutorial_list' %}" class="content-btn">← Back</a>
+  </div>
+
+  <form method="post" class="content-form">
+    {% csrf_token %}
+
+    <div class="form-group">
+      <label class="form-label">Title *</label>
+      <input type="text" name="title" class="form-input" required maxlength="255"
+        value="{{ tutorial.title|default:'' }}">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Description * <span class="form-hint">(Markdown supported)</span></label>
+      <textarea name="description" id="id_description" class="form-textarea" rows="10" required>{{ tutorial.description|default:'' }}</textarea>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Difficulty</label>
+        <select name="difficulty" class="form-select">
+          {% for val, label in difficulties %}
+          <option value="{{ val }}" {% if tutorial.difficulty == val %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Estimated Minutes</label>
+        <input type="number" name="estimated_minutes" class="form-input" min="1"
+          value="{{ tutorial.estimated_minutes|default:'15' }}">
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Prerequisites <span class="form-hint">(optional — Markdown supported)</span></label>
+      <textarea name="prerequisites" id="id_prerequisites" class="form-textarea" rows="4">{{ tutorial.prerequisites|default:'' }}</textarea>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Category <span class="form-hint">(optional)</span></label>
+      <input type="text" name="category" class="form-input" maxlength="100"
+        value="{{ tutorial.category|default:'' }}">
+    </div>
+
+    <div class="form-checkboxes">
+      <label class="form-check">
+        <input type="checkbox" name="is_published" {% if tutorial.is_published %}checked{% endif %}>
+        Published
+      </label>
+      {% if request.user.is_staff %}
+      <label class="form-check">
+        <input type="checkbox" name="is_premium" {% if tutorial.is_premium %}checked{% endif %}>
+        Premium content
+      </label>
+      {% endif %}
+    </div>
+
+    {# ── Tutorial Steps ──────────────────────────────────────── #}
+    <fieldset class="step-fieldset">
+      <legend class="form-label" style="font-size:1.1rem;">Tutorial Steps</legend>
+      <p class="form-hint">Add the steps learners will follow. Each step needs an order number, title, and content.</p>
+
+      {{ step_formset.management_form }}
+      {% if step_formset.non_form_errors %}
+      <div class="form-hint" style="color:#dc2626; margin-bottom:1rem;">
+        {{ step_formset.non_form_errors }}
+      </div>
+      {% endif %}
+
+      <div id="step-forms">
+        {% for form in step_formset %}
+        <div class="step-card" data-step-index="{{ forloop.counter0 }}">
+          <div class="step-card-header">
+            <span class="step-card-label">Step</span>
+            <button type="button" class="content-btn content-btn--danger content-btn--sm btn-remove-step">✕ Remove</button>
+          </div>
+          {% for hidden in form.hidden_fields %}
+            {{ hidden }}
+          {% endfor %}
+          {% if form.non_field_errors %}
+          <div class="form-hint" style="color:#dc2626; margin-bottom:0.5rem;">
+            {{ form.non_field_errors }}
+          </div>
+          {% endif %}
+          <div class="form-row">
+            <div class="form-group" style="max-width:100px;">
+              <label class="form-label">Order</label>
+              {{ form.order }}
+              {% for error in form.order.errors %}<span class="form-hint" style="color:#dc2626;">{{ error }}</span>{% endfor %}
+            </div>
+            <div class="form-group" style="flex:1;">
+              <label class="form-label">Title *</label>
+              {{ form.title }}
+              {% for error in form.title.errors %}<span class="form-hint" style="color:#dc2626;">{{ error }}</span>{% endfor %}
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Content * <span class="form-hint">(Markdown supported)</span></label>
+            {{ form.content }}
+            {% for error in form.content.errors %}<span class="form-hint" style="color:#dc2626;">{{ error }}</span>{% endfor %}
+          </div>
+          <div class="form-group">
+            <label class="form-label">Code Example <span class="form-hint">(optional)</span></label>
+            {{ form.code_example }}
+          </div>
+          <div class="form-checkboxes">
+            <label class="form-check">
+              {{ form.has_interactive_editor }} Interactive editor
+            </label>
+            {% if form.instance.pk %}
+            <label class="form-check" style="color:#dc2626;">
+              {{ form.DELETE }} Delete this step
+            </label>
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+
+      <button type="button" id="btn-add-step" class="content-btn" style="margin-top:0.75rem;">+ Add Step</button>
+    </fieldset>
+
+    <div class="form-actions">
+      <button type="submit" class="content-btn content-btn--primary">{{ action }} Tutorial</button>
+      <a href="{% url 'community:tutorial_list' %}" class="content-btn">Cancel</a>
+    </div>
+  </form>
+
+</div>
+</div>
+
+<script>
+(function() {
+  const container = document.getElementById('step-forms');
+  const addBtn    = document.getElementById('btn-add-step');
+  const totalInput = document.getElementById('id_steps-TOTAL_FORMS');
+  const emptyHiddenFields = `{% for hidden in step_formset.empty_form.hidden_fields %}{{ hidden|escapejs }}{% endfor %}`;
+
+  // Use the last rendered card as the empty template
+  function getEmptyHtml(index) {
+    // Clone the structure with the new index
+    const prefix = 'steps-' + index;
+    return `
+    <div class="step-card" data-step-index="${index}">
+      <div class="step-card-header">
+        <span class="step-card-label">Step</span>
+        <button type="button" class="content-btn content-btn--danger content-btn--sm btn-remove-step">✕ Remove</button>
+      </div>
+      ${emptyHiddenFields.replace(/__prefix__/g, index)}
+      <div class="form-row">
+        <div class="form-group" style="max-width:100px;">
+          <label class="form-label">Order</label>
+          <input type="number" name="${prefix}-order" class="form-input" min="1" placeholder="#">
+        </div>
+        <div class="form-group" style="flex:1;">
+          <label class="form-label">Title *</label>
+          <input type="text" name="${prefix}-title" class="form-input" maxlength="255" placeholder="Step title">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Content * <span class="form-hint">(Markdown supported)</span></label>
+        <textarea name="${prefix}-content" class="form-textarea" rows="5" placeholder="Step content (Markdown supported)"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Code Example <span class="form-hint">(optional)</span></label>
+        <textarea name="${prefix}-code_example" class="form-textarea form-textarea--code" rows="4" placeholder="Code snippet (optional)"></textarea>
+      </div>
+      <div class="form-checkboxes">
+        <label class="form-check">
+          <input type="checkbox" name="${prefix}-has_interactive_editor"> Interactive editor
+        </label>
+      </div>
+    </div>`;
+  }
+
+  addBtn.addEventListener('click', function() {
+    const idx = parseInt(totalInput.value, 10);
+    container.insertAdjacentHTML('beforeend', getEmptyHtml(idx));
+    totalInput.value = idx + 1;
+  });
+
+  container.addEventListener('click', function(e) {
+    const btn = e.target.closest('.btn-remove-step');
+    if (!btn) return;
+    const card = btn.closest('.step-card');
+    // If the card has a persisted id, tick the DELETE checkbox instead of removing
+    const idInput = card.querySelector('input[name$="-id"]');
+    const deleteCheckbox = card.querySelector('input[name$="-DELETE"]');
+    if (idInput && idInput.value && deleteCheckbox) {
+      deleteCheckbox.checked = true;
+      card.style.opacity = '0.4';
+      btn.disabled = true;
+    } else {
+      card.remove();
+    }
+  });
+})();
+</script>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.js"></script>
+<script>
+// Initialize SimpleMDE editors for tutorial markdown fields
+var mdFields = [
+    {id: 'id_description', placeholder: 'Write your tutorial description here. Markdown is supported.'},
+    {id: 'id_prerequisites', placeholder: 'List prerequisites here. Markdown is supported.'}
+];
+var editors = [];
+mdFields.forEach(function(field) {
+    var el = document.getElementById(field.id);
+    if (el) {
+        editors.push(new SimpleMDE({
+            element: el,
+            spellChecker: false,
+            autosave: { enabled: false },
+            placeholder: field.placeholder,
+            toolbar: [
+                'bold', 'italic', 'heading', '|',
+                'quote', 'unordered-list', 'ordered-list', '|',
+                'link', 'image', 'code', '|',
+                'preview', 'side-by-side', 'fullscreen', '|',
+                'guide'
+            ],
+            status: ['lines', 'words'],
+            renderingConfig: {
+                singleLineBreaks: false,
+                codeSyntaxHighlighting: false,
+            },
+        }));
+        el.removeAttribute('required');
+    }
+});
+
+// Sync all SimpleMDE instances to textareas before form submit
+var tutorialForm = document.querySelector('.content-form');
+if (tutorialForm) {
+    tutorialForm.addEventListener('submit', function() {
+        editors.forEach(function(editor) { editor.codemirror.save(); });
+    });
+}
+</script>
+{% endblock %}

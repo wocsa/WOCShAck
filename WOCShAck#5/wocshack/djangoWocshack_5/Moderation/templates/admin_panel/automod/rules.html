@@ -1,0 +1,69 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Auto-Moderation Rules{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'base/css/admin.css' %}">
+<style>
+  .trigger-value { font-size: var(--vrc-font-size-xs); color: var(--vrc-gray-500); margin-top: 3px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="mod-page">
+  <div class="mod-page-header">
+    <h1 class="mod-page-title">Auto-Moderation Rules</h1>
+    <div style="display:flex;gap:var(--vrc-spacing-2);">
+      <a href="{% url 'admin_panel:automod_logs' %}" class="mod-btn mod-btn-outline">View Logs</a>
+      <a href="{% url 'admin_panel:automod_rule_edit' 'new' %}" class="mod-btn mod-btn-primary">+ Create Rule</a>
+    </div>
+  </div>
+
+  <div class="mod-card">
+    <div class="mod-card-body">
+      {% if rules %}
+        <table class="mod-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Trigger</th>
+              <th>Action</th>
+              <th>Priority</th>
+              <th>Status</th>
+              <th>Created By</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for rule in rules %}
+              <tr class="{% if not rule.is_active %}row-inactive{% endif %}">
+                <td>{{ rule.name }}</td>
+                <td>
+                  <span class="badge badge-info">{{ rule.get_trigger_type_display }}</span>
+                  <div class="trigger-value">{{ rule.trigger_value|truncatechars:30|escape }}</div>
+                </td>
+                <td><span class="badge badge-warning">{{ rule.get_action_display }}</span></td>
+                <td>{{ rule.priority }}</td>
+                <td>
+                  {% if rule.is_active %}
+                    <span class="badge badge-success">Active</span>
+                  {% else %}
+                    <span class="badge badge-secondary">Inactive</span>
+                  {% endif %}
+                </td>
+                <td>{{ rule.created_by.username }}</td>
+                <td>
+                  <a href="{% url 'admin_panel:automod_rule_edit' rule.id %}" class="mod-btn mod-btn-outline mod-btn-sm">Edit</a>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <div class="empty-state">No auto-moderation rules found.</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

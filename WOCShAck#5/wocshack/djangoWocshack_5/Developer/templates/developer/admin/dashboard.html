@@ -1,0 +1,75 @@
+{% extends 'base/base.html' %}
+{% block title %}Developer Admin — V.R.C{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dev-container { max-width: 1100px; margin: 0 auto; padding: var(--vrc-spacing-xl); }
+    .page-header { margin-bottom: var(--vrc-spacing-xl); }
+    .page-header h1 { font-size: var(--vrc-font-size-2xl); font-weight: var(--vrc-font-weight-bold); }
+    .page-header p { color: var(--vrc-gray-500); margin-top: 4px; }
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--vrc-spacing-md); margin-bottom: var(--vrc-spacing-xl); }
+    .stat-card { background: var(--vrc-white); border-radius: var(--vrc-radius-lg); padding: var(--vrc-spacing-lg); box-shadow: var(--vrc-shadow-md); text-align: center; }
+    .stat-card .stat-value { font-size: var(--vrc-font-size-3xl); font-weight: var(--vrc-font-weight-bold); }
+    .stat-card .stat-label { font-size: var(--vrc-font-size-sm); color: var(--vrc-gray-500); margin-top: 4px; }
+    a.stat-card { text-decoration: none; transition: transform var(--vrc-transition-normal), box-shadow var(--vrc-transition-normal); }
+    a.stat-card:hover { transform: translateY(-3px); box-shadow: var(--vrc-shadow-xl); }
+    .stat-pending .stat-value { color: var(--vrc-warning); }
+    .stat-active .stat-value { color: var(--vrc-success); }
+    .stat-total .stat-value { color: var(--vrc-primary); }
+    .links-section { background: var(--vrc-white); border-radius: var(--vrc-radius-lg); padding: var(--vrc-spacing-xl); box-shadow: var(--vrc-shadow-md); }
+    .links-section h2 { font-size: var(--vrc-font-size-lg); font-weight: var(--vrc-font-weight-semibold); margin-bottom: var(--vrc-spacing-md); }
+    .quick-links { display: flex; flex-wrap: wrap; gap: var(--vrc-spacing-sm); }
+    .quick-link { display: inline-block; padding: 10px 20px; background: var(--vrc-gradient); color: white; border-radius: var(--vrc-radius-md); text-decoration: none; font-size: var(--vrc-font-size-sm); font-weight: var(--vrc-font-weight-medium); }
+    .quick-link:hover { opacity: 0.9; color: white; text-decoration: none; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dev-container">
+    <div class="page-header">
+        <h1>Developer Admin</h1>
+        <p>Staff moderation panel for the Developer module.</p>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message|escape }}
+            <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
+        </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="stats-grid">
+        <a href="{% url 'developer_admin_payout_list' %}?status=pending" class="stat-card stat-pending">
+            <div class="stat-value">{{ pending_payouts }}</div>
+            <div class="stat-label">Pending Payouts</div>
+        </a>
+        <a href="{% url 'developer_admin_subscription_list' %}" class="stat-card stat-active">
+            <div class="stat-value">{{ active_subscriptions }}</div>
+            <div class="stat-label">Active Subscriptions</div>
+        </a>
+        <a href="{% url 'developer_admin_developer_list' %}" class="stat-card stat-total">
+            <div class="stat-value">{{ total_developers }}</div>
+            <div class="stat-label">Total Developers</div>
+        </a>
+        <a href="{% url 'developer_admin_listing_list' %}" class="stat-card stat-total">
+            <div class="stat-value">{{ total_listings }}</div>
+            <div class="stat-label">Total Listings</div>
+        </a>
+    </div>
+
+    <div class="links-section">
+        <h2>Quick Links</h2>
+        <div class="quick-links">
+            <a href="{% url 'developer_admin_payout_list' %}" class="quick-link">💸 Manage Payouts</a>
+            <a href="{% url 'developer_admin_listing_list' %}" class="quick-link">🎨 Manage Listings</a>
+            <a href="{% url 'developer_admin_subscription_list' %}" class="quick-link">📋 Manage Subscriptions</a>
+            <a href="{% url 'developer_admin_developer_list' %}" class="quick-link">👤 Developer Profiles</a>
+            <a href="{% url 'developer_admin_plan_list' %}" class="quick-link">🗂 Subscription Plans</a>
+            <a href="{% url 'developer_admin_promotion_list' %}" class="quick-link">🏷 Promotions</a>
+            <a href="{% url 'developer_admin_project_list' %}" class="quick-link">📁 CSS Projects</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

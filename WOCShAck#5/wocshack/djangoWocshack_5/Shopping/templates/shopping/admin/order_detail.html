@@ -1,0 +1,192 @@
+{% extends "base/base.html" %}
+{% load static %}
+
+{% block title %}V.R.C – Order {{ order.id|truncatechars:13 }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'base/css/admin.css' %}">
+<style>
+  .detail-grid {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: var(--vrc-spacing-lg);
+    align-items: start;
+  }
+  .detail-card {
+    background: var(--vrc-white);
+    border: 1px solid var(--vrc-gray-200);
+    border-radius: var(--vrc-radius-xl);
+    box-shadow: var(--vrc-shadow-sm);
+    overflow: hidden;
+    margin-bottom: var(--vrc-spacing-lg);
+  }
+  .detail-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--vrc-spacing-md) var(--vrc-spacing-lg);
+    background: var(--vrc-gray-50);
+    border-bottom: 1px solid var(--vrc-gray-200);
+    font-weight: var(--vrc-font-weight-semibold);
+    font-size: var(--vrc-font-size-base);
+    color: var(--vrc-gray-800);
+  }
+  .detail-card-body { padding: var(--vrc-spacing-lg); }
+  .detail-dl { display: grid; grid-template-columns: 160px 1fr; gap: var(--vrc-spacing-sm) var(--vrc-spacing-md); }
+  .detail-dt { font-size: var(--vrc-font-size-sm); color: var(--vrc-gray-500); align-self: baseline; }
+  .detail-dd { font-size: var(--vrc-font-size-sm); color: var(--vrc-gray-800); margin: 0; }
+  .detail-dd.strong { font-weight: var(--vrc-font-weight-bold); }
+  .status-form-group { margin-bottom: var(--vrc-spacing-md); }
+  .status-label { display: block; font-size: var(--vrc-font-size-xs); font-weight: var(--vrc-font-weight-semibold); color: var(--vrc-gray-500); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+  .status-select { width: 100%; padding: 0.5rem 0.9rem; font-size: var(--vrc-font-size-sm); font-family: inherit; color: var(--vrc-gray-700); background: var(--vrc-gray-50); border: 1px solid var(--vrc-gray-300); border-radius: var(--vrc-radius-md); }
+  .status-select:focus { outline: none; border-color: var(--vrc-primary); box-shadow: 0 0 0 3px rgba(102,126,234,.12); }
+  @media (max-width: 840px) { .detail-grid { grid-template-columns: 1fr; } }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="mod-page">
+
+  <nav class="vrc-breadcrumbs" style="margin-bottom:var(--vrc-spacing-3);">
+    <a href="{% url 'shop_admin_dashboard' %}">Shop Admin</a>
+    <span class="bc-sep">›</span>
+    <a href="{% url 'shop_order_list' %}">Orders</a>
+    <span class="bc-sep">›</span>
+    <span class="bc-current">Order {{ order.id|truncatechars:13 }}</span>
+  </nav>
+
+  <div class="mod-section-header">
+    <div>
+      <p class="mod-section-subtitle">
+        <a href="{% url 'shop_admin_dashboard' %}">Moderation</a> ›
+        <a href="{% url 'shop_order_list' %}">Orders</a> ›
+        {{ order.id|truncatechars:13 }}
+      </p>
+      <h1 class="mod-section-title">📦 Order Detail</h1>
+    </div>
+  </div>
+
+  <div class="detail-grid">
+
+    <!-- Left: details + items -->
+    <div>
+      <div class="detail-card">
+        <div class="detail-card-header">
+          <span>Order Details</span>
+          {% if order.status == 'pending' %}
+            <span class="mod-badge mod-badge--warning">{{ order.get_status_display }}</span>
+          {% elif order.status == 'processing' %}
+            <span class="mod-badge mod-badge--info">{{ order.get_status_display }}</span>
+          {% elif order.status == 'completed' %}
+            <span class="mod-badge mod-badge--success">{{ order.get_status_display }}</span>
+          {% elif order.status == 'cancelled' or order.status == 'refunded' %}
+            <span class="mod-badge mod-badge--danger">{{ order.get_status_display }}</span>
+          {% else %}
+            <span class="mod-badge mod-badge--gray">{{ order.get_status_display }}</span>
+          {% endif %}
+        </div>
+        <div class="detail-card-body">
+          <dl class="detail-dl">
+            <dt class="detail-dt">Order ID</dt>
+            <dd class="detail-dd"><code>{{ order.id }}</code></dd>
+
+            <dt class="detail-dt">Customer</dt>
+            <dd class="detail-dd">{{ order.user.username|escape }}</dd>
+
+            <dt class="detail-dt">Billing Name</dt>
+            <dd class="detail-dd">{{ order.billing_first_name|escape }} {{ order.billing_last_name|escape }}</dd>
+
+            <dt class="detail-dt">Billing Email</dt>
+            <dd class="detail-dd">{{ order.billing_email|escape }}</dd>
+
+            {% if order.billing_phone %}
+            <dt class="detail-dt">Phone</dt>
+            <dd class="detail-dd">{{ order.billing_phone|escape }}</dd>
+            {% endif %}
+
+            <dt class="detail-dt">Subtotal</dt>
+            <dd class="detail-dd">{{ order.total_amount }} Neuros</dd>
+
+            {% if order.discount_amount %}
+            <dt class="detail-dt">Discount</dt>
+            <dd class="detail-dd" style="color:var(--vrc-error);">
+              -{{ order.discount_amount }} Neuros
+              {% if order.coupon_code %}
+              <span class="mod-badge mod-badge--light" style="margin-left:4px;">{{ order.coupon_code|escape }}</span>
+              {% endif %}
+            </dd>
+            {% endif %}
+
+            <dt class="detail-dt">Final Total</dt>
+            <dd class="detail-dd strong">{{ order.get_final_total }} Neuros</dd>
+
+            <dt class="detail-dt">Created</dt>
+            <dd class="detail-dd">{{ order.created_at|date:"d M Y H:i" }}</dd>
+
+            {% if order.completed_at %}
+            <dt class="detail-dt">Completed</dt>
+            <dd class="detail-dd">{{ order.completed_at|date:"d M Y H:i" }}</dd>
+            {% endif %}
+          </dl>
+        </div>
+      </div>
+
+      <!-- Order Items -->
+      <div class="mod-table-card">
+        <div class="detail-card-header">Order Items</div>
+        <div class="mod-table-scroll">
+          <table class="mod-table">
+            <thead>
+              <tr>
+                <th>Product</th>
+                <th>Qty</th>
+                <th>Unit Price</th>
+                <th>Line Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in items %}
+              <tr>
+                <td>
+                  {{ item.css_name|escape }}
+                  <div style="font-size:var(--vrc-font-size-xs);color:var(--vrc-gray-400);">by {{ item.css_author|escape }}</div>
+                </td>
+                <td>{{ item.quantity }}</td>
+                <td>{{ item.price_at_purchase }} N</td>
+                <td style="font-weight:600;">{{ item.get_total }} N</td>
+              </tr>
+              {% empty %}
+              <tr><td colspan="4" class="mod-table-empty">No items in this order.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Update status -->
+    <div>
+      <div class="detail-card">
+        <div class="detail-card-header">Update Status</div>
+        <div class="detail-card-body">
+          <form method="post" action="{% url 'shop_order_update_status' order.id %}">
+            {% csrf_token %}
+            <div class="status-form-group">
+              <label for="new_status" class="status-label">New Status</label>
+              <select name="new_status" id="new_status" class="status-select">
+                {% for value, label in status_choices %}
+                <option value="{{ value }}" {% if order.status == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <button type="submit" class="mod-btn mod-btn--primary" style="width:100%;">Update Status</button>
+          </form>
+        </div>
+      </div>
+      <a href="{% url 'shop_order_list' %}" class="mod-btn mod-btn--ghost" style="width:100%;justify-content:center;">&larr; Back to Orders</a>
+    </div>
+
+  </div>
+
+</div>
+{% endblock %}

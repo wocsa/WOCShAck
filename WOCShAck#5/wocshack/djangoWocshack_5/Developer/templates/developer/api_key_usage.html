@@ -1,0 +1,45 @@
+{% extends 'base/base.html' %}
+{% block title %}API Key Usage - V.R.C{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dev-container { max-width: 1000px; margin: 0 auto; padding: var(--vrc-spacing-xl); }
+    .section { background: var(--vrc-white); border-radius: var(--vrc-radius-lg); padding: var(--vrc-spacing-xl); box-shadow: var(--vrc-shadow-md); }
+    .section h1 { font-size: var(--vrc-font-size-xl); font-weight: var(--vrc-font-weight-bold); margin-bottom: var(--vrc-spacing-lg); }
+    .usage-table { width: 100%; border-collapse: collapse; }
+    .usage-table th { background: var(--vrc-gray-50); padding: 10px 14px; text-align: left; font-size: var(--vrc-font-size-sm); color: var(--vrc-gray-500); border-bottom: 1px solid var(--vrc-gray-200); }
+    .usage-table td { padding: 10px 14px; border-bottom: 1px solid var(--vrc-gray-100); font-size: var(--vrc-font-size-sm); }
+    .status-2xx { color: var(--vrc-success); }
+    .status-4xx { color: var(--vrc-warning); }
+    .status-5xx { color: var(--vrc-error); }
+    .back-link { display: inline-block; margin-bottom: var(--vrc-spacing-lg); color: var(--vrc-primary); text-decoration: none; font-size: var(--vrc-font-size-sm); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dev-container">
+    <a href="{% url 'developer_api_keys' %}" class="back-link">&larr; Back to API Keys</a>
+    <div class="section">
+        <h1>Usage: {{ api_key.name }} ({{ api_key.key_prefix }}...)</h1>
+        {% if usage %}
+        <table class="usage-table">
+            <thead><tr><th>Endpoint</th><th>Method</th><th>Status</th><th>IP</th><th>Time (ms)</th><th>Timestamp</th></tr></thead>
+            <tbody>
+                {% for u in usage %}
+                <tr>
+                    <td>{{ u.endpoint }}</td>
+                    <td>{{ u.method }}</td>
+                    <td class="{% if u.status_code < 300 %}status-2xx{% elif u.status_code < 500 %}status-4xx{% else %}status-5xx{% endif %}">{{ u.status_code }}</td>
+                    <td>{{ u.ip_address }}</td>
+                    <td>{{ u.response_time_ms }}</td>
+                    <td>{{ u.timestamp|date:"M d H:i:s" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p style="color: var(--vrc-gray-500);">No usage data yet.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,54 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Assign Staff Role{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'base/css/admin.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="mod-page">
+  <h1 class="mod-page-title">Assign Role: {{ target_user.username }}</h1>
+
+  <div class="mod-card">
+    <div class="mod-card-body">
+      <form method="post">
+        {% csrf_token %}
+        <div class="form-group">
+          <label for="role_id" class="form-label">Role</label>
+          <select name="role_id" id="role_id" class="form-control" required>
+            <option value="">Select role...</option>
+            {% for role in roles %}
+              <option value="{{ role.id }}" {% if existing_assignment and existing_assignment.role.id == role.id %}selected{% endif %}>
+                {{ role.name }} - {{ role.description }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="module_access" class="form-label">Module Access</label>
+          <select name="module_access" id="module_access" class="form-control">
+            <option value="">All Modules</option>
+            {% for value, label in module_choices %}
+              <option value="{{ value }}">{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="daily_action_limit" class="form-label">Daily Action Limit</label>
+          <input type="number" name="daily_action_limit" id="daily_action_limit" class="form-control" value="{{ existing_assignment.daily_action_limit|default:'100' }}">
+        </div>
+        <div class="form-group">
+          <label for="notes" class="form-label">Notes</label>
+          <textarea name="notes" id="notes" class="form-control" rows="3">{{ existing_assignment.notes|default:'' }}</textarea>
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="mod-btn mod-btn-primary">{% if existing_assignment %}Update{% else %}Assign{% endif %} Role</button>
+          <a href="{% url 'admin_panel:staff_list' %}" class="mod-btn mod-btn-outline">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

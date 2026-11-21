@@ -1,0 +1,70 @@
+{% extends "base/base.html" %}
+{% load static %}
+
+{% block title %}VRC — Activity Feed{% endblock %}
+
+{% block module_css %}
+<link rel="stylesheet" href="{% static 'community/css/feed.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="main-container">
+<nav class="vrc-breadcrumbs">
+  <a href="{% url 'community:index' %}">Community</a>
+  <span class="bc-sep">›</span>
+  <span class="bc-current">Activity Feed</span>
+</nav>
+<div class="feed-wrapper">
+
+  <div class="feed-header">
+    <div>
+      <h1 class="feed-title">Activity Feed</h1>
+      <p class="feed-subtitle">Latest activity from you and people you follow.</p>
+    </div>
+    <a href="{% url 'community:feed_preferences' %}" class="feed-btn feed-btn--ghost">⚙ Settings</a>
+  </div>
+
+  {% if feed %}
+  <ul class="feed-list">
+    {% for item in feed %}
+    <li class="feed-item">
+      <div class="feed-item-icon">{{ item.icon }}</div>
+      <div class="feed-item-body">
+        <div class="feed-item-meta">
+          <strong class="feed-item-user">{{ item.user.username }}</strong>
+          <span class="feed-item-time">· {{ item.created_at|timesince }} ago</span>
+          {% if item.visibility != 'public' %}
+          <span class="feed-item-vis">{{ item.visibility }}</span>
+          {% endif %}
+        </div>
+        <p class="feed-item-title">{{ item.title }}</p>
+        {% if item.description %}
+        <p class="feed-item-desc">{{ item.description }}</p>
+        {% endif %}
+        {% if item.related_user %}
+        <span class="feed-item-related">with {{ item.related_user.username }}</span>
+        {% endif %}
+      </div>
+    </li>
+    {% endfor %}
+  </ul>
+
+  <div class="feed-pagination">
+    {% if has_prev %}
+    <a href="?page={{ page|add:'-1' }}" class="feed-btn feed-btn--ghost">← Previous</a>
+    {% endif %}
+    {% if has_next %}
+    <a href="?page={{ page|add:'1' }}" class="feed-btn feed-btn--primary">Next →</a>
+    {% endif %}
+  </div>
+
+  {% else %}
+  <div class="feed-empty">
+    <span class="feed-empty-icon">📰</span>
+    <p>No activity yet. Follow people and start creating content to see your feed!</p>
+  </div>
+  {% endif %}
+
+</div>
+</div>
+{% endblock %}

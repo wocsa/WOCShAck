@@ -1,0 +1,363 @@
+{% extends "base/base_shop.html" %}
+{% load static %}
+
+
+{% block title %}V.R.C - Sell Your CSS Loader{% endblock %}
+
+{% block module_css %}
+<link rel="stylesheet" href="{% static 'css/cart.css' %}">
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .add-article-container {
+        max-width: 800px;
+        margin: 2rem auto;
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        overflow: hidden;
+    }
+
+    .add-article-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 2rem;
+        color: white;
+    }
+
+    .add-article-header h1 {
+        margin: 0 0 0.5rem 0;
+        font-size: 1.8rem;
+        font-weight: 700;
+    }
+
+    .add-article-header p {
+        margin: 0;
+        opacity: 0.85;
+        font-size: 0.95rem;
+    }
+
+    .add-article-body {
+        padding: 2rem;
+    }
+
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-group label {
+        display: block;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 0.5rem;
+        font-size: 0.95rem;
+    }
+
+    .form-group label .required {
+        color: #e74c3c;
+        margin-left: 0.25rem;
+    }
+
+    .form-group input[type="text"],
+    .form-group input[type="number"],
+    .form-group textarea,
+    .form-group select {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border: 2px solid #e0e0e0;
+        border-radius: 10px;
+        font-size: 0.95rem;
+        color: #333;
+        background: #fafafa;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        box-sizing: border-box;
+    }
+
+    .form-group input:focus,
+    .form-group textarea:focus,
+    .form-group select:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+        background: white;
+    }
+
+    .form-group textarea {
+        min-height: 200px;
+        font-family: 'Courier New', Courier, monospace;
+        font-size: 0.9rem;
+        resize: vertical;
+    }
+
+    .form-group .help-text {
+        margin-top: 0.4rem;
+        font-size: 0.82rem;
+        color: #888;
+    }
+
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.25rem;
+    }
+
+    @media (max-width: 600px) {
+        .form-row { grid-template-columns: 1fr; }
+    }
+
+    .price-input-wrapper {
+        position: relative;
+    }
+
+    .price-input-wrapper input {
+        padding-right: 4.5rem;
+    }
+
+    .price-input-wrapper .currency-label {
+        position: absolute;
+        right: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #888;
+        font-size: 0.9rem;
+        font-weight: 500;
+        pointer-events: none;
+    }
+
+    .form-actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: flex-end;
+        margin-top: 2rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid #eee;
+    }
+
+    .btn-submit {
+        padding: 0.8rem 2rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+
+    .btn-submit:hover {
+        opacity: 0.9;
+        transform: translateY(-1px);
+    }
+
+    .btn-cancel {
+        padding: 0.8rem 2rem;
+        background: #f5f5f5;
+        color: #666;
+        border: 2px solid #e0e0e0;
+        border-radius: 10px;
+        font-size: 1rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        transition: background 0.2s ease;
+    }
+
+    .btn-cancel:hover {
+        background: #eee;
+        color: #333;
+    }
+
+    .seller-notice {
+        background: rgba(102, 126, 234, 0.05);
+        border: 1px solid rgba(102, 126, 234, 0.15);
+        border-radius: 10px;
+        padding: 1rem 1.25rem;
+        margin-bottom: 1.5rem;
+        font-size: 0.9rem;
+        color: #555;
+    }
+
+    .seller-notice strong {
+        color: #667eea;
+    }
+
+    .css-preview-section {
+        margin-top: 0.75rem;
+    }
+
+    .preview-toggle {
+        background: none;
+        border: 1px solid #667eea;
+        color: #667eea;
+        padding: 0.4rem 0.8rem;
+        border-radius: 6px;
+        font-size: 0.82rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .preview-toggle:hover {
+        background: #667eea;
+        color: white;
+    }
+
+    #css-live-preview {
+        display: none;
+        margin-top: 1rem;
+        padding: 1.5rem;
+        background: #1a1a2e;
+        border-radius: 10px;
+        min-height: 150px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+    }
+
+    #css-live-preview.visible {
+        display: flex;
+    }
+</style>
+{% endblock %}
+
+{% block content_wrapper_class %}{% endblock %}
+
+{% block content %}
+<div class="cart-page-wrapper" style="padding: 1.5rem;">
+    <div class="add-article-container">
+        <div class="add-article-header">
+            <h1>Sell Your CSS Loader</h1>
+            <p>Share your creative CSS animations with the V.R.C community and earn Neuros.</p>
+        </div>
+
+        <div class="add-article-body">
+            <div class="seller-notice">
+                <strong>Seller Guidelines:</strong> You must have the
+                <strong>Developer</strong> role to sell CSS files. Ensure your CSS is original, functional,
+                and follows community standards. Set a fair price to attract buyers.
+            </div>
+
+            <form method="post" action="{% url 'add_article' %}">
+                {% csrf_token %}
+
+                <div class="form-group">
+                    <label for="name">CSS Loader Name <span class="required">*</span></label>
+                    <input
+                        type="text"
+                        id="name"
+                        name="name"
+                        maxlength="100"
+                        required
+                        placeholder="e.g. Neon Pulse Spinner"
+                        value="{{ form_data.name|default:'' }}"
+                    >
+                    <div class="help-text">Give your CSS loader a unique, descriptive name (max 100 characters).</div>
+                </div>
+
+                <div class="form-group">
+                    <label for="description">Description</label>
+                    <textarea
+                        id="description"
+                        name="description"
+                        placeholder="Describe your CSS loader — what it looks like, how to use it…"
+                        rows="3"
+                    >{{ form_data.description|default:'' }}</textarea>
+                    <div class="help-text">Optional short description shown on the shop listing.</div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="author">Author Name <span class="required">*</span></label>
+                        <input
+                            type="text"
+                            id="author"
+                            name="author"
+                            maxlength="150"
+                            required
+                            placeholder="Your display name"
+                            value="{{ form_data.author|default:request.user.username }}"
+                        >
+                        <div class="help-text">The name shown on your product listing.</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="price">Price <span class="required">*</span></label>
+                        <div class="price-input-wrapper">
+                            <input
+                                type="number"
+                                id="price"
+                                name="price"
+                                min="0"
+                                max="9999.99"
+                                step="0.01"
+                                required
+                                placeholder="0.00"
+                                value="{{ form_data.price|default:'0.00' }}"
+                            >
+                            <span class="currency-label">Neuros</span>
+                        </div>
+                        <div class="help-text">Set to 0 for free. Maximum 9999.99 Neuros.</div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="category">Category</label>
+                    <select id="category" name="category">
+                        <option value="">-- No Category --</option>
+                        {% for cat in categories %}
+                        <option value="{{ cat.slug }}" {% if form_data.category == cat.slug %}selected{% endif %}>{{ cat.name }}</option>
+                        {% endfor %}
+                    </select>
+                    <div class="help-text">Categorizing your CSS loader helps buyers find it more easily.</div>
+                </div>
+
+                <div class="form-group">
+                    <label for="css_content">CSS Code <span class="required">*</span></label>
+                    <textarea
+                        id="css_content"
+                        name="css_content"
+                        required
+                        placeholder=".my-loader {
+  width: 50px;
+  height: 50px;
+  border: 5px solid #f3f3f3;
+  border-top: 5px solid #667eea;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}"
+                    >{{ form_data.css_content|default:'' }}</textarea>
+                    <div class="help-text">
+                        Paste your complete CSS code. It will be kept private until a buyer purchases it.
+                        Use animations, keyframes, and modern CSS features.
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="html_template">HTML Template</label>
+                    <textarea
+                        id="html_template"
+                        name="html_template"
+                        placeholder='&lt;div class="loader"&gt;&lt;/div&gt;'
+                        style="min-height: 100px;"
+                    >{{ form_data.html_template|default:'<div class="loader"></div>' }}</textarea>
+                    <div class="help-text">
+                        Custom HTML structure for rendering your CSS preview. Defaults to &lt;div class="loader"&gt;&lt;/div&gt;.
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <a href="{% url 'shop' %}" class="btn-cancel">Cancel</a>
+                    <button type="submit" class="btn-submit">Publish CSS Loader</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

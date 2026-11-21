@@ -1,0 +1,196 @@
+{% extends "base/base_forum.html" %}
+{% load static %}
+
+
+{% block title %}My Bookmarks - V.R.C Forum{% endblock %}
+
+{% block extra_css %}
+<style>
+    .bookmarks-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 30px;
+        border-radius: 16px;
+        margin-bottom: 20px;
+    }
+    .breadcrumb {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        margin-bottom: 10px;
+        font-size: 0.9rem;
+    }
+    .breadcrumb a {
+        color: rgba(255,255,255,0.8);
+        text-decoration: none;
+    }
+    .breadcrumb a:hover {
+        color: white;
+    }
+    .breadcrumb span {
+        opacity: 0.6;
+    }
+    .bookmarks-header h1 {
+        font-size: 1.8rem;
+    }
+
+    .bookmark-card {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        margin-bottom: 15px;
+        transition: transform 0.2s ease;
+    }
+    .bookmark-card:hover {
+        transform: translateY(-2px);
+    }
+    .bookmark-topic {
+        font-size: 0.85rem;
+        color: #888;
+        margin-bottom: 5px;
+    }
+    .bookmark-topic a {
+        color: #667eea;
+        text-decoration: none;
+    }
+    .bookmark-content-preview {
+        color: #333;
+        margin: 10px 0;
+        line-height: 1.5;
+    }
+    .bookmark-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 10px;
+        font-size: 0.85rem;
+        color: #888;
+    }
+    .bookmark-note {
+        background: #f8f9fa;
+        padding: 8px 12px;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        color: #555;
+        margin-top: 10px;
+        border-left: 3px solid #667eea;
+    }
+    .remove-bookmark-btn {
+        padding: 6px 12px;
+        background: #fee2e2;
+        color: #ef4444;
+        border: 1px solid #fca5a5;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 0.85rem;
+        transition: all 0.2s ease;
+    }
+    .remove-bookmark-btn:hover {
+        background: #ef4444;
+        color: white;
+    }
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: white;
+        border-radius: 12px;
+    }
+    .empty-state h3 {
+        color: #333;
+        margin-bottom: 10px;
+    }
+    .empty-state p {
+        color: #888;
+    }
+
+    .pagination-container {
+        display: flex;
+        justify-content: center;
+        margin-top: 30px;
+    }
+    .pagination {
+        display: flex;
+        gap: 5px;
+    }
+    .pagination a, .pagination span {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 40px;
+        height: 40px;
+        padding: 0 12px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 500;
+    }
+    .pagination a {
+        background: white;
+        color: #333;
+        border: 1px solid #ddd;
+    }
+    .pagination a:hover {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+    .pagination .current {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="bookmarks-header">
+    <div class="breadcrumb">
+        <a href="{% url 'forum_index' %}">Forum</a>
+        <span>/</span>
+        <span>My Bookmarks</span>
+    </div>
+    <h1>My Bookmarks</h1>
+</div>
+
+{% for bookmark in bookmarks %}
+<div class="bookmark-card">
+    <div class="bookmark-topic">
+        <a href="{% url 'forum_category' slug=bookmark.post.topic.category.slug %}">{{ bookmark.post.topic.category.name }}</a>
+        &raquo;
+        <a href="{% url 'forum_topic' topic_id=bookmark.post.topic.id %}">{{ bookmark.post.topic.title }}</a>
+    </div>
+    <div class="bookmark-content-preview">
+        {{ bookmark.post.content|truncatewords:50 }}
+    </div>
+    {% if bookmark.note %}
+    <div class="bookmark-note">
+        {{ bookmark.note }}
+    </div>
+    {% endif %}
+    <div class="bookmark-meta">
+        <span>by {{ bookmark.post.author.username }} | Bookmarked {{ bookmark.created_at|timesince }} ago</span>
+        <form action="{% url 'forum_toggle_bookmark' post_id=bookmark.post.id %}" method="post" style="display: inline;">
+            {% csrf_token %}
+            <button type="submit" class="remove-bookmark-btn">Remove Bookmark</button>
+        </form>
+    </div>
+</div>
+{% empty %}
+<div class="empty-state">
+    <h3>No bookmarks yet</h3>
+    <p>Bookmark posts you want to come back to later.</p>
+</div>
+{% endfor %}
+
+{% if page_obj.has_other_pages %}
+<div class="pagination-container">
+    <nav class="pagination">
+        {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}">&lsaquo; Previous</a>
+        {% endif %}
+        <span class="current">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+        {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}">Next &rsaquo;</a>
+        {% endif %}
+    </nav>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,58 @@
+{% extends 'base/base.html' %}
+{% block title %}Admin — {% if plan %}Edit{% else %}New{% endif %} Plan — V.R.C{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dev-container { max-width: 700px; margin: 0 auto; padding: var(--vrc-spacing-xl); }
+    .back-link { display: inline-block; margin-bottom: var(--vrc-spacing-lg); color: var(--vrc-primary); text-decoration: none; font-size: var(--vrc-font-size-sm); }
+    .page-header { margin-bottom: var(--vrc-spacing-xl); }
+    .page-header h1 { font-size: var(--vrc-font-size-2xl); font-weight: var(--vrc-font-weight-bold); }
+    .section { background: var(--vrc-white); border-radius: var(--vrc-radius-lg); padding: var(--vrc-spacing-xl); box-shadow: var(--vrc-shadow-md); }
+    .form-group { margin-bottom: var(--vrc-spacing-lg); }
+    .form-group label { display: block; font-size: var(--vrc-font-size-sm); font-weight: var(--vrc-font-weight-medium); color: var(--vrc-gray-700); margin-bottom: 6px; }
+    .form-group input[type="text"],
+    .form-group input[type="number"],
+    .form-group textarea { width: 100%; padding: 8px 12px; border: 1px solid var(--vrc-gray-300); border-radius: var(--vrc-radius-md); font-size: var(--vrc-font-size-sm); box-sizing: border-box; }
+    .form-group input[type="checkbox"] { margin-right: 6px; }
+    .form-group .helptext { font-size: var(--vrc-font-size-xs); color: var(--vrc-gray-500); margin-top: 4px; }
+    .form-group .errorlist { list-style: none; padding: 0; margin: 4px 0 0; color: var(--vrc-error); font-size: var(--vrc-font-size-xs); }
+    .form-actions { display: flex; gap: var(--vrc-spacing-md); margin-top: var(--vrc-spacing-xl); }
+    .btn-save { padding: 10px 28px; background: var(--vrc-gradient); color: white; border: none; border-radius: var(--vrc-radius-md); font-size: var(--vrc-font-size-sm); font-weight: var(--vrc-font-weight-semibold); cursor: pointer; }
+    .btn-save:hover { opacity: 0.9; }
+    .btn-cancel { padding: 10px 20px; background: var(--vrc-gray-100); color: var(--vrc-gray-700); border-radius: var(--vrc-radius-md); font-size: var(--vrc-font-size-sm); text-decoration: none; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dev-container">
+    <a href="{% url 'developer_admin_plan_list' %}" class="back-link">&larr; Back to Plans</a>
+
+    <div class="page-header">
+        <h1>{% if plan %}Edit Plan: {{ plan.name|escape }}{% else %}New Plan{% endif %}</h1>
+    </div>
+
+    <div class="section">
+        <form method="post">
+            {% csrf_token %}
+            {% for field in form %}
+            <div class="form-group">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% if field.help_text %}
+                <div class="helptext">{{ field.help_text }}</div>
+                {% endif %}
+                {% if field.errors %}
+                <ul class="errorlist">
+                    {% for error in field.errors %}<li>{{ error }}</li>{% endfor %}
+                </ul>
+                {% endif %}
+            </div>
+            {% endfor %}
+            <div class="form-actions">
+                <button type="submit" class="btn-save">Save Changes</button>
+                <a href="{% url 'developer_admin_plan_list' %}" class="btn-cancel">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

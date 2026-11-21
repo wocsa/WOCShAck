@@ -1,0 +1,109 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Audit Log{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'base/css/admin.css' %}">
+<style>
+  .time-cell { font-size: var(--vrc-font-size-xs); color: var(--vrc-gray-500); white-space: nowrap; }
+  .details-cell { font-size: var(--vrc-font-size-xs); color: var(--vrc-gray-500); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="mod-page">
+  <h1 class="mod-page-title">Audit Log</h1>
+
+  <div class="filter-card">
+    <form method="get">
+      <div class="filter-row">
+        <div class="filter-group">
+          <label>Action Type</label>
+          <select name="action_type" class="form-control">
+            <option value="all">All Types</option>
+            {% for type in action_types %}
+              <option value="{{ type }}" {% if current_filters.action_type == type %}selected{% endif %}>{{ type|title }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="filter-group">
+          <label>Staff</label>
+          <select name="actor" class="form-control">
+            <option value="all">All Staff</option>
+            {% for actor in actors %}
+              <option value="{{ actor }}" {% if current_filters.actor == actor %}selected{% endif %}>{{ actor }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="filter-group">
+          <label>From</label>
+          <input type="date" name="date_from" class="form-control" value="{{ current_filters.date_from|default:'' }}">
+        </div>
+        <div class="filter-group">
+          <label>To</label>
+          <input type="date" name="date_to" class="form-control" value="{{ current_filters.date_to|default:'' }}">
+        </div>
+        <div class="filter-group" style="flex:2;min-width:180px;">
+          <label>Search</label>
+          <input type="text" name="search" class="form-control" placeholder="Search..." value="{{ current_filters.search|default:'' }}">
+        </div>
+        <div class="filter-group" style="flex:0;min-width:auto;">
+          <label>&nbsp;</label>
+          <button type="submit" class="mod-btn mod-btn-primary">Filter</button>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <div class="mod-card">
+    <div class="mod-card-body">
+      {% if page_obj.object_list %}
+        <table class="mod-table">
+          <thead>
+            <tr>
+              <th>Time</th>
+              <th>Staff</th>
+              <th>Action</th>
+              <th>Target</th>
+              <th>Result</th>
+              <th>Details</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for log in page_obj.object_list %}
+              <tr>
+                <td class="time-cell">{{ log.created_at|date:"M j H:i" }}</td>
+                <td>{{ log.actor.username }}</td>
+                <td>
+                  <span class="badge badge-primary">{{ log.action_type }}</span>
+                  {{ log.action_name }}
+                </td>
+                <td>
+                  {% if log.affected_user %}
+                    <a href="{% url 'admin_panel:user_overview' log.affected_user.username %}">{{ log.affected_user.username }}</a>
+                  {% elif log.target_type %}
+                    {{ log.target_type }}
+                  {% else %}
+                    -
+                  {% endif %}
+                </td>
+                <td>
+                  {% if log.result == 'success' %}
+                    <span class="badge badge-success">Success</span>
+                  {% else %}
+                    <span class="badge badge-danger">{{ log.result|title }}</span>
+                  {% endif %}
+                </td>
+                <td class="details-cell">{{ log.details|truncatechars:100|escape }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <div class="empty-state">No audit log entries found.</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

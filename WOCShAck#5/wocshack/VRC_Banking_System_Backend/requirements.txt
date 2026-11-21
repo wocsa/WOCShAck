@@ -1,0 +1,7 @@
+regex
+django
+pillow
+pyotp
+qrcode
+sockets
+sqlalchemy
