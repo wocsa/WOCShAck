@@ -1,6 +1,6 @@
 # Description
 
-Stored Cross-Site Scripting (CWE-79) in the user-profile **Biography** field. Input submitted via `POST /account/settings/` (the *Change Biography* action) is persisted without sanitisation and later rendered raw on the public profile page `GET /account/profile/<username>/`. Any JavaScript stored in the biography executes in the browser of **every visitor** who views that profile — including administrators.
+Stored Cross-Site Scripting (CWE-79) in the user-profile **Biography** field. Input submitted via `POST /account/settings/` (form field `biography`, the *Change Biography* action) is persisted without sanitisation and later rendered raw on the public profile page `GET /account/profile/<username>/` (also reachable as `/account/profile/?username=<username>`), where the template wraps it in `{% autoescape off %}`. The profile page requires no authentication, so any JavaScript stored in the biography executes in the browser of **every visitor** who views that profile — anonymous visitors, users and administrators alike. No `Content-Security-Policy` header is sent (neither by Django on port 8000 nor through the BunkerWeb proxy, which strips it), so inline scripts are not blocked.
 
 Unlike the reflected shop-search XSS, this payload is persistent and victim-targeting is passive: the attacker simply waits for others to view the profile.
 
@@ -10,7 +10,7 @@ Unlike the reflected shop-search XSS, this payload is persistent and victim-targ
 |------|--------|--------|
 | 1 | Log in and open `/account/settings/` → *Change Biography*. | Authenticated session. |
 | 2 | Store a payload such as `<script>alert(1)</script>` and save. | Biography persisted verbatim. |
-| 3 | Visit `/account/profile/<username>/`. | The script executes for anyone viewing the profile. |
+| 3 | Visit `/account/profile/<username>/`. | `200 OK`; the payload appears verbatim inside `<p class="biography-text">` and executes for anyone viewing the profile (no login required). |
 
 # PoC
 
@@ -41,17 +41,20 @@ A realistic payload steals the CSRF cookie of any viewer (the `sessionid` cookie
 | Dimension | Impact |
 |-----------|--------|
 | Confidentiality | CSRF-token theft and DOM data exfiltration from every profile viewer, including admins (`sessionid` is `HttpOnly`). |
-| Integrity | Actions performed in the victim's session (account takeover when an admin views the profile). |
-| Availability | Profile defacement / forced redirects. |
+| Integrity | Arbitrary same-origin actions in the viewer's session: the script can read the `csrftoken` cookie and send authenticated POSTs (e.g. a superuser viewing the profile can be made to call `POST /account/admin/users/<id>/promote/`). Password and e-mail changes require the current password, so direct account takeover through this XSS alone is not possible. |
+| Availability | No direct impact demonstrated. |
 
-Overall severity: **Medium-High** — persistent, low-privilege to plant, high blast radius. Worm potential when chained with friend-request or notification flows that drive traffic to the profile.
+Overall severity: Medium-High — persistent rendering of untrusted biography content may compromise user data confidentiality and application integrity. The extent of the impact depends on the permissions of affected users and the application's security controls.
 
 # Remediation
 
-1. **Escape on output** — render the biography with Django's default auto-escaping; remove the `{% autoescape off %}` block wrapping user content.
-2. **Sanitise on input** — if HTML must be allowed, run the value through an allow-list sanitiser (e.g., `bleach`) restricted to safe tags/attributes.
-3. **Add a Content-Security-Policy** to contain any residual injection.
-4. **Mark the CSRF cookie `HttpOnly`** (`CSRF_COOKIE_HTTPONLY = True`) so script cannot read it (the session cookie is already `HttpOnly` by default).
+1. **Restore Django's automatic HTML escaping** — remove the `{% autoescape off %}` block surrounding user-controlled biography content and rely on Django's default auto-escaping.
+2. **Enforce server-side input validation** — validate biography length and format according to functional requirements, while preserving plain-text content without unnecessary HTML encoding before database storage.
+3. **Ensure consistent output encoding** — ensure that existing and newly stored biographies are rendered safely across all relevant templates using context-appropriate output encoding.
+4. **Use HTML sanitisation only if rich-text biographies are required** — use a maintained, parser-based HTML sanitisation library such as `nh3.clean()` with explicit allow-lists of permitted tags, attributes and URL schemes.
+5. **Implement a restrictive Content-Security-Policy (CSP)** — configure `CONTENT_SECURITY_POLICY` in `docker-compose.yml` and update `REMOVE_HEADERS` to preserve the policy in the final HTTP response. CSP must remain a defence-in-depth measure rather than a replacement for proper output escaping.
+6. **Maintain secure cookie settings** — preserve `SESSION_COOKIE_HTTPONLY = True` and configure appropriate `Secure` and `SameSite` attributes according to deployment requirements. Cookie hardening is not a substitute for XSS prevention.
+7. **Add regression tests** — extend `Account/tests.py` to verify that biographies are rendered as escaped text, previously stored content remains safe and legitimate biography content is displayed correctly.
 
 # Author
 DaVinciCode
