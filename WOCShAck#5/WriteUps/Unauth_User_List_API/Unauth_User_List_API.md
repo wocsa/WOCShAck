@@ -17,6 +17,8 @@ def user_list(request):
 
 - Route: `Api/urls.py:220` — `path("users/", views.user_list, name="user_list"),`, included under `api/` by `djangoWocshack_5/urls.py:48`.
 
+In the running platform no code path assigns `UserProfile.bid` (it is nullable and is only shown read-only in `Account/admin.py`), so every record currently returns `"bid": null`; the practical leak is the complete username roster, and any `bid` value populated later would be exposed in the same way.
+
 The full dump has no pagination, filtering or rate limiting. The project's `robots.txt` template (`djangoWocshack_5/urls.py:29`) contains `Disallow: /api/users/`, but robots.txt is advisory and does not restrict access.
 
 # Exploitation
@@ -24,8 +26,8 @@ The full dump has no pagination, filtering or rate limiting. The project's `robo
 | Step | Action | Result |
 |------|--------|--------|
 | 1 | Log out (or use a fresh client with no session cookie and no API key). | Caller is fully unauthenticated. |
-| 2 | Send `GET /api/users/` to the application. | Server responds `200 OK` with a JSON array. |
-| 3 | Parse the response. Each element contains `user__username` and `bid`. | Complete list of registered usernames and their bank IDs is obtained in one request. |
+| 2 | Send `GET /api/users/` to the application. | Server responds `200 OK` (`Content-Type: application/json`) with a JSON array. |
+| 3 | Parse the response. Each element contains `user__username` and `bid`. | Complete list of registered usernames (15 accounts on the seeded instance, including `admin`) is obtained in one request; `bid` is `null` for every account. |
 | 4 | Use the harvested usernames as input to follow-on attacks, such as login brute force or password spraying against `/account/login/`, or as targets for other broken-access-control or account-takeover issues in the platform. | Attack surface for account compromise is expanded without any prior knowledge of valid accounts. |
 
 # PoC
@@ -34,11 +36,12 @@ The full dump has no pagination, filtering or rate limiting. The project's `robo
 curl -s http://localhost:8000/api/users/
 ```
 
-Expected response shape (values depend on seeded data):
+Observed response on the seeded instance (truncated):
 
 ```json
-[{"user__username": "admin", "bid": "..."},
- {"user__username": "johndoe", "bid": "..."},
+[{"user__username": "admin", "bid": null},
+ {"user__username": "johndoe", "bid": null},
+ {"user__username": "janedoe", "bid": null},
  ...]
 ```
 
@@ -61,11 +64,11 @@ The following screenshot shows the JSON response returned by the user-list API i
 
 | Dimension | Impact |
 |-----------|--------|
-| Confidentiality | Every registered username and its `bid` (bank ID) is disclosed to anonymous callers. Usernames and bank identifiers are personal and financial-adjacent data. |
+| Confidentiality | Every registered username is disclosed to anonymous callers, including privileged accounts such as `admin`. The `bid` (bank ID) field is also serialised; it is `null` for all accounts in the current deployment, but would be leaked as soon as it is populated. |
 | Integrity | No direct modification of data. The disclosed usernames enable follow-on integrity attacks (credential stuffing, password spraying, account takeover via other flaws). |
 | Availability | No direct impact. The unpaginated full-table dump is cheap to request repeatedly and is not rate-limited, but it does not by itself degrade service. |
 
-Overall severity: **Medium** — the endpoint leaks the full user roster and bank IDs to anyone with network access, with no preconditions (CVSS 3.1 `AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N`, score 5.3). Severity rises when chained with login brute force or other account-takeover flaws, since the attacker no longer has to guess valid usernames.
+Overall severity: **Medium** — the endpoint leaks the full user roster (and the `bid` field, currently `null`) to anyone with network access, with no preconditions (CVSS 3.1 `AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N`, score 5.3). Severity rises when chained with login brute force or other account-takeover flaws, since the attacker no longer has to guess valid usernames.
 
 # Remediation
 
