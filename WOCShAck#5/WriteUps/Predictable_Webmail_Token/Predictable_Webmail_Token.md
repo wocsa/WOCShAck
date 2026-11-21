@@ -1,6 +1,6 @@
 # Description
 
-Deterministic session token (CWE-340 / CWE-330) on the TrackBox webmail. The authentication cookie `Id` is set to `SHA256(f"{username} + {stored_password_hash}")` (`Backend.py:136-140`) at login time — a deterministic value derived from the username and the stored SHA-256 password hash, not a random one. The token never expires, has no server-side session store, and logout only deletes the client cookie.
+Deterministic session token (CWE-340 / CWE-330) on the TrackBox webmail. The authentication cookie `Id` is set to `SHA256(f"{username} + {stored_password_hash}")` (`Backend.py:136-140`) at login time — a deterministic value derived from the username and the stored SHA-256 password hash, not a random one. The token never expires server-side (it stays valid until the user's password changes), has no server-side session store, and logout only deletes the client cookie.
 
 The authentication cookie has a client-side lifetime of 20 minutes (`Pages.py:85,141-142,171-172`). Client-side cookie expiration and deletion do not replace server-side session expiration and revocation.
 
@@ -45,15 +45,15 @@ Host: webmail.<TARGET>
 Cookie: Id=<computed_token>; Username=admin@tbox.traced
 ```
 
-Full inbox access confirmed with no plaintext password.
+Full inbox access confirmed with no plaintext password: the computed value is byte-for-byte the `Id` cookie that `POST /connect` sets for the same account, `GET /client` returns `200` with the victim's inbox (e.g. the admin `Welcome to V.R.C Platform!` mail), while a wrong `Id` returns `302 Location: /connect`.
 
 # Risk
 
 | Dimension | Impact |
 |-----------|--------|
 | Confidentiality | Any user's inbox readable without credentials, including secrets and password-reset links. |
-| Integrity | Admin-inbox access enables password resets across Banking and Django admin → full platform compromise. |
-| Availability | Chained with the webmail CSRF (password change / account delete), one visit takes over and destroys an account. |
+| Integrity | Admin-inbox access lets the attacker receive the main-app password-reset link (`/account/password-reset-request/` mails it to `admin@tbox.traced`) → admin takeover of the V.R.C platform. The Banking backend has no email-based reset. |
+| Availability | Limited: `/client/settings/change_password` and `/client/settings/delete_account` re-check the current password, so a forged session alone cannot change the password or delete the account (both return `Wrong password.`). |
 
 Overall severity: **Critical** — deterministic, non-expiring token forgeable from the unauthenticated hash dump; chains with the `GET /api/users` finding for password-less session forgery for every account.
 
