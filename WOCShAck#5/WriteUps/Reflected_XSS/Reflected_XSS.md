@@ -5,9 +5,9 @@ Reflected Cross-Site Scripting (CWE-79) on the shop search endpoint `GET /shop/?
 The vulnerability is:
 - **Reflected** — the payload lives in the URL and runs on page load.
 - **Unauthenticated** — no session cookie is required to reach the endpoint.
-- **Limited defense-in-depth** — no Content-Security-Policy was observed in the tested HTTP response.
+- **Limited defense-in-depth** — no `Content-Security-Policy` or `X-XSS-Protection` header is sent, neither by Django directly (port 8000) nor through the BunkerWeb reverse proxy (which strips the remaining security headers via `REMOVE_HEADERS`).
 
-Because the `csrftoken` cookie is **not** marked `HttpOnly`, a successful injection can steal it and forge state-changing requests in the victim's session.
+Because the `csrftoken` cookie is **not** marked `HttpOnly`, a successful injection can read it and forge state-changing requests in the victim's session. The `sessionid` cookie **is** `HttpOnly`, so the session token itself cannot be read from `document.cookie`.
 
 # Exploitation
 
@@ -47,7 +47,8 @@ curl -s "http://<TARGET>/shop/?q=%3Cscript%3Ealert(1)%3C%2Fscript%3E" | grep "se
 
 ```bash
 curl -sI "http://<TARGET>/shop/?q=test" | grep -iE "content-security-policy|x-xss-protection|x-content-type-options"
-# (empty)
+# Through the BunkerWeb proxy: (empty)
+# Directly against Django (http://localhost:8000): only "X-Content-Type-Options: nosniff", which does not mitigate XSS.
 ```
 
 ![No security headers on the response](xss-shop-no-defense-headers.png)
@@ -65,7 +66,7 @@ curl -sI "http://<TARGET>/shop/?q=test" | grep -iE "content-security-policy|x-xs
 | Dimension | Impact |
 |-----------|--------|
 | Confidentiality | Theft of the non-`HttpOnly` `csrftoken` cookie and any DOM-accessible data. |
-| Integrity | Forged state-changing actions (purchases, profile/password changes, forum posts) in the victim's session. |
+| Integrity | Forged state-changing actions (purchases, profile changes, forum posts) in the victim's session. Password and e-mail changes require the current password, so they cannot be forged this way. |
 | Availability | No direct impact demonstrated. |
 
 Overall severity: **Medium** — potential compromise of user data confidentiality and application integrity.
