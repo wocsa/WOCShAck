@@ -1,6 +1,6 @@
 # Description
 
-Unsafe iframe sandbox configuration (CWE-693 — Protection Mechanism Failure). The chatbot widget is embedded site-wide via the `chat_widget.html` partial (`shared/templates/chat-bubble/chat_widget.html:68`), included in the shared base template (`shared/templates/base/base.html:91`). The widget is rendered on `/`, `/account/`, `/forum/` and `/banking/`.
+Unsafe iframe sandbox configuration (CWE-693 — Protection Mechanism Failure). The chatbot widget is embedded site-wide via the `chat_widget.html` partial (`shared/templates/chat-bubble/chat_widget.html:68`), included in the shared base template (`shared/templates/base/base.html:91`). The widget is rendered on `/`, `/account/`, `/forum/` and `/banking/`, and also on unauthenticated pages such as `/account/login/`; `/chatbot/widget/` itself is served with `200` to anonymous clients.
 
 The combination of `allow-scripts` and `allow-same-origin` in the same-origin iframe defeats the intended document isolation provided by the sandbox.
 
@@ -37,13 +37,15 @@ console.log("CSRF:", window.parent.document.querySelector('[name=csrfmiddlewaret
 
 ![Browser sandbox warning and parent document access observed during testing](parent_csrf_cookies.png)
 
-The `sessionid` cookie is protected by `HttpOnly`, whereas `csrftoken` is not (`CSRF_COOKIE_HTTPONLY=False` by default).
+The `sessionid` cookie is protected by `HttpOnly`, whereas `csrftoken` is not (`CSRF_COOKIE_HTTPONLY=False` by default). Observed on login over direct HTTP: `csrftoken=...; Max-Age=31449600; Path=/; SameSite=Lax` and `sessionid=...; HttpOnly; Max-Age=1209600; Path=/; SameSite=Lax` (no `Secure` flag on either).
+
+Reproduced in Chrome on `http://localhost:8000/account/login/` by injecting a script into the widget document: it ran with origin `http://localhost:8000`, read `window.parent.document.cookie` (only `csrftoken` visible, no `sessionid`), the parent's `csrfmiddlewaretoken` input value and the parent `document.title`.
 
 W3C HTML Living Standard (§ iframe sandbox): a page with both `allow-same-origin` and `allow-scripts` "could remove the sandbox attribute and then reload, running the original page's scripts again."
 
 The same iframe configuration was confirmed through BunkerWeb over HTTP and HTTPS.
 
-Django returns `X-Frame-Options: DENY` when accessed directly, except for the chatbot widget, which is exempt from this protection. Through BunkerWeb, the tested responses contain neither Content-Security-Policy nor X-Frame-Options headers.
+Django returns `X-Frame-Options: DENY` when accessed directly, except for the chatbot widget (`@xframe_options_exempt`, `Chatbot/views.py:207`), which is returned without `X-Frame-Options`. Django sends no `Content-Security-Policy` header on any of these responses, even when accessed directly. Through BunkerWeb, the tested responses contain neither Content-Security-Policy nor X-Frame-Options headers.
 
 BunkerWeb strips these headers through its `REMOVE_HEADERS` configuration (`docker-compose.yml:6`), while `CONTENT_SECURITY_POLICY` and `X_FRAME_OPTIONS` are explicitly set to empty strings (`docker-compose.yml:155-157`).
 
