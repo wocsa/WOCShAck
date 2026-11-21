@@ -4,7 +4,9 @@ Coupon abuse via cross-tenant discount application (CWE-285). The Developer Coup
 
 Developer-specific coupon restrictions are implemented in `Coupon.get_applicable_total()` (`Shopping/models.py:395-409`) and enforced by the web shopping interface.
 
-The API shopping implementation does not consistently enforce these restrictions.
+The API shopping implementation does not enforce these restrictions. Both `POST /api/shop/coupon/apply/` (`Api/views_shopping.py:450-456`) and `POST /api/shop/checkout/` (`Api/views_shopping.py:267-285`) call `coupon.calculate_discount(total)` on the **whole cart total** returned by `cart_obj.get_total()`. Neither calls `get_applicable_total()` or checks `coupon.developer_id`, so a developer-scoped coupon is computed against items sold by other sellers. The web shop, by contrast, uses `get_applicable_total()` and filters on `css.creator_id == coupon_obj.developer_id` (`Shopping/views.py:590-591, 651-681`).
+
+The API checkout also never increments `coupon.current_uses` (only the web flow does, `Shopping/views.py:871`). It records a `CouponUsage` row, so the per-user limit is enforced, but the global `max_uses` limit is never reached through the API.
 
 The API checkout implementation (`Api/views_shopping.py:267-359`) also handles discounted order totals inconsistently with actual banking payments, resulting in incorrect preliminary balance validation and inaccurate order and local accounting records.
 
@@ -14,7 +16,7 @@ The API checkout implementation (`Api/views_shopping.py:267-359`) also handles d
 |------|--------|--------|
 | 1 | Log in as a user with the Developer Role. | Developer access. |
 | 2 | `POST /developer/coupons/create/` with `discount_value=100`, `minimum_order_amount=0`, high max-uses. | 100%-off coupon created (the server-side discount cap allows discounts of up to 100%). |
-| 3 | Review the API coupon validation result. | Discount calculated outside the intended developer-specific scope. No completed purchase is demonstrated. |
+| 3 | With another seller's item in the cart, `POST /api/shop/coupon/apply/` with the coupon code (session cookie or `X-API-Key`). | The discount is computed on the whole cart total, including items the developer does not own. No completed free purchase is demonstrated. |
 
 # PoC
 
@@ -65,7 +67,7 @@ These results demonstrate inconsistencies between payment processing and account
 | Integrity | Incorrect discount calculations, inconsistent preliminary balance validation, and order and local accounting records that do not reflect actual banking payments. |
 | Availability | None directly. |
 
-Overall severity: **Medium** — improper enforcement of developer-specific coupon restrictions compromises the integrity of marketplace order and accounting records.
+Overall severity: **Medium** — improper enforcement of developer-specific coupon restrictions and of the global usage limit compromises the integrity of marketplace order and accounting records.
 
 Free purchases and direct revenue loss are not demonstrated.
 
@@ -77,7 +79,8 @@ Free purchases and direct revenue loss are not demonstrated.
 2. **Consistently enforce the existing developer-specific coupon scope** across both web and API shopping interfaces.
 3. **Validate coupon eligibility** against the applicable cart contents before checkout.
 4. **Ensure consistency between calculated totals, banking payments, order records and local transaction records.**
-5. **Add regression tests** covering coupon scope enforcement, usage limits, payment consistency and accounting accuracy.
+5. **Increment `current_uses` in the API checkout** (inside the same transaction as `CouponUsage`) so `max_uses` is enforced on every checkout path.
+6. **Add regression tests** covering coupon scope enforcement, usage limits, payment consistency and accounting accuracy.
 
 # Author
 CPE LYON
