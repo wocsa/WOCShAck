@@ -25,10 +25,10 @@ csrfmiddlewaretoken=<token>&total=0.01&first_name=Test&name=User&email=hunter001
 Server response confirms it used the attacker value for the balance check, not the 13.22 NE cart total:
 
 ```
-Insufficient funds. Your balance is 0.01 Neuros, but the order total is 0.02 Neuros.
+Insufficient funds. Your balance is <balance> Neuros, but the order total is 0.01 Neuros.
 ```
 
-(without the tampered field, the same request returns `... but the order total is 2.50 Neuros.` for a 2.50 NE cart).
+(without the tampered field, the same request reports the real cart total, e.g. `... but the order total is 13.22 Neuros.`).
 
 With `total=0` the pipeline accepts the order: `302 → /shop/payment/loading/`, "Authentication successful. Processing your payment...".
 
