@@ -88,7 +88,7 @@ Verified against the live lab instance (test accounts only):
 | Integrity | The same SID grants write commands (`tr` transfers, `sb` set balance, `sp` set PIN, `delu`, and so on), so balances and account state can be changed in the victim's context. (`su` is a read-only search-by-payment-number command.) |
 | Availability | Limited. Session registration and cleanup run on a single backend process, and SID collisions within the same second can cause one session's `sescl` to invalidate another's. |
 
-Overall severity: **High**. This matches the dev catalog CVSS 3.1 score of 7.4 (`AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:N`). The attack needs an authenticated Django session to reach `quick_transfer`, and the time-window search makes it harder to exploit, which is why the score is not Critical. The unauthenticated-SID registration path in `create_session` raises the practical risk, and it is independent of the MD5 weakness.
+Overall severity: **High**. The dev catalog records CVSS 3.1 7.4 (`AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:N`), but the attack needs an authenticated Django session to reach `quick_transfer`, so `PR:L` is more accurate: the SID-prediction path alone scores 6.8 (`AV:N/AC:H/PR:L/UI:N/S:U/C:H/I:H/A:N`). The sid-less command path (`getu`/`sb` accepted on any `user_id` without a `sid`) needs no time-window search, which raises it to 8.1 (`AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:N`). The unauthenticated-SID registration path in `create_session` raises the practical risk, and it is independent of the MD5 weakness.
 
 # Remediation
 
