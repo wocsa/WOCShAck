@@ -73,6 +73,8 @@ curl --request-target "http://domain.com/account/password-reset-request/" -H "Ho
 # 200 "If an account with that email exists, a reset link has been sent."
 ```
 
+Over HTTPS the same request works with `--http1.1` and `https://domain.com/...` as request target; because Django's CSRF check then compares the `Referer` with the poisoned host, the request must carry `Referer: https://attacker.example/`. The resulting link is `https://attacker.example/account/password_reset/?token=<valid_token>`.
+
 In both cases the e-mail received by the victim contains:
 
 ```
