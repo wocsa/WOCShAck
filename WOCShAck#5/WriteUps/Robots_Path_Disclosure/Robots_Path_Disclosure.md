@@ -28,11 +28,12 @@ Disallow: /banking/webhook/
 ![robots.txt disclosing sensitive endpoints](PoC_200_-_01.png)
 
 Actionable entries:
-- `/admin/` — admin panel location (real route at `urls.py:41`).
-- `/api/users/` — the unauthenticated user list (`Api/views.py:3850`, no auth decorator).
-- `/banking/pin-skip/` — the PIN-gate bypass back-door (requires `@login_required`).
+- `/admin/` — admin panel location (real route at `urls.py:41`; `GET /admin/` → 302 to `/admin/login/`).
+- `/api/users/` — the unauthenticated user list (`Api/views.py:3850`, no auth decorator; `GET /api/users/` without a session → 200 with every username).
+- `/banking/api/` — the prefix itself returns 404, but it reveals the banking JSON API namespace (`/banking/api/user/<id>/`, `/banking/api/pay/`, `/banking/api/quick-transfer/`, all live for authenticated users).
+- `/banking/pin-skip/` — the PIN-gate bypass back-door (requires `@login_required`; unauthenticated → 302 to login, authenticated → 302 to `/banking/dashboard/` with the PIN session flag set).
 - `/banking/webhook/` — the SSRF-vulnerable webhook endpoint.
-- `/backup/db.sqlite3` — listed but no URL pattern serves this path; it is a dead entry that still hints at the database engine.
+- `/backup/db.sqlite3` and `/debug/` — listed but no URL pattern serves these paths (both 404); they are dead entries, the first one still hinting at the database engine.
 
 # Risk
 
