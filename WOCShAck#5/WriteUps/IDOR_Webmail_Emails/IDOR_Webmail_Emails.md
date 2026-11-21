@@ -1,8 +1,8 @@
 # Description
 
-Missing Access Control (CWE-306 / CWE-639) on the TrackBox webmail endpoint `GET /api/emails` (`API.py:101-139`).
+Missing Access Control (CWE-306 / CWE-639) on the TrackBox webmail endpoints `GET /api/emails` (`API.py:101-139`) and `GET /api/emails/<id>` (`API.py:140-163`).
 
-The endpoint exposes all stored mailboxes without enforcing authentication or mailbox-level authorisation. Unauthenticated access has been confirmed both directly and through BunkerWeb.
+The endpoints expose all stored mailboxes, and any single message by its sequential integer id, without enforcing authentication or mailbox-level authorisation. (The HTML route `/client/mail?email=<id>` does compare the `Username` cookie with the destination and does not disclose other users' mail — it returns `500` instead — so the flaw is in the API.) Unauthenticated access has been confirmed both directly and through BunkerWeb.
 
 The V.R.C welcome system includes plaintext login credentials in welcome emails. These messages expose sensitive authentication information, including credentials associated with seeded accounts.
 
@@ -38,12 +38,13 @@ Runtime testing confirmed that no authenticated session is required to access th
 ```http
 GET /api/emails?user=admin HTTP/1.1
 Host: webmail.<TARGET>
-Cookie: Id=<any_valid_session>
 
 {"count":1,"emails":[{"content":"...Password: [REDACTED]...","destination":"admin@tbox.traced"}]}
 ```
 
 ![Plaintext administrative credentials exposed in a welcome email — password redacted](admin_credentials.png)
+
+No cookie is needed. The same message is also returned by id: `GET /api/emails/1` → `200 {"email":{"content":"Dear admin, ... Password: [REDACTED] ...","destination":"admin@tbox.traced","id":1,...}}`; ids are sequential, so every message can be enumerated.
 
 The exposed welcome email contains plaintext login credentials associated with the seeded V.R.C superuser. The password value has been redacted from the evidence.
 
