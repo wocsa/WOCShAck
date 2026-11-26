@@ -1,0 +1,76 @@
+{% comment %}
+V.R.C Floating Chat Widget Partial
+- Embeds chatbot widget via iframe for sandboxing
+- Uses proper ARIA attributes for accessibility
+- Enhanced UI with status indicator
+- Loaded at end of body for optimal performance
+{% endcomment %}
+{% load static %}
+
+<!-- Chat Bubble Toggle Button -->
+<button id="chat-bubble-toggle"
+        class="chat-bubble-toggle"
+        type="button"
+        aria-label="Open support chat"
+        aria-expanded="false"
+        aria-controls="chat-widget-container">
+    <span class="chat-icon">
+        <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: white;">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+        </svg>
+    </span>
+    <span class="close-icon">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color: white;">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+    </span>
+    <span class="chat-bubble-badge" aria-hidden="true"></span>
+</button>
+
+<!-- Chat Widget Container -->
+<div id="chat-widget-container"
+     class="chat-widget-container"
+     role="dialog"
+     aria-label="Support chat"
+     aria-hidden="true">
+
+    <!-- Widget Header -->
+    <div class="chat-widget-header">
+        <div class="chat-widget-header-title">
+            <span class="avatar">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" style="color: white;">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M8 14s1.5 2 4 2 4-2 4-2"/>
+                    <line x1="9" y1="9" x2="9.01" y2="9"/>
+                    <line x1="15" y1="9" x2="15.01" y2="9"/>
+                </svg>
+            </span>
+            <div class="status">
+                <span class="status-name">V.R.C Support</span>
+                <span class="status-text">Always here to help</span>
+            </div>
+        </div>
+        <button id="chat-widget-close"
+                class="chat-widget-header-close"
+                type="button"
+                aria-label="Close chat">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"/>
+                <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+        </button>
+    </div>
+
+    <!-- Iframe containing the chatbot widget -->
+    <iframe src="/chatbot/widget/"
+            title="Support Chat"
+            sandbox="allow-scripts allow-forms allow-same-origin">
+    </iframe>
+</div>
+
+<!-- Chat Bubble Styles -->
+<link rel="stylesheet" href="{% static 'chat-bubble/css/chat-bubble.css' %}">
+
+<!-- Chat Bubble Script (defer for performance) -->
+<script src="{% static 'chat-bubble/js/chat-bubble.js' %}" defer></script>

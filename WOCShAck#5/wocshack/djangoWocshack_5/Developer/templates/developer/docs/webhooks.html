@@ -1,0 +1,95 @@
+{% extends 'base/base.html' %}
+{% block title %}Webhooks Documentation - V.R.C{% endblock %}
+
+{% block extra_css %}
+<style>
+    .docs-layout { display: grid; grid-template-columns: 240px 1fr; max-width: 1200px; margin: 0 auto; padding: var(--vrc-spacing-xl); gap: var(--vrc-spacing-xl); }
+    .docs-sidebar { position: sticky; top: 100px; align-self: start; }
+    .docs-sidebar h3 { font-size: var(--vrc-font-size-sm); text-transform: uppercase; letter-spacing: 0.1em; color: var(--vrc-gray-500); margin-bottom: var(--vrc-spacing-sm); }
+    .docs-nav { list-style: none; padding: 0; }
+    .docs-nav li { margin-bottom: 4px; }
+    .docs-nav a { display: block; padding: 8px 12px; border-radius: var(--vrc-radius-md); color: var(--vrc-gray-600); text-decoration: none; font-size: var(--vrc-font-size-sm); }
+    .docs-nav a:hover, .docs-nav a.active { background: rgba(102, 126, 234, 0.1); color: var(--vrc-primary); }
+    .docs-content { background: var(--vrc-white); border-radius: var(--vrc-radius-lg); padding: var(--vrc-spacing-xl) var(--vrc-spacing-2xl); box-shadow: var(--vrc-shadow-md); }
+    .docs-content h1 { font-size: var(--vrc-font-size-3xl); font-weight: var(--vrc-font-weight-bold); margin-bottom: var(--vrc-spacing-lg); }
+    .docs-content h2 { font-size: var(--vrc-font-size-xl); font-weight: var(--vrc-font-weight-semibold); margin-top: var(--vrc-spacing-xl); margin-bottom: var(--vrc-spacing-md); }
+    .docs-content p { line-height: var(--vrc-line-height-relaxed); color: var(--vrc-gray-600); margin-bottom: var(--vrc-spacing-md); }
+    .docs-content code { background: var(--vrc-gray-100); padding: 2px 6px; border-radius: var(--vrc-radius-sm); font-size: var(--vrc-font-size-sm); }
+    .docs-content pre { background: var(--vrc-gray-800); color: var(--vrc-gray-100); padding: var(--vrc-spacing-lg); border-radius: var(--vrc-radius-md); overflow-x: auto; margin-bottom: var(--vrc-spacing-lg); }
+    .docs-content pre code { background: none; padding: 0; color: inherit; }
+    .event-list { list-style: none; padding: 0; }
+    .event-list li { padding: 10px 0; border-bottom: 1px solid var(--vrc-gray-100); }
+    .event-name { font-family: monospace; font-weight: var(--vrc-font-weight-semibold); color: var(--vrc-primary); }
+    .event-desc { font-size: var(--vrc-font-size-sm); color: var(--vrc-gray-500); margin-top: 2px; }
+    .back-link { display: inline-block; margin-bottom: var(--vrc-spacing-lg); color: var(--vrc-primary); text-decoration: none; font-size: var(--vrc-font-size-sm); }
+    @media (max-width: 768px) { .docs-layout { grid-template-columns: 1fr; } }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="docs-layout">
+    <div class="docs-sidebar">
+        <a href="{% url 'developer_dashboard' %}" class="back-link">&larr; Dashboard</a>
+        <h3>Documentation</h3>
+        <ul class="docs-nav">
+            <li><a href="{% url 'developer_docs' %}">Getting Started</a></li>
+            <li><a href="{% url 'developer_docs_api' %}">API Reference</a></li>
+            <li><a href="{% url 'developer_docs_webhooks' %}" class="active">Webhooks</a></li>
+            <li><a href="{% url 'developer_docs_examples' %}">Examples</a></li>
+        </ul>
+    </div>
+
+    <div class="docs-content">
+        <h1>Webhooks</h1>
+        <p>Webhooks allow you to receive real-time HTTP notifications when events occur on your developer account.</p>
+
+        <h2>Event Types</h2>
+        <ul class="event-list">
+            <li><div class="event-name">sale.completed</div><div class="event-desc">Triggered when a customer purchases one of your CSS listings</div></li>
+            <li><div class="event-name">sale.refunded</div><div class="event-desc">Triggered when a sale is refunded</div></li>
+            <li><div class="event-name">listing.published</div><div class="event-desc">Your listing has been approved and published</div></li>
+            <li><div class="event-name">listing.rejected</div><div class="event-desc">Your listing was rejected during review</div></li>
+            <li><div class="event-name">review.created</div><div class="event-desc">A customer left a review on your listing</div></li>
+            <li><div class="event-name">payout.completed</div><div class="event-desc">Your payout has been processed</div></li>
+            <li><div class="event-name">subscription.renewed</div><div class="event-desc">Your developer plan subscription was renewed</div></li>
+            <li><div class="event-name">subscription.cancelled</div><div class="event-desc">Your developer plan subscription was cancelled</div></li>
+        </ul>
+
+        <h2>Payload Format</h2>
+        <pre><code>{
+    "event": "sale.completed",
+    "data": {
+        "listing_id": "uuid-here",
+        "customer": "username",
+        "amount": "19.99",
+        "currency": "NE"
+    },
+    "timestamp": "2025-01-15T10:30:00Z",
+    "webhook_id": "uuid-here"
+}</code></pre>
+
+        <h2>Signature Verification</h2>
+        <p>Every webhook delivery includes an <code>X-Webhook-Signature</code> header containing an HMAC-SHA256 signature of the payload using your webhook secret.</p>
+        <pre><code>import hmac
+import hashlib
+
+def verify_webhook(secret, payload, signature):
+    expected = hmac.new(
+        secret.encode('utf-8'),
+        payload,
+        hashlib.sha256
+    ).hexdigest()
+    return hmac.compare_digest(expected, signature)</code></pre>
+
+        <h2>Retry Policy</h2>
+        <p>Failed deliveries are retried up to <strong>3 times</strong>. After <strong>10 consecutive failures</strong>, the webhook is automatically deactivated. You can re-enable it from the webhook settings.</p>
+
+        <h2>Headers</h2>
+        <p>Each delivery includes these headers:</p>
+        <pre><code>Content-Type: application/json
+X-Webhook-Signature: hmac-sha256-hex-digest
+X-Webhook-Event: sale.completed
+User-Agent: VRC-Developer-Webhooks/1.0</code></pre>
+    </div>
+</div>
+{% endblock %}

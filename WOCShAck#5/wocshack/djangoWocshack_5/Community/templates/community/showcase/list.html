@@ -1,0 +1,117 @@
+{% extends "base/base.html" %}
+{% load static %}
+
+{% block title %}VRC — Showcase Gallery{% endblock %}
+
+{% block module_css %}
+<link rel="stylesheet" href="{% static 'community/css/content.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="main-container">
+<nav class="vrc-breadcrumbs">
+  <a href="{% url 'community:index' %}">Community</a>
+  <span class="bc-sep">›</span>
+  <span class="bc-current">Showcase</span>
+</nav>
+<div class="content-wrapper">
+
+  <div class="content-header">
+    <div>
+      <h1 class="content-title">Showcase Gallery</h1>
+      <p class="content-subtitle">Exceptional CSS creations from the community</p>
+    </div>
+    {% if request.user.is_authenticated %}
+    <a href="{% url 'community:showcase_submit' %}" class="content-btn content-btn--primary">+ Submit CSS</a>
+    {% endif %}
+  </div>
+
+  {# Filters #}
+  <div class="filter-bar">
+    <div class="filter-group">
+      <span class="filter-label">Sort:</span>
+      <a href="?{% if active_category %}category={{ active_category }}&{% endif %}sort=votes"
+         class="filter-chip {% if sort == 'votes' or not sort %}filter-chip--active{% endif %}">Top Voted</a>
+      <a href="?{% if active_category %}category={{ active_category }}&{% endif %}sort=new"
+         class="filter-chip {% if sort == 'new' %}filter-chip--active{% endif %}">Newest</a>
+    </div>
+    <div class="filter-group">
+      <span class="filter-label">Category:</span>
+      <a href="?sort={{ sort }}" class="filter-chip {% if not active_category %}filter-chip--active{% endif %}">All</a>
+      {% for val, label in categories %}
+      <a href="?sort={{ sort }}&category={{ val }}"
+         class="filter-chip {% if active_category == val %}filter-chip--active{% endif %}">
+        {{ label }}
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+
+  {% if page_obj.object_list %}
+  <div class="showcase-grid">
+    {% for item in page_obj %}
+    <div class="showcase-card">
+      <a href="{% url 'community:showcase_detail' item.id %}" class="showcase-card-preview">
+        {% if item.preview_gif %}
+        <img src="{{ item.preview_gif.url }}" alt="{{ item.title|escape }}" style="width:100%;height:100%;object-fit:contain;">
+        {% elif item.thumbnail %}
+        <img src="{{ item.thumbnail.url }}" alt="{{ item.title }}">
+        {% else %}
+        <div class="showcase-preview-placeholder" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#1a1a2e;color:#888;font-size:2rem;">🎨</div>
+        {% endif %}
+        {% if item.is_featured %}<span class="showcase-featured-badge">⭐</span>{% endif %}
+      </a>
+      <div class="showcase-card-body">
+        <h3 class="showcase-card-title">
+          <a href="{% url 'community:showcase_detail' item.id %}">{{ item.title }}</a>
+        </h3>
+        <div class="showcase-card-meta">
+          <span class="showcase-author">{{ item.author.username }}</span>
+          <span class="showcase-category">{{ item.get_category_display }}</span>
+        </div>
+        <div class="showcase-vote-row">
+          {% if request.user.is_authenticated %}
+          <form method="post" action="{% url 'community:showcase_vote' item.id %}" class="vote-form">
+            {% csrf_token %}
+            <input type="hidden" name="vote_type" value="upvote">
+            <button type="submit" class="vote-btn {% for k,vt in user_votes.items %}{% if k == item.id|stringformat:'s' and vt == 'upvote' %}vote-btn--active{% endif %}{% endfor %}">▲</button>
+          </form>
+          {% else %}
+          <span class="vote-btn vote-btn--static">▲</span>
+          {% endif %}
+          <span class="vote-score">{{ item.vote_score }}</span>
+          {% if request.user.is_authenticated %}
+          <form method="post" action="{% url 'community:showcase_vote' item.id %}" class="vote-form">
+            {% csrf_token %}
+            <input type="hidden" name="vote_type" value="downvote">
+            <button type="submit" class="vote-btn vote-btn--down">▼</button>
+          </form>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  {% if page_obj.has_other_pages %}
+  <div class="content-pagination">
+    {% if page_obj.has_previous %}
+    <a href="?sort={{ sort }}{% if active_category %}&category={{ active_category }}{% endif %}&page={{ page_obj.previous_page_number }}" class="page-btn">← Prev</a>
+    {% endif %}
+    <span class="page-info">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+    {% if page_obj.has_next %}
+    <a href="?sort={{ sort }}{% if active_category %}&category={{ active_category }}{% endif %}&page={{ page_obj.next_page_number }}" class="page-btn">Next →</a>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {% else %}
+  <div class="content-empty">
+    <span class="content-empty-icon">🎨</span>
+    <p>No showcase items yet. <a href="{% url 'community:showcase_submit' %}">Submit yours!</a></p>
+  </div>
+  {% endif %}
+
+</div>
+</div>
+{% endblock %}

@@ -1,0 +1,429 @@
+{% extends "base/base_shop.html" %}
+{% load static %}
+
+
+{% block title %}V.R.C - CSS Marketplace{% endblock %}
+
+
+{% block module_css %}
+<link rel="stylesheet" href="{% static 'css/shop.css' %}">
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    {# to prevent source code scraping from the shop frontend. #}
+    .css-preview {
+        width: 150px;
+        height: 150px;
+        margin: 15px auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        border-radius: 12px;
+        overflow: hidden;
+    }
+    .css-preview img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 12px;
+        /* Prevent right-click save and drag of preview images */
+        -webkit-user-drag: none;
+        user-select: none;
+        pointer-events: none;
+    }
+    .css-preview .preview-placeholder {
+        color: rgba(255, 255, 255, 0.3);
+        font-size: 0.75rem;
+        text-align: center;
+        padding: 10px;
+    }
+    .author {
+        font-size: 0.85rem;
+        color: #666;
+        margin: 5px 0;
+    }
+    .author-link {
+        color: #667eea;
+        text-decoration: none;
+        font-weight: 500;
+        transition: color 0.2s ease;
+    }
+    .author-link:hover {
+        color: #764ba2;
+        text-decoration: underline;
+    }
+
+    /* Pagination Styles */
+    .pagination-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+        margin: 30px 0;
+        flex-wrap: wrap;
+    }
+    .pagination {
+        display: flex;
+        gap: 5px;
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    .pagination a,
+    .pagination span {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 40px;
+        height: 40px;
+        padding: 0 12px;
+        border-radius: 10px;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.2s ease;
+    }
+    .pagination a {
+        background: rgba(255, 255, 255, 0.95);
+        color: #333;
+        border: 1px solid #ddd;
+    }
+    .pagination a:hover {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-color: transparent;
+        transform: translateY(-2px);
+    }
+    .pagination .current {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+    }
+    .pagination .disabled {
+        background: #f5f5f5;
+        color: #ccc;
+        cursor: not-allowed;
+    }
+    .pagination .ellipsis {
+        background: transparent;
+        border: none;
+    }
+    .per-page-select {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.9rem;
+        color: #666;
+    }
+    .per-page-select select {
+        padding: 8px 12px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        background: white;
+        cursor: pointer;
+    }
+
+    /* Article Actions */
+    .article-actions {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+        justify-content: center;
+        margin-top: 5px;
+    }
+    .wishlist-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: rgba(102, 126, 234, 0.1);
+        color: #667eea;
+        transition: all 0.2s ease;
+        text-decoration: none;
+    }
+    .wishlist-btn:hover {
+        background: rgba(231, 76, 60, 0.1);
+        color: #e74c3c;
+        transform: scale(1.1);
+    }
+    .wishlist-btn.in-wishlist {
+        background: rgba(231, 76, 60, 0.15);
+        color: #e74c3c;
+    }
+    .wishlist-btn.in-wishlist:hover {
+        background: rgba(231, 76, 60, 0.25);
+    }
+    .wishlist-btn svg {
+        width: 20px;
+        height: 20px;
+    }
+
+    /* Product Rating Display */
+    .product-rating {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.35rem;
+        margin: 8px 0;
+        font-size: 0.85rem;
+    }
+    .product-rating .stars {
+        display: flex;
+        gap: 1px;
+    }
+    .product-rating .star {
+        color: #ddd;
+        font-size: 0.9rem;
+    }
+    .product-rating .star.filled {
+        color: #f1c40f;
+    }
+    .product-rating .star.half {
+        background: linear-gradient(90deg, #f1c40f 50%, #ddd 50%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    .product-rating .rating-text {
+        color: #888;
+        font-size: 0.8rem;
+    }
+    .product-rating .no-reviews {
+        color: #aaa;
+        font-size: 0.8rem;
+        font-style: italic;
+    }
+
+    /* User Links */
+    .user-links {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+    }
+    .user-link {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: #667eea;
+        text-decoration: none;
+        font-weight: 500;
+        font-size: 0.9rem;
+    }
+    .user-link:hover {
+        color: #764ba2;
+    }
+    .user-link svg {
+        width: 18px;
+        height: 18px;
+    }
+</style>
+{% endblock %}
+
+{% block content_wrapper_class %}{% endblock %}
+
+{% block content %}
+<div class="layout">
+    <!-- Left Sidebar with Filters -->
+    <div class="lad">
+        <form method="get" action="{% url 'shop' %}" class="sidebar-filter-form">
+            <h3>Filters</h3>
+            <div class="filter-group">
+                <label for="filter-search">Search</label>
+                <input type="text" id="filter-search" name="search" value="{{ search }}" placeholder="CSS name...">
+            </div>
+            <div class="filter-group">
+                <label for="filter-price">Price</label>
+                <select id="filter-price" name="price">
+                    <option value="">All Prices</option>
+                    <option value="free" {% if price_range == 'free' %}selected{% endif %}>Free</option>
+                    <option value="low" {% if price_range == 'low' %}selected{% endif %}>$0.01 - $5</option>
+                    <option value="mid" {% if price_range == 'mid' %}selected{% endif %}>$5 - $10</option>
+                    <option value="high" {% if price_range == 'high' %}selected{% endif %}>$10 - $20</option>
+                    <option value="premium" {% if price_range == 'premium' %}selected{% endif %}>$20+</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="filter-sort">Sort By</label>
+                <select id="filter-sort" name="sort">
+                    <option value="-created_at" {% if sort_by == '-created_at' %}selected{% endif %}>Newest</option>
+                    <option value="created_at" {% if sort_by == 'created_at' %}selected{% endif %}>Oldest</option>
+                    <option value="price" {% if sort_by == 'price' %}selected{% endif %}>Price: Low to High</option>
+                    <option value="-price" {% if sort_by == '-price' %}selected{% endif %}>Price: High to Low</option>
+                    <option value="name" {% if sort_by == 'name' %}selected{% endif %}>Name: A-Z</option>
+                    <option value="-name" {% if sort_by == '-name' %}selected{% endif %}>Name: Z-A</option>
+                </select>
+            </div>
+            <input type="hidden" name="per_page" value="{{ per_page }}">
+            <div class="filter-buttons">
+                <button type="submit" class="filter-btn filter-btn-primary">Apply</button>
+                <a href="{% url 'shop' %}" class="filter-btn filter-btn-secondary">Reset</a>
+            </div>
+        </form>
+    </div>
+
+    <div class="main-content">
+        <!-- Results Info Bar with User Links -->
+        <div class="results-info-bar">
+            <span class="results-count">
+                Showing {{ page_obj.start_index }}-{{ page_obj.end_index }} of {{ paginator.count }} CSS loaders
+                {% if search %} matching "<strong>{{ search }}</strong>"{% endif %}
+                {% if price_range %} in <strong>{{ price_range }}</strong> price range{% endif %}
+            </span>
+            {% if query %}<p class="search-info">Results for: {{ query|safe }}</p>{% endif %}
+            <div class="user-links">
+                {% if user.is_authenticated %}
+                <a href="{% url 'wishlist' %}" class="user-link">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                    </svg>
+                    Wishlist
+                </a>
+                <a href="{% url 'order_history' %}" class="user-link">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                    </svg>
+                    Orders
+                </a>
+                {% endif %}
+                <a href="{% url 'cart' %}" class="cart-link">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                    Cart{% if cart_count %} ({{ cart_count }}){% endif %}
+                </a>
+            </div>
+        </div>
+
+<div class="articles">
+            {# This prevents users from scraping/copying CSS source code from the shop page #}
+            {% for css in css_files %}
+                <div class="article" onclick="window.location.href='{% url 'product_detail' css.id %}'">
+                    <h1>{{ css.name }}</h1>
+                    <div class="css-preview">
+                        {% if css.preview_gif %}
+                        <img src="{{ css.preview_gif.url }}" alt="Preview of {{ css.name }}" loading="lazy" draggable="false" oncontextmenu="return false;">
+                        {% else %}
+                        <span class="preview-placeholder">Preview loading...</span>
+                        {% endif %}
+                    </div>
+                    <p class="author">By <a href="{% url 'seller_by_css' css.id %}" class="author-link" onclick="event.stopPropagation();">{{ css.author }}</a></p>
+                    {% if css.description %}<p class="article-description">{{ css.description|safe }}</p>{% endif %}
+
+                    <div class="product-rating">
+                        {% if css.review_count > 0 %}
+                        <div class="stars">
+                            {% for i in "12345" %}
+                            {% if forloop.counter <= css.avg_rating %}
+                            <span class="star filled">&#9733;</span>
+                            {% else %}
+                            <span class="star">&#9733;</span>
+                            {% endif %}
+                            {% endfor %}
+                        </div>
+                        <span class="rating-text">({{ css.review_count }})</span>
+                        {% else %}
+                        <span class="no-reviews">No reviews yet</span>
+                        {% endif %}
+                    </div>
+
+                    <h4>{{ css.price }} Neuros</h4>
+                    <div class="article-actions">
+                        <button class="cart_button" onclick="event.stopPropagation(); window.location.href='{% url 'add_to_cart' css.id %}'">Add to cart</button>
+                        {% if user.is_authenticated %}
+                        {% if css.id in wishlist_ids %}
+                        <a href="{% url 'remove_from_wishlist' css.id %}" class="wishlist-btn in-wishlist" onclick="event.stopPropagation();" title="Remove from wishlist">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                            </svg>
+                        </a>
+                        {% else %}
+                        <a href="{% url 'add_to_wishlist' css.id %}" class="wishlist-btn" onclick="event.stopPropagation();" title="Add to wishlist">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                            </svg>
+                        </a>
+                        {% endif %}
+                        {% endif %}
+                    </div>
+                </div>
+            {% empty %}
+                <div class="no-results" style="text-align: center; padding: 40px; width: 100%;">
+                    <h2>No CSS loaders found</h2>
+                    <p>Try adjusting your filters or <a href="{% url 'shop' %}">view all loaders</a></p>
+                </div>
+            {% endfor %}
+        </div>
+
+        <!-- Pagination -->
+        {% if paginator.num_pages > 1 %}
+        <div class="pagination-container">
+            <div class="per-page-select">
+                <span>Show:</span>
+                <select onchange="updatePerPage(this.value)">
+                    <option value="12" {% if per_page == 12 %}selected{% endif %}>12</option>
+                    <option value="24" {% if per_page == 24 %}selected{% endif %}>24</option>
+                    <option value="48" {% if per_page == 48 %}selected{% endif %}>48</option>
+                </select>
+            </div>
+
+            <nav class="pagination">
+                {% if page_obj.has_previous %}
+                    <a href="?page=1{% if query_string %}&{{ query_string }}{% endif %}" title="First">&laquo;</a>
+                    <a href="?page={{ page_obj.previous_page_number }}{% if query_string %}&{{ query_string }}{% endif %}" title="Previous">&lsaquo;</a>
+                {% else %}
+                    <span class="disabled">&laquo;</span>
+                    <span class="disabled">&lsaquo;</span>
+                {% endif %}
+
+                {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                        <span class="current">{{ num }}</span>
+                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                        <a href="?page={{ num }}{% if query_string %}&{{ query_string }}{% endif %}">{{ num }}</a>
+                    {% elif num == 1 or num == paginator.num_pages %}
+                        <a href="?page={{ num }}{% if query_string %}&{{ query_string }}{% endif %}">{{ num }}</a>
+                    {% elif num == page_obj.number|add:'-3' or num == page_obj.number|add:'3' %}
+                        <span class="ellipsis">...</span>
+                    {% endif %}
+                {% endfor %}
+
+                {% if page_obj.has_next %}
+                    <a href="?page={{ page_obj.next_page_number }}{% if query_string %}&{{ query_string }}{% endif %}" title="Next">&rsaquo;</a>
+                    <a href="?page={{ paginator.num_pages }}{% if query_string %}&{{ query_string }}{% endif %}" title="Last">&raquo;</a>
+                {% else %}
+                    <span class="disabled">&rsaquo;</span>
+                    <span class="disabled">&raquo;</span>
+                {% endif %}
+            </nav>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function updatePerPage(value) {
+    var url = new URL(window.location.href);
+    url.searchParams.set('per_page', value);
+    url.searchParams.delete('page');
+    window.location.href = url.toString();
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+    const articles = document.querySelectorAll(".article");
+
+    articles.forEach(article => {
+        article.addEventListener("click", function (e) {
+            if (e.target.closest(".cart_button")) {
+                e.stopPropagation();
+                return;
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,132 @@
+{% extends "base/base.html" %}
+
+{% block title %}Privacy Policy | V.R.C{% endblock %}
+
+{% block meta_description %}V.R.C Privacy Policy — Last updated April 2026{% endblock %}
+
+{% block extra_css %}
+<style>
+    .policy-container {
+        max-width: 780px;
+        margin: 3rem auto;
+        padding: 0 1.5rem 4rem;
+        color: #e2e8f0;
+    }
+
+    .policy-header {
+        margin-bottom: 2.5rem;
+        border-bottom: 1px solid #334155;
+        padding-bottom: 1.5rem;
+    }
+
+    .policy-header h1 {
+        font-size: 2.2rem;
+        font-weight: 700;
+        color: #f1f5f9;
+        margin-bottom: 0.5rem;
+    }
+
+    .policy-meta {
+        font-size: 0.875rem;
+        color: #64748b;
+    }
+
+    .policy-section {
+        margin-bottom: 2rem;
+    }
+
+    .policy-section h2 {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: #93c5fd;
+        margin-bottom: 0.75rem;
+    }
+
+    .policy-section p {
+        font-size: 0.975rem;
+        line-height: 1.75;
+        color: #94a3b8;
+    }
+
+    .policy-back {
+        display: inline-block;
+        margin-top: 2.5rem;
+        padding: 0.65rem 1.75rem;
+        background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+        color: #ffffff;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 500;
+        font-size: 0.9rem;
+        transition: opacity 0.2s ease;
+    }
+
+    .policy-back:hover {
+        opacity: 0.85;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="policy-container">
+    <div class="policy-header">
+        <h1>Privacy Policy</h1>
+        <p class="policy-meta">Last updated: April 2026 &middot; Effective upon your awareness of our existence</p>
+    </div>
+
+    <p class="policy-section" style="color:#94a3b8;line-height:1.75;font-size:0.975rem;margin-bottom:2rem;">
+        At V.R.C, we take your privacy seriously. This policy describes how we collect, use, and share information about you when you use our services, which include banking, shopping, task management, and advertising. Please read it carefully, or don't — the outcome is the same.
+    </p>
+
+    <div class="policy-section">
+        <h2>1. Information we collect</h2>
+        <p>We collect information you provide directly to us, such as your name, email address, financial details, and the contents of your to-do list. We also collect information you provide indirectly, such as information you didn't intend to provide, information you assumed was private, and information we inferred from the gaps between things you told us.</p>
+        <p style="margin-top:0.75rem;">When you use our banking services, we collect your transaction history. We find it very interesting.</p>
+    </div>
+
+    <div class="policy-section">
+        <h2>2. How we use your information</h2>
+        <p>We use the information we collect to operate and improve our services, process your transactions, and send you communications you may not have requested. We also use it to build a detailed understanding of your preferences, financial habits, and life circumstances, which we refer to internally as your <em>profile</em> and externally as nothing, because we don't bring it up.</p>
+        <p style="margin-top:0.75rem;">When you create a task in our to-do feature, the content of that task may inform the ads you see. We consider this a convenience.</p>
+        <p style="margin-top:0.75rem;">When you purchase advertising space on V.R.C, you join a community of advertisers whose own data is subject to this same policy. We wanted you to know that.</p>
+    </div>
+
+    <div class="policy-section">
+        <h2>3. How we share your information</h2>
+        <p>We do not sell your personal data. We share it with partners under agreements that allow them to use it in ways that are functionally identical to purchasing it. Our current partners include analytics providers, advertising networks, financial service intermediaries, and tbox.traced, with whom we have a longstanding and mutually beneficial arrangement we are not able to detail further.</p>
+        <p style="margin-top:0.75rem;">We may also share your information when required by law, or when we believe in good faith that sharing it is reasonably necessary, a standard we apply with some flexibility.</p>
+    </div>
+
+    <div class="policy-section">
+        <h2>4. Data retention</h2>
+        <p>We retain your data for as long as necessary to provide our services, comply with legal obligations, resolve disputes, and, where applicable, for as long as we find it useful. You may request deletion of your account and associated data at any time. We will acknowledge your request promptly and process it in accordance with our internal timelines, which are not published.</p>
+    </div>
+
+    <div class="policy-section">
+        <h2>5. Your banking data</h2>
+        <p>V.R.C provides financial tools and account management features. We are not a bank. This distinction has implications that we encourage you to research independently. Your funds are managed in accordance with applicable regulations in the jurisdictions where we are registered, which we review periodically.</p>
+    </div>
+
+    <div class="policy-section">
+        <h2>6. Cookies and tracking</h2>
+        <p>We use cookies and similar technologies to operate our platform. Some of these are strictly necessary. Others help us understand how you use our services. A third category exists for reasons that are difficult to summarize briefly. You can manage your cookie preferences through your browser settings, which will affect your experience in ways we cannot fully predict.</p>
+    </div>
+
+    <div class="policy-section">
+        <h2>7. Security</h2>
+        <p>We use reasonable technical and organizational measures to protect your information against unauthorized access, loss, or misuse. In the event of a data breach that meets the legal threshold for notification, we will inform you and the relevant authorities within the timeframes required by applicable law. We have not had to do this yet in any way we are required to disclose.</p>
+    </div>
+
+    <div class="policy-section">
+        <h2>8. Your rights</h2>
+        <p>Depending on your location, you may have the right to access, correct, or delete your personal data, to object to or restrict certain processing, and to lodge a complaint with your local supervisory authority. To exercise these rights, please contact our Data Protection Officer at the address below. Response times vary. Our DPO is one person.</p>
+    </div>
+
+    <div class="policy-section">
+        <h2>9. Changes to this policy</h2>
+        <p>We may update this policy from time to time. When we do, we will revise the date at the top of this page. If the changes are material, we will make reasonable efforts to notify you, subject to our assessment of what is material.</p>
+    </div>
+
+    <a href="{% url 'index' %}" class="policy-back">← Back to Home</a>
+</div>
+{% endblock %}

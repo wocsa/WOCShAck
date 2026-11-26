@@ -1,0 +1,27 @@
+{% extends "base/base.html" %}
+{% load static %}
+
+
+{% block title %}V.R.C - Todo List{% endblock %}
+
+{% block content %}
+<div class="card animate-fade-in-up" style="max-width: 800px; margin: 2rem auto;">
+    <h1 style="background: var(--vrc-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 1.5rem;">
+        Todo List
+    </h1>
+    {% if todos %}
+    <ul style="list-style: none; padding: 0;">
+        {% for todo in todos %}
+        <li style="padding: 1rem; margin-bottom: 0.5rem; background: var(--vrc-gray-50); border-radius: var(--vrc-radius-md); display: flex; justify-content: space-between; align-items: center;">
+            <span>{{ todo.title }}</span>
+            <span style="padding: 0.25rem 0.75rem; border-radius: var(--vrc-radius-sm); font-size: 0.875rem; {% if todo.completed %}background: #10b981; color: white;{% else %}background: var(--vrc-gray-200); color: var(--vrc-gray-600);{% endif %}">
+                {% if todo.completed %}Completed{% else %}Not Completed{% endif %}
+            </span>
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p style="text-align: center; color: var(--vrc-gray-500);">No todos found.</p>
+    {% endif %}
+</div>
+{% endblock %}

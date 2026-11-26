@@ -1,0 +1,122 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Appeals{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'base/css/admin.css' %}">
+<style>
+  .outcome-note { font-size: var(--vrc-font-size-xs); color: var(--vrc-gray-500); margin-top: 2px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="mod-page">
+  <div class="mod-page-header">
+    <h1 class="mod-page-title">User Appeals</h1>
+    <a href="{% url 'admin_panel:dashboard' %}" class="mod-btn mod-btn-outline">Back to Dashboard</a>
+  </div>
+
+  <div class="filter-card">
+    <form method="get">
+      <div class="filter-row">
+        <div class="filter-group">
+          <label for="status">Status</label>
+          <select name="status" id="status" class="form-control">
+            <option value="all" {% if current_filters.status == 'all' %}selected{% endif %}>All</option>
+            {% for value, label in status_choices %}
+              <option value="{{ value }}" {% if current_filters.status == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="filter-group">
+          <label for="sanction_type">Sanction Type</label>
+          <select name="sanction_type" id="sanction_type" class="form-control">
+            <option value="all" {% if current_filters.sanction_type == 'all' %}selected{% endif %}>All</option>
+            {% for value, label in sanction_type_choices %}
+              <option value="{{ value }}" {% if current_filters.sanction_type == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="filter-group" style="flex:0;min-width:auto;">
+          <label>&nbsp;</label>
+          <button type="submit" class="mod-btn mod-btn-primary">Filter</button>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <div class="mod-card">
+    <div class="mod-card-body">
+      {% if page_obj.object_list %}
+        <table class="mod-table">
+          <thead>
+            <tr>
+              <th>User</th>
+              <th>Sanction Type</th>
+              <th>Appeal</th>
+              <th>Status</th>
+              <th>Reviewer</th>
+              <th>Submitted</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for appeal in page_obj.object_list %}
+              <tr class="{% if appeal.status == 'pending' %}row-pending{% endif %}">
+                <td><a href="{% url 'admin_panel:user_overview' appeal.user.username %}">{{ appeal.user.username }}</a></td>
+                <td><span class="badge badge-info">{{ appeal.get_sanction_type_display }}</span></td>
+                <td style="max-width:280px;">{{ appeal.appeal_text|truncatechars:100|escape }}</td>
+                <td>
+                  {% if appeal.status == 'pending' %}
+                    <span class="badge badge-warning">{{ appeal.get_status_display }}</span>
+                  {% elif appeal.status == 'reviewed' %}
+                    <span class="badge badge-success">{{ appeal.get_status_display }}</span>
+                    {% if appeal.outcome %}
+                      <div class="outcome-note">{{ appeal.get_outcome_display }}</div>
+                    {% endif %}
+                  {% endif %}
+                </td>
+                <td>{% if appeal.reviewer %}{{ appeal.reviewer.username }}{% else %}<span class="muted">Unassigned</span>{% endif %}</td>
+                <td class="date-cell">{{ appeal.created_at|date:"M j, Y" }}<br>{{ appeal.created_at|time:"H:i" }}</td>
+                <td>
+                  {% if appeal.status == 'pending' %}
+                    <a href="{% url 'admin_panel:appeal_review' appeal.id %}" class="mod-btn mod-btn-primary mod-btn-sm">Review</a>
+                  {% else %}
+                    <a href="{% url 'admin_panel:appeal_review' appeal.id %}" class="mod-btn mod-btn-outline mod-btn-sm">View</a>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+
+        {% if page_obj.has_other_pages %}
+          <div class="pagination">
+            {% if page_obj.has_previous %}
+              <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page=1">First</a>
+              <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.previous_page_number }}">Previous</a>
+            {% endif %}
+            <span class="page-link page-link-active">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+            {% if page_obj.has_next %}
+              <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.next_page_number }}">Next</a>
+              <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.paginator.num_pages }}">Last</a>
+            {% endif %}
+          </div>
+        {% endif %}
+      {% else %}
+        <div class="empty-state">
+          <h4>No appeals found</h4>
+          <p>
+            {% if current_filters.status or current_filters.sanction_type %}
+              No appeals match your current filters.
+            {% else %}
+              No appeals have been submitted yet.
+            {% endif %}
+          </p>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

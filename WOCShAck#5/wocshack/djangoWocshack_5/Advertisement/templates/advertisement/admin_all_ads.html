@@ -1,0 +1,273 @@
+{% extends "base/base.html" %}
+{% load static %}
+
+{% block title %}V.R.C — All Advertisements{% endblock %}
+
+{% block content %}
+<div style="max-width:1200px; margin:2rem auto;">
+
+    <!-- Header & Nav -->
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; flex-wrap:wrap; gap:1rem;">
+        <h1 style="font-size:1.75rem; color:var(--vrc-gray-900); margin:0;">All Advertisements</h1>
+        <div style="display:flex; gap:0.75rem; flex-wrap:wrap;">
+            <a href="{% url 'advertisement_admin_dashboard' %}"
+               style="padding:0.45rem 1rem; background:var(--vrc-gray-200); color:var(--vrc-gray-700); border-radius:8px; text-decoration:none; font-weight:600; font-size:0.9rem;">
+                &#8592; Dashboard
+            </a>
+            <a href="{% url 'admin_pending_ads' %}"
+               style="padding:0.45rem 1rem; background:#f59e0b; color:white; border-radius:8px; text-decoration:none; font-weight:600; font-size:0.9rem;">
+                Pending Ads
+            </a>
+        </div>
+    </div>
+
+    {% if messages %}
+    <div style="margin-bottom:1.25rem;">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}" role="alert">{{ message }}</div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Filters -->
+    <form method="get" style="background:white; border-radius:var(--vrc-radius-xl); padding:1.25rem 1.5rem; box-shadow:0 2px 10px rgba(0,0,0,0.06); margin-bottom:1.5rem; display:flex; flex-wrap:wrap; gap:0.75rem; align-items:flex-end;">
+        <div style="flex:1; min-width:180px;">
+            <label style="display:block; font-size:0.8rem; font-weight:600; color:var(--vrc-gray-500); margin-bottom:0.3rem; text-transform:uppercase; letter-spacing:0.04em;">Search</label>
+            <input type="text" name="search" value="{{ search|escape }}"
+                   placeholder="Title or advertiser…"
+                   style="width:100%; padding:0.5rem 0.75rem; border:1px solid var(--vrc-gray-300); border-radius:8px; font-size:0.9rem;">
+        </div>
+        <div style="min-width:160px;">
+            <label style="display:block; font-size:0.8rem; font-weight:600; color:var(--vrc-gray-500); margin-bottom:0.3rem; text-transform:uppercase; letter-spacing:0.04em;">Status</label>
+            <select name="status" style="width:100%; padding:0.5rem 0.75rem; border:1px solid var(--vrc-gray-300); border-radius:8px; font-size:0.9rem; background:white;">
+                <option value="">All statuses</option>
+                {% for val, label in status_choices %}
+                <option value="{{ val }}"{% if filter_status == val %} selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div style="min-width:160px;">
+            <label style="display:block; font-size:0.8rem; font-weight:600; color:var(--vrc-gray-500); margin-bottom:0.3rem; text-transform:uppercase; letter-spacing:0.04em;">Zone</label>
+            <select name="zone" style="width:100%; padding:0.5rem 0.75rem; border:1px solid var(--vrc-gray-300); border-radius:8px; font-size:0.9rem; background:white;">
+                <option value="">All zones</option>
+                {% for val, label in zone_choices %}
+                <option value="{{ val }}"{% if filter_zone == val %} selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div style="display:flex; gap:0.5rem;">
+            <button type="submit"
+                    style="padding:0.5rem 1.25rem; background:#667eea; color:white; border:none; border-radius:8px; font-weight:600; cursor:pointer; font-size:0.9rem;">
+                Filter
+            </button>
+            {% if filter_status or filter_zone or search %}
+            <a href="{% url 'advertisement_admin_all' %}"
+               style="padding:0.5rem 1rem; background:var(--vrc-gray-100); color:var(--vrc-gray-600); border-radius:8px; text-decoration:none; font-size:0.9rem; display:inline-flex; align-items:center;">
+                Clear
+            </a>
+            {% endif %}
+        </div>
+    </form>
+
+    <!-- Results count -->
+    <p style="color:var(--vrc-gray-500); font-size:0.9rem; margin-bottom:0.75rem;">
+        Showing {{ page_obj.start_index }}–{{ page_obj.end_index }} of {{ page_obj.paginator.count }} advertisement{{ page_obj.paginator.count|pluralize }}
+        {% if filter_status or filter_zone or search %}<span style="color:#667eea;">(filtered)</span>{% endif %}
+    </p>
+
+    <!-- Table -->
+    {% if page_obj.object_list %}
+    <div style="background:white; border-radius:var(--vrc-radius-xl); box-shadow:0 2px 10px rgba(0,0,0,0.06); overflow:hidden; margin-bottom:1.5rem;">
+        <div style="overflow-x:auto;">
+            <table style="width:100%; border-collapse:collapse; min-width:700px;">
+                <thead>
+                    <tr style="border-bottom:2px solid var(--vrc-gray-100); background:var(--vrc-gray-50);">
+                        <th style="text-align:left; padding:0.75rem 1rem; font-size:0.8rem; color:var(--vrc-gray-500); font-weight:600; text-transform:uppercase; letter-spacing:0.05em;">Title</th>
+                        <th style="text-align:left; padding:0.75rem 0.75rem; font-size:0.8rem; color:var(--vrc-gray-500); font-weight:600; text-transform:uppercase; letter-spacing:0.05em;">Advertiser</th>
+                        <th style="text-align:left; padding:0.75rem 0.75rem; font-size:0.8rem; color:var(--vrc-gray-500); font-weight:600; text-transform:uppercase; letter-spacing:0.05em;">Zone</th>
+                        <th style="text-align:left; padding:0.75rem 0.75rem; font-size:0.8rem; color:var(--vrc-gray-500); font-weight:600; text-transform:uppercase; letter-spacing:0.05em;">Status</th>
+                        <th style="text-align:right; padding:0.75rem 0.75rem; font-size:0.8rem; color:var(--vrc-gray-500); font-weight:600; text-transform:uppercase; letter-spacing:0.05em;">Budget</th>
+                        <th style="text-align:left; padding:0.75rem 0.75rem; font-size:0.8rem; color:var(--vrc-gray-500); font-weight:600; text-transform:uppercase; letter-spacing:0.05em;">Created</th>
+                        <th style="text-align:center; padding:0.75rem 1rem; font-size:0.8rem; color:var(--vrc-gray-500); font-weight:600; text-transform:uppercase; letter-spacing:0.05em;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for ad in page_obj %}
+                    <tr style="border-bottom:1px solid var(--vrc-gray-100);">
+                        <!-- Title -->
+                        <td style="padding:0.75rem 1rem; max-width:220px;">
+                            <a href="{% url 'advertisement_detail' ad.id %}"
+                               style="color:var(--vrc-gray-900); font-weight:600; text-decoration:none; font-size:0.9rem; word-break:break-word;">
+                                {{ ad.title|escape|truncatechars:45 }}
+                            </a>
+                        </td>
+                        <!-- Advertiser -->
+                        <td style="padding:0.75rem 0.75rem; font-size:0.9rem; color:var(--vrc-gray-700);">
+                            {{ ad.advertiser.username|escape }}
+                        </td>
+                        <!-- Zone -->
+                        <td style="padding:0.75rem 0.75rem; font-size:0.85rem; color:var(--vrc-gray-600);">
+                            {{ ad.get_placement_zone_display }}
+                        </td>
+                        <!-- Status badge -->
+                        <td style="padding:0.75rem 0.75rem;">
+                            {% if ad.status == 'pending' %}
+                            <span class="badge badge-warning">Pending</span>
+                            {% elif ad.status == 'approved' %}
+                            <span class="badge badge-primary">Approved</span>
+                            {% elif ad.status == 'active' %}
+                            <span class="badge badge-success">Active</span>
+                            {% elif ad.status == 'rejected' %}
+                            {% if ad.rejection_reason == '[Suspended by admin]' %}
+                            <span class="badge badge-danger">Suspended</span>
+                            {% else %}
+                            <span class="badge badge-danger">Rejected</span>
+                            {% endif %}
+                            {% elif ad.status == 'expired' %}
+                            <span class="badge badge-secondary">Expired</span>
+                            {% else %}
+                            <span class="badge badge-light">{{ ad.get_status_display }}</span>
+                            {% endif %}
+                        </td>
+                        <!-- Budget -->
+                        <td style="padding:0.75rem 0.75rem; text-align:right; font-size:0.9rem; color:var(--vrc-gray-700);">
+                            {{ ad.budget_neuros }} N
+                        </td>
+                        <!-- Created -->
+                        <td style="padding:0.75rem 0.75rem; font-size:0.85rem; color:var(--vrc-gray-500); white-space:nowrap;">
+                            {{ ad.created_at|date:"Y-m-d" }}
+                        </td>
+                        <!-- Actions -->
+                        <td style="padding:0.75rem 1rem; text-align:center; white-space:nowrap;">
+                            <div style="display:inline-flex; gap:0.4rem; flex-wrap:wrap; justify-content:center;">
+
+                                {% if ad.status == 'pending' %}
+                                <!-- Approve -->
+                                <form method="post" action="{% url 'approve_ad' ad.id %}" style="margin:0;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-success" style="font-size:0.78rem; padding:0.3rem 0.65rem;">
+                                        Approve
+                                    </button>
+                                </form>
+                                <!-- Reject -->
+                                <button type="button"
+                                        class="btn btn-sm btn-danger"
+                                        style="font-size:0.78rem; padding:0.3rem 0.65rem;"
+                                        data-toggle="modal"
+                                        data-target="#rejectModal{{ ad.id|slugify }}">
+                                    Reject
+                                </button>
+
+                                {% elif ad.status == 'approved' or ad.status == 'active' %}
+                                <!-- Suspend -->
+                                <form method="post" action="{% url 'advertisement_admin_suspend' ad.id %}" style="margin:0;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-warning" style="font-size:0.78rem; padding:0.3rem 0.65rem;">
+                                        Suspend
+                                    </button>
+                                </form>
+
+                                {% elif ad.status == 'rejected' and ad.rejection_reason == '[Suspended by admin]' %}
+                                <!-- Unsuspend -->
+                                <form method="post" action="{% url 'advertisement_admin_unsuspend' ad.id %}" style="margin:0;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-success" style="font-size:0.78rem; padding:0.3rem 0.65rem;">
+                                        Unsuspend
+                                    </button>
+                                </form>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+
+                    <!-- Reject modal (inline, per-ad) -->
+                    {% if ad.status == 'pending' %}
+                    <div class="modal fade" id="rejectModal{{ ad.id|slugify }}" tabindex="-1" role="dialog" aria-hidden="true">
+                        <div class="modal-dialog" role="document">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Reject: {{ ad.title|escape|truncatechars:40 }}</h5>
+                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                        <span aria-hidden="true">&times;</span>
+                                    </button>
+                                </div>
+                                <form method="post" action="{% url 'reject_ad' ad.id %}">
+                                    {% csrf_token %}
+                                    <div class="modal-body">
+                                        <div class="form-group">
+                                            <label for="reason{{ ad.id|slugify }}">Rejection reason (optional)</label>
+                                            <input type="text" name="rejection_reason" id="reason{{ ad.id|slugify }}"
+                                                   class="form-control" maxlength="1000"
+                                                   placeholder="Reason for rejecting this ad…">
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                                        <button type="submit" class="btn btn-danger">Confirm Reject</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    {% if page_obj.has_other_pages %}
+    <nav aria-label="Advertisement pagination">
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}&status={{ filter_status|urlencode }}&zone={{ filter_zone|urlencode }}&search={{ search|urlencode }}">
+                    &laquo; Prev
+                </a>
+            </li>
+            {% else %}
+            <li class="page-item disabled"><span class="page-link">&laquo; Prev</span></li>
+            {% endif %}
+
+            {% for num in page_obj.paginator.page_range %}
+            {% if page_obj.number == num %}
+            <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+            {% elif num > page_obj.number|add:'-4' and num < page_obj.number|add:'4' %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ num }}&status={{ filter_status|urlencode }}&zone={{ filter_zone|urlencode }}&search={{ search|urlencode }}">{{ num }}</a>
+            </li>
+            {% endif %}
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}&status={{ filter_status|urlencode }}&zone={{ filter_zone|urlencode }}&search={{ search|urlencode }}">
+                    Next &raquo;
+                </a>
+            </li>
+            {% else %}
+            <li class="page-item disabled"><span class="page-link">Next &raquo;</span></li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+
+    {% else %}
+    <div style="text-align:center; padding:4rem 2rem; background:white; border-radius:var(--vrc-radius-xl); box-shadow:0 2px 10px rgba(0,0,0,0.06);">
+        <div style="font-size:3rem; margin-bottom:1rem;">&#128270;</div>
+        <h2 style="color:var(--vrc-gray-700); margin-bottom:0.5rem;">No ads found</h2>
+        <p style="color:var(--vrc-gray-500);">
+            {% if filter_status or filter_zone or search %}
+                No advertisements match your current filters.
+                <a href="{% url 'advertisement_admin_all' %}" style="color:#667eea;">Clear filters</a>
+            {% else %}
+                No advertisements have been submitted yet.
+            {% endif %}
+        </p>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

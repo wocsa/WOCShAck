@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block stylesheets %}
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+{% endblock %}
+
+{% block content %}
+{% include "components/header.html" %}
+
+<main class="container mt-5">
+    {% block main_content %}{% endblock %}
+</main>
+
+{% include "components/footer_public.html" %}
+{% include "components/cookie_banner.html" %}
+{% endblock %}

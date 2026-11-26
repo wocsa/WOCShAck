@@ -1,0 +1,109 @@
+{% extends "base/base.html" %}
+{% load static %}
+
+{% block title %}Mod — Events{% endblock %}
+
+{% block module_css %}
+<link rel="stylesheet" href="{% static 'base/css/admin.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="mod-page">
+
+  <div class="mod-section-header">
+    <h1 class="mod-section-title">📅 Events</h1>
+    <a href="{% url 'community:admin_dashboard' %}" class="mod-btn mod-btn--ghost mod-btn--sm">← Dashboard</a>
+  </div>
+
+  {# Filter form #}
+  <form method="get">
+    <div class="mod-filter-bar">
+      <input type="text" name="search" value="{{ search|escape }}" placeholder="Search title or organizer…"
+             class="mod-filter-input">
+      <button type="submit" class="mod-btn mod-btn--primary mod-btn--sm">Filter</button>
+      {% if search %}
+      <a href="{% url 'community:admin_event_list' %}" class="mod-btn mod-btn--ghost mod-btn--sm">Clear</a>
+      {% endif %}
+    </div>
+  </form>
+
+  <div class="mod-table-card">
+    <div class="mod-table-scroll">
+      <table class="mod-table">
+        <thead>
+          <tr>
+            <th>Title</th>
+            <th>Organizer</th>
+            <th>Type</th>
+            <th>Start Date</th>
+            <th class="text-center">Status</th>
+            <th class="text-center">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for event in page_obj %}
+          <tr>
+            <td>
+              <a href="{% url 'community:event_detail' event.id %}" target="_blank"
+                 class="mod-table-link">{{ event.title|escape }}</a>
+            </td>
+            <td>{{ event.organizer.username|escape|default:"—" }}</td>
+            <td>{{ event.get_event_type_display|escape }}</td>
+            <td style="white-space:nowrap;">{{ event.start_datetime|date:"Y-m-d H:i" }}</td>
+            <td class="text-center">
+              {% if event.status == "cancelled" %}
+                <span class="mod-badge mod-badge--danger">Cancelled</span>
+              {% elif event.status == "published" %}
+                <span class="mod-badge mod-badge--success">Published</span>
+              {% else %}
+                <span class="mod-badge mod-badge--gray">{{ event.get_status_display|escape }}</span>
+              {% endif %}
+            </td>
+            <td class="text-center">
+              <div class="mod-actions">
+                {% if event.status != "cancelled" %}
+                <form method="post"
+                      action="{% url 'community:admin_event_cancel' event.id %}"
+                      onsubmit="return confirm('Cancel event &quot;{{ event.title|escapejs }}&quot;?');">
+                  {% csrf_token %}
+                  <button type="submit" class="mod-btn mod-btn--warning mod-btn--sm">Cancel</button>
+                </form>
+                {% else %}
+                <span style="font-size:var(--vrc-font-size-xs);color:var(--vrc-gray-400);">Already cancelled</span>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="6" class="mod-table-empty">No events found.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  {# Pagination #}
+  {% if page_obj.has_other_pages %}
+  <div class="mod-pagination">
+    {% if page_obj.has_previous %}
+    <a href="?search={{ search|urlencode }}&page={{ page_obj.previous_page_number }}"
+       class="mod-page-btn">«</a>
+    {% else %}
+    <span class="mod-page-btn mod-page-btn--disabled">«</span>
+    {% endif %}
+
+    <span class="mod-page-btn mod-page-btn--active">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+
+    {% if page_obj.has_next %}
+    <a href="?search={{ search|urlencode }}&page={{ page_obj.next_page_number }}"
+       class="mod-page-btn">»</a>
+    {% else %}
+    <span class="mod-page-btn mod-page-btn--disabled">»</span>
+    {% endif %}
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

@@ -1,0 +1,453 @@
+{% extends "base/base_shop.html" %}
+{% load static %}
+
+
+{% block title %}V.R.C - Reviews for {{ css_file.name }}{% endblock %}
+
+{% block module_css %}
+<link rel="stylesheet" href="{% static 'css/shop.css' %}">
+{% endblock %}
+
+{% block content_wrapper_class %}{% endblock %}
+
+{% block content %}
+<div class="layout">
+    <div class="main-content">
+        <div class="reviews-page-container">
+            <!-- Product Header -->
+            <div class="product-header">
+                <div class="product-mini-preview">
+                    <iframe id="mini-frame" sandbox="allow-same-origin"></iframe>
+                </div>
+                <script>
+                (function() {
+                    var css = "{{ css_file.css_content|escapejs }}";
+                    var iframe = document.getElementById('mini-frame');
+                    var doc = iframe.contentDocument || iframe.contentWindow.document;
+                    doc.open();
+                    doc.write('<!DOCTYPE html><html><head><style>body{margin:0;display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%);}' + css + '</style></head><body><div class="loader"></div></body></html>');
+                    doc.close();
+                })();
+                </script>
+                <div class="product-mini-info">
+                    <h1>Reviews for {{ css_file.name }}</h1>
+                    <p>By <a href="{% url 'seller_by_css' css_file.id %}" class="author-link">{{ css_file.author }}</a></p>
+                    <a href="{% url 'product_detail' css_file.id %}" class="back-to-product">&larr; Back to product</a>
+                </div>
+            </div>
+
+            <!-- Rating Overview -->
+            <div class="rating-overview">
+                <div class="overall-rating">
+                    <div class="big-number">
+                        {% if total_reviews > 0 %}
+                        {{ rating_distribution.5|add:rating_distribution.4|add:rating_distribution.3|add:rating_distribution.2|add:rating_distribution.1|floatformat:0 }}
+                        {% else %}
+                        0
+                        {% endif %}
+                    </div>
+                    <div class="rating-label">Total Reviews</div>
+                </div>
+                <div class="rating-bars">
+                    {% for rating, count in rating_distribution.items|dictsortreversed:0 %}
+                    <div class="rating-bar-row">
+                        <span class="rating-label">{{ rating }} <span class="star filled">&#9733;</span></span>
+                        <div class="bar-container">
+                            <div class="bar-fill" style="width: {% if total_reviews > 0 %}{{ count|divisibleby:total_reviews|yesno:'100,0' }}{% widthratio count total_reviews 100 %}{% else %}0{% endif %}%"></div>
+                        </div>
+                        <span class="count">{{ count }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Sort Options -->
+            <div class="reviews-controls">
+                <form method="get" class="sort-form">
+                    <label for="sort">Sort by:</label>
+                    <select name="sort" id="sort" onchange="this.form.submit()">
+                        <option value="-created_at" {% if sort_by == '-created_at' %}selected{% endif %}>Newest First</option>
+                        <option value="created_at" {% if sort_by == 'created_at' %}selected{% endif %}>Oldest First</option>
+                        <option value="-rating" {% if sort_by == '-rating' %}selected{% endif %}>Highest Rated</option>
+                        <option value="rating" {% if sort_by == 'rating' %}selected{% endif %}>Lowest Rated</option>
+                    </select>
+                </form>
+            </div>
+
+            <!-- Reviews List -->
+            {% if reviews %}
+            <div class="reviews-list">
+                {% for review in reviews %}
+                <div class="review-card-full">
+                    <div class="review-card-header">
+                        <div class="reviewer-info">
+                            <span class="reviewer-name">{{ review.user.username }}</span>
+                            {% if review.is_verified_purchase %}
+                            <span class="verified-badge">Verified Purchase</span>
+                            {% endif %}
+                        </div>
+                        <div class="review-meta">
+                            <div class="review-rating">
+                                {% for i in "12345" %}
+                                {% if forloop.counter <= review.rating %}
+                                <span class="star filled">&#9733;</span>
+                                {% else %}
+                                <span class="star">&#9733;</span>
+                                {% endif %}
+                                {% endfor %}
+                            </div>
+                            <span class="review-date">{{ review.created_at|date:"F d, Y" }}</span>
+                        </div>
+                    </div>
+                    <h3 class="review-title">{{ review.title }}</h3>
+                    <p class="review-content-full">{{ review.content|linebreaks }}</p>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Pagination -->
+            {% if page_obj.has_other_pages %}
+            <div class="pagination-container">
+                <nav class="pagination">
+                    {% if page_obj.has_previous %}
+                    <a href="?page=1{% if sort_by %}&sort={{ sort_by }}{% endif %}">&laquo;</a>
+                    <a href="?page={{ page_obj.previous_page_number }}{% if sort_by %}&sort={{ sort_by }}{% endif %}">&lsaquo;</a>
+                    {% endif %}
+
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                        <span class="current">{{ num }}</span>
+                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                        <a href="?page={{ num }}{% if sort_by %}&sort={{ sort_by }}{% endif %}">{{ num }}</a>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if page_obj.has_next %}
+                    <a href="?page={{ page_obj.next_page_number }}{% if sort_by %}&sort={{ sort_by }}{% endif %}">&rsaquo;</a>
+                    <a href="?page={{ page_obj.paginator.num_pages }}{% if sort_by %}&sort={{ sort_by }}{% endif %}">&raquo;</a>
+                    {% endif %}
+                </nav>
+            </div>
+            {% endif %}
+
+            {% else %}
+            <div class="no-reviews">
+                <svg class="no-reviews-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                </svg>
+                <h2>No reviews yet</h2>
+                <p>Be the first to share your thoughts on this CSS loader!</p>
+                <a href="{% url 'product_detail' css_file.id %}" class="action-btn action-btn-primary">Write a Review</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .reviews-page-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    .product-header {
+        display: flex;
+        gap: 1.5rem;
+        align-items: center;
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 16px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    .product-mini-preview {
+        width: 80px;
+        height: 80px;
+        border-radius: 12px;
+        overflow: hidden;
+        flex-shrink: 0;
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    }
+    .product-mini-preview iframe {
+        width: 100%;
+        height: 100%;
+        border: none;
+    }
+    .product-mini-info h1 {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: #333;
+        margin: 0 0 0.25rem;
+    }
+    .product-mini-info p {
+        color: #666;
+        margin: 0 0 0.5rem;
+        font-size: 0.9rem;
+    }
+    .author-link {
+        color: #667eea;
+        text-decoration: none;
+        font-weight: 500;
+    }
+    .author-link:hover {
+        text-decoration: underline;
+        color: #764ba2;
+    }
+    .back-to-product {
+        color: #667eea;
+        text-decoration: none;
+        font-size: 0.85rem;
+        font-weight: 500;
+    }
+    .back-to-product:hover {
+        text-decoration: underline;
+    }
+
+    .rating-overview {
+        display: flex;
+        gap: 2rem;
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 16px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+    }
+    .overall-rating {
+        text-align: center;
+        min-width: 100px;
+    }
+    .big-number {
+        font-size: 3rem;
+        font-weight: 700;
+        color: #667eea;
+        line-height: 1;
+    }
+    .rating-label {
+        color: #666;
+        font-size: 0.85rem;
+        margin-top: 0.5rem;
+    }
+    .rating-bars {
+        flex: 1;
+        min-width: 200px;
+    }
+    .rating-bar-row {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 0.5rem;
+    }
+    .rating-bar-row .rating-label {
+        width: 40px;
+        display: flex;
+        align-items: center;
+        gap: 2px;
+        margin: 0;
+    }
+    .bar-container {
+        flex: 1;
+        height: 8px;
+        background: #eee;
+        border-radius: 4px;
+        overflow: hidden;
+    }
+    .bar-fill {
+        height: 100%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 4px;
+        min-width: 0;
+    }
+    .rating-bar-row .count {
+        width: 30px;
+        text-align: right;
+        color: #666;
+        font-size: 0.85rem;
+    }
+
+    .star {
+        color: #ddd;
+        font-size: 0.9rem;
+    }
+    .star.filled {
+        color: #f1c40f;
+    }
+
+    .reviews-controls {
+        display: flex;
+        justify-content: flex-end;
+        margin-bottom: 1rem;
+    }
+    .sort-form {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+    .sort-form label {
+        font-weight: 600;
+        color: #555;
+        font-size: 0.9rem;
+    }
+    .sort-form select {
+        padding: 0.5rem 1rem;
+        border: 1px solid rgba(102, 126, 234, 0.2);
+        border-radius: 8px;
+        font-size: 0.9rem;
+        background: white;
+        cursor: pointer;
+    }
+
+    .reviews-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .review-card-full {
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 16px;
+        padding: 1.5rem;
+    }
+    .review-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 1rem;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+    .reviewer-info {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+    .reviewer-name {
+        font-weight: 700;
+        color: #333;
+    }
+    .verified-badge {
+        background: #d4edda;
+        color: #155724;
+        padding: 0.25rem 0.6rem;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    .review-meta {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 0.25rem;
+    }
+    .review-rating {
+        display: flex;
+        gap: 2px;
+    }
+    .review-date {
+        color: #999;
+        font-size: 0.8rem;
+    }
+    .review-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #333;
+        margin: 0 0 0.75rem;
+    }
+    .review-content-full {
+        color: #555;
+        line-height: 1.6;
+        margin: 0;
+    }
+    .review-content-full p {
+        margin: 0 0 0.75rem;
+    }
+    .review-content-full p:last-child {
+        margin: 0;
+    }
+
+    .no-reviews {
+        text-align: center;
+        padding: 4rem 2rem;
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 20px;
+    }
+    .no-reviews-icon {
+        width: 80px;
+        height: 80px;
+        color: #ddd;
+        margin-bottom: 1rem;
+    }
+    .no-reviews h2 {
+        color: #333;
+        margin: 0 0 0.5rem;
+    }
+    .no-reviews p {
+        color: #666;
+        margin: 0 0 1.5rem;
+    }
+
+    .pagination-container {
+        display: flex;
+        justify-content: center;
+        margin-top: 2rem;
+    }
+    .pagination {
+        display: flex;
+        gap: 0.5rem;
+    }
+    .pagination a, .pagination .current {
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 600;
+    }
+    .pagination a {
+        background: white;
+        color: #667eea;
+        border: 1px solid rgba(102, 126, 234, 0.2);
+    }
+    .pagination a:hover {
+        background: #667eea;
+        color: white;
+    }
+    .pagination .current {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .action-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.875rem 1.5rem;
+        border-radius: 12px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.2s ease;
+    }
+    .action-btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+    .action-btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    @media (max-width: 600px) {
+        .product-header {
+            flex-direction: column;
+            text-align: center;
+        }
+        .rating-overview {
+            flex-direction: column;
+        }
+        .review-card-header {
+            flex-direction: column;
+        }
+        .review-meta {
+            align-items: flex-start;
+        }
+    }
+</style>
+{% endblock %}

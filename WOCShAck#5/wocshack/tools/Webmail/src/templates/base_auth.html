@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block stylesheets %}
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='connection_pages_style.css') }}">
+{% endblock %}
+
+{% block content %}
+{% include "components/header.html" %}
+
+<div class="form-container">
+    {% block form_content %}{% endblock %}
+</div>
+{% endblock %}

@@ -1,0 +1,64 @@
+{% extends 'base/base.html' %}
+{% block title %}Edit {{ project.name }} - V.R.C{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dev-container { max-width: 800px; margin: 0 auto; padding: var(--vrc-spacing-xl); }
+    .form-card { background: var(--vrc-white); border-radius: var(--vrc-radius-lg); padding: var(--vrc-spacing-xl); box-shadow: var(--vrc-shadow-md); margin-bottom: var(--vrc-spacing-xl); }
+    .form-card h1 { font-size: var(--vrc-font-size-2xl); font-weight: var(--vrc-font-weight-bold); margin-bottom: var(--vrc-spacing-lg); }
+    .form-card h2 { font-size: var(--vrc-font-size-xl); font-weight: var(--vrc-font-weight-semibold); margin-bottom: var(--vrc-spacing-md); }
+    .form-group { margin-bottom: var(--vrc-spacing-lg); }
+    .form-group label { display: block; font-size: var(--vrc-font-size-sm); font-weight: var(--vrc-font-weight-medium); color: var(--vrc-gray-700); margin-bottom: var(--vrc-spacing-xs); }
+    .form-group input, .form-group textarea { width: 100%; padding: 10px 14px; border: 1px solid var(--vrc-gray-300); border-radius: var(--vrc-radius-md); font-size: var(--vrc-font-size-base); font-family: var(--vrc-font-family); box-sizing: border-box; }
+    .form-group input:focus, .form-group textarea:focus { outline: none; border-color: var(--vrc-primary); }
+    .btn-primary { padding: 10px 24px; background: var(--vrc-gradient); color: white; border: none; border-radius: var(--vrc-radius-md); cursor: pointer; font-size: var(--vrc-font-size-base); }
+    .btn-secondary { padding: 10px 24px; background: var(--vrc-gray-100); color: var(--vrc-gray-700); border: none; border-radius: var(--vrc-radius-md); cursor: pointer; text-decoration: none; font-size: var(--vrc-font-size-sm); }
+    .btn-row { display: flex; gap: var(--vrc-spacing-sm); }
+    .version-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--vrc-gray-100); font-size: var(--vrc-font-size-sm); }
+    .version-item:last-child { border-bottom: none; }
+    .version-current { color: var(--vrc-success); font-weight: var(--vrc-font-weight-medium); }
+    .back-link { display: inline-block; margin-bottom: var(--vrc-spacing-lg); color: var(--vrc-primary); text-decoration: none; font-size: var(--vrc-font-size-sm); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dev-container">
+    <a href="{% url 'developer_projects' %}" class="back-link">&larr; Back to Projects</a>
+    <div class="form-card">
+        <h1>Edit Project</h1>
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="name">Project Name</label>
+                <input type="text" id="name" name="name" value="{{ project.name }}" maxlength="200" required>
+            </div>
+            <div class="form-group">
+                <label for="description">Description</label>
+                <textarea id="description" name="description" rows="3" maxlength="2000">{{ project.description }}</textarea>
+            </div>
+            <div class="btn-row">
+                <button type="submit" class="btn-primary">Save</button>
+                <a href="{% url 'developer_editor' %}?project={{ project.id }}" class="btn-secondary">Open in Editor</a>
+                <a href="{% url 'developer_publish' project_id=project.id %}" class="btn-secondary">Publish</a>
+            </div>
+        </form>
+    </div>
+
+    <div class="form-card">
+        <h2>Versions</h2>
+        {% for v in versions %}
+        <div class="version-item">
+            <div>
+                <strong>v{{ v.version_number }}</strong>
+                {% if v.is_current %}<span class="version-current">(current)</span>{% endif %}
+                <span style="color: var(--vrc-gray-500); margin-left: 8px;">{{ v.commit_message }}</span>
+            </div>
+            <span style="color: var(--vrc-gray-400);">{{ v.created_at|date:"M d, Y H:i" }}</span>
+        </div>
+        {% empty %}
+        <p style="color: var(--vrc-gray-500);">No versions yet.</p>
+        {% endfor %}
+        <a href="{% url 'developer_versions' project_id=project.id %}" class="btn-secondary" style="display: inline-block; margin-top: var(--vrc-spacing-md);">Manage Versions</a>
+    </div>
+</div>
+{% endblock %}

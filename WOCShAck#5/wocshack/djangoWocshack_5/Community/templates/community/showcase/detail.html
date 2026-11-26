@@ -1,0 +1,77 @@
+{% extends "base/base.html" %}
+{% load static community_tags %}
+
+{% block title %}VRC — {{ item.title }}{% endblock %}
+
+{% block module_css %}
+<link rel="stylesheet" href="{% static 'community/css/content.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="main-container">
+<nav class="vrc-breadcrumbs">
+  <a href="{% url 'community:index' %}">Community</a>
+  <span class="bc-sep">›</span>
+  <a href="{% url 'community:showcase_list' %}">Showcase</a>
+  <span class="bc-sep">›</span>
+  <span class="bc-current">{{ item.title }}</span>
+</nav>
+<div class="showcase-detail-wrapper">
+
+  <div class="showcase-detail-header">
+    <div>
+      <span class="showcase-category">{{ item.get_category_display }}</span>
+      <h1 class="showcase-detail-title">{{ item.title }}</h1>
+      <div class="showcase-detail-meta">
+        <span>By {{ item.author.username }}</span>
+        <span>·</span>
+        <span>{{ item.view_count }} views</span>
+        <span>·</span>
+        <span>{{ item.created_at|date:"M d, Y" }}</span>
+        {% if item.is_featured %}<span class="post-badge post-badge--featured">⭐ Featured</span>{% endif %}
+      </div>
+      {% if item.description %}
+      <div class="showcase-detail-desc">{{ item.description|markdownify }}</div>
+      {% endif %}
+    </div>
+    <div class="showcase-vote-col">
+      {% if request.user.is_authenticated %}
+      <form method="post" action="{% url 'community:showcase_vote' item.id %}" id="vote-form-up">
+        {% csrf_token %}
+        <input type="hidden" name="vote_type" value="upvote">
+        <button type="submit" class="vote-btn vote-btn--lg {% if user_vote == 'upvote' %}vote-btn--active{% endif %}">▲</button>
+      </form>
+      {% else %}
+      <span class="vote-btn vote-btn--lg vote-btn--static">▲</span>
+      {% endif %}
+      <span class="vote-score vote-score--lg" id="vote-score">{{ item.vote_score }}</span>
+      {% if request.user.is_authenticated %}
+      <form method="post" action="{% url 'community:showcase_vote' item.id %}" id="vote-form-down">
+        {% csrf_token %}
+        <input type="hidden" name="vote_type" value="downvote">
+        <button type="submit" class="vote-btn vote-btn--lg vote-btn--down {% if user_vote == 'downvote' %}vote-btn--active{% endif %}">▼</button>
+      </form>
+      {% else %}
+      <span class="vote-btn vote-btn--lg vote-btn--static vote-btn--down">▼</span>
+      {% endif %}
+    </div>
+  </div>
+
+  {# GIF preview #}
+  {% if item.preview_gif %}
+  <div class="showcase-demo-section">
+    <div class="showcase-demo-header">
+      <span class="showcase-demo-title">Preview</span>
+    </div>
+    <div class="showcase-gif-wrapper">
+      <img src="{{ item.preview_gif.url }}" alt="{{ item.title|escape }} preview" class="showcase-preview-gif">
+    </div>
+  </div>
+  {% endif %}
+
+
+</div>
+</div>
+
+
+{% endblock %}

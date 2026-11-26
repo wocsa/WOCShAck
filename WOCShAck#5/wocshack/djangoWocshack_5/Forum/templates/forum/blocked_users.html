@@ -1,0 +1,144 @@
+{% extends "base/base_forum.html" %}
+{% load static %}
+
+
+{% block title %}Blocked Users - V.R.C Forum{% endblock %}
+
+{% block extra_css %}
+<style>
+    .blocked-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 30px;
+        border-radius: 16px;
+        margin-bottom: 20px;
+    }
+    .breadcrumb {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        margin-bottom: 10px;
+        font-size: 0.9rem;
+    }
+    .breadcrumb a {
+        color: rgba(255,255,255,0.8);
+        text-decoration: none;
+    }
+    .breadcrumb a:hover {
+        color: white;
+    }
+    .breadcrumb span {
+        opacity: 0.6;
+    }
+    .blocked-header h1 {
+        font-size: 1.8rem;
+    }
+    .blocked-header p {
+        opacity: 0.9;
+        margin-top: 10px;
+    }
+
+    .blocked-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    .blocked-card {
+        background: white;
+        border-radius: 12px;
+        padding: 15px 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .blocked-user-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    .blocked-avatar {
+        width: 40px;
+        height: 40px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 600;
+    }
+    .blocked-name {
+        font-weight: 600;
+        color: #333;
+    }
+    .blocked-reason {
+        font-size: 0.85rem;
+        color: #888;
+    }
+    .blocked-date {
+        font-size: 0.8rem;
+        color: #aaa;
+    }
+    .unblock-btn {
+        padding: 8px 16px;
+        background: #d1fae5;
+        color: #10b981;
+        border: 1px solid #6ee7b7;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.2s ease;
+    }
+    .unblock-btn:hover {
+        background: #10b981;
+        color: white;
+    }
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: white;
+        border-radius: 12px;
+    }
+    .empty-state h3 { color: #333; margin-bottom: 10px; }
+    .empty-state p { color: #888; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="blocked-header">
+    <div class="breadcrumb">
+        <a href="{% url 'forum_index' %}">Forum</a>
+        <span>/</span>
+        <span>Blocked Users</span>
+    </div>
+    <h1>Blocked Users</h1>
+    <p>Posts from blocked users will be hidden from your view in the forum.</p>
+</div>
+
+<div class="blocked-list">
+    {% for block in blocked_users %}
+    <div class="blocked-card">
+        <div class="blocked-user-info">
+            <div class="blocked-avatar">{{ block.blocked.username|slice:":1"|upper }}</div>
+            <div>
+                <div class="blocked-name">{{ block.blocked.username }}</div>
+                {% if block.reason %}
+                <div class="blocked-reason">{{ block.reason }}</div>
+                {% endif %}
+                <div class="blocked-date">Blocked {{ block.created_at|timesince }} ago</div>
+            </div>
+        </div>
+        <form action="{% url 'forum_toggle_block' username=block.blocked.username %}" method="post">
+            {% csrf_token %}
+            <button type="submit" class="unblock-btn">Unblock</button>
+        </form>
+    </div>
+    {% empty %}
+    <div class="empty-state">
+        <h3>No blocked users</h3>
+        <p>You have not blocked any users. You can block users from their forum posts or profile.</p>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

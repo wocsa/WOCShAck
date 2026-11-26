@@ -1,0 +1,34 @@
+{% extends "payments/loader.html" %}
+{% block title %}
+<title>V.R.C - Initialization</title>
+{% endblock %}
+
+{% block script %}
+<script>
+    window.addEventListener("DOMContentLoaded", async () => {
+      try {
+        const response = await fetch("{% url 'pay_init' %}", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": "{{ csrf_token }}",
+          },
+          body: JSON.stringify({
+            // any required data here
+          }),
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          window.location.href = `/banking/payment/popup-action/${result.sid}`;
+        } else {
+          alert("Error: " + result.error);
+          // Optionally redirect or show a message
+        }
+      } catch (error) {
+        alert("Something went wrong.");
+      }
+    });
+  </script>
+{% endblock %}

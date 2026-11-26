@@ -1,0 +1,116 @@
+{% extends 'base/base.html' %}
+{% block title %}Admin — Developer Profiles — V.R.C{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dev-container { max-width: 1100px; margin: 0 auto; padding: var(--vrc-spacing-xl); }
+    .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--vrc-spacing-xl); }
+    .page-header h1 { font-size: var(--vrc-font-size-2xl); font-weight: var(--vrc-font-weight-bold); }
+    .back-link { display: inline-block; margin-bottom: var(--vrc-spacing-lg); color: var(--vrc-primary); text-decoration: none; font-size: var(--vrc-font-size-sm); }
+    .filter-bar { background: var(--vrc-white); border-radius: var(--vrc-radius-lg); padding: var(--vrc-spacing-md) var(--vrc-spacing-lg); box-shadow: var(--vrc-shadow-md); margin-bottom: var(--vrc-spacing-xl); display: flex; gap: var(--vrc-spacing-md); align-items: flex-end; flex-wrap: wrap; }
+    .filter-group label { display: block; font-size: var(--vrc-font-size-xs); color: var(--vrc-gray-500); margin-bottom: 4px; font-weight: var(--vrc-font-weight-medium); }
+    .filter-group input[type="text"] { padding: 8px 12px; border: 1px solid var(--vrc-gray-300); border-radius: var(--vrc-radius-md); font-size: var(--vrc-font-size-sm); }
+    .btn-filter { padding: 8px 18px; background: var(--vrc-gradient); color: white; border: none; border-radius: var(--vrc-radius-md); font-size: var(--vrc-font-size-sm); cursor: pointer; }
+    .btn-reset { padding: 8px 14px; background: var(--vrc-gray-100); color: var(--vrc-gray-700); border: none; border-radius: var(--vrc-radius-md); font-size: var(--vrc-font-size-sm); text-decoration: none; }
+    .section { background: var(--vrc-white); border-radius: var(--vrc-radius-lg); padding: var(--vrc-spacing-xl); box-shadow: var(--vrc-shadow-md); margin-bottom: var(--vrc-spacing-xl); }
+    .data-table { width: 100%; border-collapse: collapse; }
+    .data-table th { background: var(--vrc-gray-50); padding: 10px 14px; text-align: left; font-size: var(--vrc-font-size-sm); color: var(--vrc-gray-500); border-bottom: 1px solid var(--vrc-gray-200); }
+    .data-table td { padding: 10px 14px; border-bottom: 1px solid var(--vrc-gray-100); font-size: var(--vrc-font-size-sm); vertical-align: middle; }
+    .badge { padding: 2px 10px; border-radius: var(--vrc-radius-full); font-size: var(--vrc-font-size-xs); font-weight: var(--vrc-font-weight-medium); }
+    .badge-verified { background: var(--vrc-success-light); color: var(--vrc-success); }
+    .badge-unverified { background: var(--vrc-gray-100); color: var(--vrc-gray-500); }
+    .pagination { display: flex; gap: 4px; justify-content: center; margin-top: var(--vrc-spacing-lg); }
+    .pagination a, .pagination span { padding: 6px 12px; border-radius: var(--vrc-radius-sm); font-size: var(--vrc-font-size-sm); text-decoration: none; }
+    .pagination a { background: var(--vrc-gray-100); color: var(--vrc-gray-700); }
+    .pagination .current { background: var(--vrc-primary); color: white; }
+    .empty-state { text-align: center; padding: var(--vrc-spacing-xl); color: var(--vrc-gray-500); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dev-container">
+    <a href="{% url 'developer_admin_dashboard' %}" class="back-link">&larr; Back to Developer Admin</a>
+
+    <div class="page-header">
+        <h1>Developer Profiles</h1>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message|escape }}
+            <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
+        </div>
+        {% endfor %}
+    {% endif %}
+
+    <form method="get" class="filter-bar">
+        <div class="filter-group">
+            <label for="id_search">Username or display name</label>
+            <input type="text" name="search" id="id_search" value="{{ search|escape }}" placeholder="Search…">
+        </div>
+        <button type="submit" class="btn-filter">Filter</button>
+        {% if search %}
+        <a href="{% url 'developer_admin_developer_list' %}" class="btn-reset">Clear</a>
+        {% endif %}
+    </form>
+
+    <div class="section">
+        {% if page_obj %}
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Username</th>
+                    <th>Display Name</th>
+                    <th>Tagline</th>
+                    <th>Commission</th>
+                    <th>Verified</th>
+                    <th>Joined</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for profile in page_obj %}
+                <tr>
+                    <td><strong><a href="{% url 'public_profile_by_username' username=profile.user.username %}" style="color:inherit;text-decoration:underline;">{{ profile.user.username|escape }}</a></strong></td>
+                    <td>{{ profile.display_name|escape|default:"—" }}</td>
+                    <td>{{ profile.tagline|escape|default:"—" }}</td>
+                    <td>{% if profile.plan_commission_rate %}{% widthratio profile.plan_commission_rate 1 100 %}%{% else %}—{% endif %}</td>
+                    <td>
+                        {% if profile.is_verified %}
+                        <span class="badge badge-verified">Verified</span>
+                        {% else %}
+                        <span class="badge badge-unverified">Unverified</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ profile.created_at|date:"M d, Y" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        {% if page_obj.has_other_pages %}
+        <div class="pagination">
+            {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}&search={{ search|urlencode }}">&laquo;</a>
+            {% endif %}
+            {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                <span class="current">{{ num }}</span>
+                {% elif num > page_obj.number|add:"-3" and num < page_obj.number|add:"3" %}
+                <a href="?page={{ num }}&search={{ search|urlencode }}">{{ num }}</a>
+                {% endif %}
+            {% endfor %}
+            {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}&search={{ search|urlencode }}">&raquo;</a>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        {% else %}
+        <div class="empty-state">
+            <p>No developer profiles found{% if search %} matching your search{% endif %}.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

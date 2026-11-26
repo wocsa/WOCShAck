@@ -1,0 +1,12 @@
+{% extends "base/base_auth.html" %}
+{% load static %}
+
+{# This template is kept for backward compatibility with existing templates #}
+
+{% block auth_title %}{% block title_text %}V.R.C{% endblock %}{% endblock %}
+
+{% block auth_form %}
+{% block content %}
+{# Content from child templates will be rendered here #}
+{% endblock %}
+{% endblock %}

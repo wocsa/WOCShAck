@@ -1,0 +1,19 @@
+{% load static %}
+<ul class="friend-requests-list">
+  {% for req in requests_sent %}
+    <li class="friend-request-item">
+      <div>
+        <span class="friend-request-username">{{ req.receiver.username|capfirst }}</span>
+        <span class="friend-request-pending">· Pending Request</span>
+      </div>
+      <form method="post" action="{% url 'community:suppress_friend_request' %}"
+            onsubmit="return confirm('Cancel friend request to {{ req.receiver.username }}?');">
+        {% csrf_token %}
+        <input type="hidden" name="user_id" value="{{ req.receiver.id }}">
+        <button class="btn-cancel" type="submit">✕ Cancel</button>
+      </form>
+    </li>
+  {% empty %}
+    <li class="friend-requests-empty">No sent requests.</li>
+  {% endfor %}
+</ul>

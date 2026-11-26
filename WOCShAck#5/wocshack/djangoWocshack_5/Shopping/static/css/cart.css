@@ -1,0 +1,407 @@
+/* Cart and Payment Page Styles */
+/* Consistent styling for shopping module cart and payment pages */
+
+/* ============================
+   Shop Page Body Override
+   ============================ */
+html, body {
+    box-sizing: border-box;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    color: #313638;
+    margin: 0;
+    padding: 0;
+    padding-top: 80px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow-x: hidden;
+    position: relative;
+}
+
+/* ============================
+   Cart Page Wrapper
+   ============================ */
+.cart-page-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: calc(100vh - 200px);
+    padding: 40px 20px;
+    box-sizing: border-box;
+    flex: 1;
+}
+
+/* ============================
+   Cart Container
+   ============================ */
+.cart-container {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 2rem;
+    width: 100%;
+    max-width: 900px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+.payment-container {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 2rem;
+    width: 100%;
+    max-width: 600px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+/* ============================
+   Page Titles
+   ============================ */
+.cart-title {
+    font-size: 1.8rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-align: center;
+    margin: 0 0 1.5rem 0;
+    letter-spacing: -0.5px;
+}
+
+.payment-amount {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #555;
+    text-align: center;
+    margin: 0 0 2rem 0;
+}
+
+/* ============================
+   Cart Content
+   ============================ */
+.cart-content {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+/* ============================
+   Cart Table
+   ============================ */
+.cart_table {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(102, 126, 234, 0.1);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+    font-size: 0.9rem;
+    border-collapse: collapse;
+}
+
+.cart_table thead {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.cart_table th {
+    padding: 1rem 0.8rem;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.cart_table td {
+    padding: 1rem 0.8rem;
+    color: #333;
+    font-weight: 500;
+    border-bottom: 1px solid rgba(102, 126, 234, 0.08);
+    font-size: 0.9rem;
+}
+
+.cart_table tbody tr:hover {
+    background: rgba(102, 126, 234, 0.03);
+    transition: all 0.2s ease;
+}
+
+.cart_table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* Form Elements in Table */
+.cart_table form {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.cart_table input[type="number"] {
+    width: 60px;
+    padding: 0.4rem;
+    border: 1px solid rgba(102, 126, 234, 0.2);
+    border-radius: 6px;
+    font-size: 0.85rem;
+    text-align: center;
+    transition: all 0.2s ease;
+}
+
+.cart_table input[type="number"]:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+}
+
+.cart_table button {
+    padding: 0.4rem 0.8rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 6px rgba(102, 126, 234, 0.2);
+}
+
+.cart_table button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(102, 126, 234, 0.3);
+}
+
+/* Remove Link */
+.remove-link {
+    color: #e74c3c;
+    text-decoration: none;
+    font-weight: 600;
+    padding: 0.4rem 0.8rem;
+    border: 1px solid rgba(231, 76, 60, 0.2);
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    font-size: 0.8rem;
+    display: inline-block;
+}
+
+.remove-link:hover {
+    background: rgba(231, 76, 60, 0.08);
+    border-color: rgba(231, 76, 60, 0.3);
+}
+
+/* ============================
+   Cart Summary
+   ============================ */
+.cart-summary {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(102, 126, 234, 0.1);
+}
+
+.cart-total {
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: #333;
+    background: rgba(102, 126, 234, 0.05);
+    padding: 1rem 2rem;
+    border-radius: 10px;
+    margin: 0;
+}
+
+.cart-actions {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+/* ============================
+   Cart Buttons
+   ============================ */
+.cart-btn {
+    padding: 0.875rem 1.75rem;
+    border: none;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.cart-btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.cart-btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.cart-btn-secondary {
+    background: rgba(102, 126, 234, 0.08);
+    color: #667eea;
+    border: 1px solid rgba(102, 126, 234, 0.15);
+}
+
+.cart-btn-secondary:hover {
+    background: rgba(102, 126, 234, 0.12);
+    border-color: rgba(102, 126, 234, 0.25);
+    transform: translateY(-1px);
+}
+
+/* ============================
+   Empty Cart
+   ============================ */
+.cart-empty {
+    text-align: center;
+    padding: 3rem 2rem;
+}
+
+.cart-empty p {
+    font-size: 1.1rem;
+    color: #666;
+    margin: 0 0 1.5rem 0;
+}
+
+/* ============================
+   Payment Form
+   ============================ */
+.payment-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.form-group.full-width {
+    grid-column: 1 / -1;
+}
+
+.form-group label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #555;
+}
+
+.payment-input {
+    padding: 0.875rem 1rem;
+    border: 1px solid rgba(102, 126, 234, 0.2);
+    border-radius: 10px;
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
+    background: #fff;
+}
+
+.payment-input:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.payment-input::placeholder {
+    color: #aaa;
+}
+
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+    flex-wrap: wrap;
+}
+
+.form-actions .cart-btn {
+    flex: 1;
+    min-width: 150px;
+}
+
+/* ============================
+   Responsive Design
+   ============================ */
+@media (max-width: 768px) {
+    .cart-page-wrapper {
+        padding: 20px 15px;
+    }
+
+    .cart-container,
+    .payment-container {
+        padding: 1.5rem;
+        border-radius: 16px;
+    }
+
+    .cart-title {
+        font-size: 1.5rem;
+    }
+
+    .cart_table {
+        display: block;
+        overflow-x: auto;
+    }
+
+    .cart_table th,
+    .cart_table td {
+        padding: 0.75rem 0.5rem;
+        font-size: 0.85rem;
+    }
+
+    .cart-total {
+        font-size: 1.2rem;
+        padding: 0.875rem 1.5rem;
+    }
+
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+
+    .form-actions {
+        flex-direction: column;
+    }
+
+    .form-actions .cart-btn {
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .cart-title {
+        font-size: 1.3rem;
+    }
+
+    .cart_table form {
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .cart_table input[type="number"] {
+        width: 50px;
+    }
+
+    .cart-btn {
+        padding: 0.75rem 1.25rem;
+        font-size: 0.9rem;
+    }
+}

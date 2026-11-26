@@ -1,0 +1,111 @@
+{% extends 'base/base.html' %}
+{% block title %}New E-Shop Coupon - V.R.C{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dev-container { max-width: 700px; margin: 0 auto; padding: var(--vrc-spacing-xl); }
+    .form-card { background: var(--vrc-white); border-radius: var(--vrc-radius-lg); padding: var(--vrc-spacing-xl); box-shadow: var(--vrc-shadow-md); }
+    .form-card h1 { font-size: var(--vrc-font-size-2xl); font-weight: var(--vrc-font-weight-bold); margin-bottom: var(--vrc-spacing-xs); }
+    .form-card .subtitle { color: var(--vrc-gray-500); font-size: var(--vrc-font-size-sm); margin-bottom: var(--vrc-spacing-xl); }
+    .form-group { margin-bottom: var(--vrc-spacing-lg); }
+    .form-group label { display: block; font-size: var(--vrc-font-size-sm); font-weight: var(--vrc-font-weight-medium); color: var(--vrc-gray-700); margin-bottom: var(--vrc-spacing-xs); }
+    .form-group input, .form-group select { width: 100%; padding: 10px 14px; border: 1px solid var(--vrc-gray-300); border-radius: var(--vrc-radius-md); font-size: var(--vrc-font-size-base); box-sizing: border-box; }
+    .form-group input:focus, .form-group select:focus { outline: none; border-color: var(--vrc-primary); }
+    .form-group .help-text { font-size: var(--vrc-font-size-xs); color: var(--vrc-gray-500); margin-top: 4px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--vrc-spacing-md); }
+    .btn-primary { padding: 10px 24px; background: var(--vrc-gradient); color: white; border: none; border-radius: var(--vrc-radius-md); cursor: pointer; font-size: var(--vrc-font-size-base); }
+    .back-link { display: inline-block; margin-bottom: var(--vrc-spacing-lg); color: var(--vrc-primary); text-decoration: none; font-size: var(--vrc-font-size-sm); }
+    .products-section { margin-top: var(--vrc-spacing-xl); padding-top: var(--vrc-spacing-xl); border-top: 1px solid var(--vrc-gray-100); }
+    .products-section h2 { font-size: var(--vrc-font-size-base); font-weight: var(--vrc-font-weight-semibold); margin-bottom: var(--vrc-spacing-sm); color: var(--vrc-gray-700); }
+    .products-section .note { font-size: var(--vrc-font-size-xs); color: var(--vrc-gray-500); margin-bottom: var(--vrc-spacing-md); }
+    .product-chip { display: inline-block; padding: 4px 10px; margin: 3px; background: var(--vrc-gray-100); border-radius: var(--vrc-radius-sm); font-size: var(--vrc-font-size-xs); color: var(--vrc-gray-700); }
+    .no-products { font-size: var(--vrc-font-size-sm); color: var(--vrc-gray-500); }
+    .error-msg { padding: 10px 14px; background: #fee2e2; color: #991b1b; border-radius: var(--vrc-radius-md); margin-bottom: var(--vrc-spacing-lg); font-size: var(--vrc-font-size-sm); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dev-container">
+    <a href="{% url 'developer_coupons' %}" class="back-link">&larr; Back to Coupons</a>
+    <div class="form-card">
+        <h1>New E-Shop Coupon</h1>
+        <p class="subtitle">Create a discount code for buyers purchasing your CSS in the e-shop.</p>
+
+        {% if messages %}
+        {% for message in messages %}
+        {% if message.tags == 'error' %}
+        <div class="error-msg">{{ message }}</div>
+        {% endif %}
+        {% endfor %}
+        {% endif %}
+
+        <form method="post">
+            {% csrf_token %}
+
+            <div class="form-group">
+                <label for="code">Coupon Code <span style="color:#ef4444">*</span></label>
+                <input type="text" id="code" name="code" maxlength="50" required placeholder="SAVE20" style="text-transform: uppercase;">
+                <div class="help-text">Alphanumeric, automatically uppercased. Must be unique across the platform.</div>
+            </div>
+
+            <div class="form-group">
+                <label for="description">Description (optional)</label>
+                <input type="text" id="description" name="description" maxlength="200" placeholder="Summer sale discount">
+            </div>
+
+            <div class="form-group">
+                <label for="discount_value">Discount Percent <span style="color:#ef4444">*</span></label>
+                <input type="number" id="discount_value" name="discount_value" step="0.01" min="0.01" max="100" required placeholder="20">
+                <div class="help-text">Enter a percentage between 0.01 and 100</div>
+            </div>
+
+            <div class="form-group">
+                <label for="minimum_order_amount">Minimum Order Amount (NE)</label>
+                <input type="number" id="minimum_order_amount" name="minimum_order_amount" step="0.01" min="0" value="0" placeholder="0">
+                <div class="help-text">Minimum subtotal of your products in the buyer's cart. 0 = no minimum.</div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="max_uses">Total Usage Limit</label>
+                    <input type="number" id="max_uses" name="max_uses" min="0" value="0">
+                    <div class="help-text">0 = unlimited uses</div>
+                </div>
+                <div class="form-group">
+                    <label for="max_uses_per_user">Max Uses per User</label>
+                    <input type="number" id="max_uses_per_user" name="max_uses_per_user" min="1" value="1">
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="valid_from">Valid From</label>
+                    <input type="datetime-local" id="valid_from" name="valid_from">
+                    <div class="help-text">Leave blank to activate immediately</div>
+                </div>
+                <div class="form-group">
+                    <label for="valid_until">Valid Until</label>
+                    <input type="datetime-local" id="valid_until" name="valid_until">
+                    <div class="help-text">Leave blank for no expiry</div>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-primary">Create Coupon</button>
+        </form>
+
+        <div class="products-section">
+            <h2>Your published CSS products</h2>
+            <p class="note">This coupon will apply to all of these products when buyers use it at checkout.</p>
+            {% if products %}
+            <div>
+                {% for product in products %}
+                <span class="product-chip">{{ product.name }} — {{ product.price }} NE</span>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="no-products">You have no published CSS products yet. <a href="{% url 'developer_projects' %}" style="color: var(--vrc-primary);">Publish a project</a> to get started.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,94 @@
+.settings-container {
+    text-align: center;
+    padding: 2em;
+}
+
+.settings-container h1 {
+    font-size: 2em;
+    margin-bottom: 1em;
+    color: #313638;
+}
+
+.settings-actions {
+    display: flex;
+    justify-content: center;
+    gap: 1em;
+    flex-wrap: wrap;
+}
+
+.settings-button {
+    cursor: pointer;
+    border: 2px solid #E8E9EB;
+    background: #313638;
+    color: #E8E9EB;
+    border-radius: 8px;
+    padding: 15px 30px;
+    transition: background 0.2s, border-color 0.2s;
+}
+
+.settings-button:hover {
+    background: #3e4446;
+    border-color: #ffffff;
+}
+
+dialog {
+    border: none;
+    border-radius: 10px;
+    padding: 2em;
+    max-width: 400px;
+    width: 90%;
+}
+
+.dialog-wrapper form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75em;
+}
+
+.dialog-wrapper h2 {
+    text-align: center;
+    margin-bottom: 0.5em;
+}
+
+.dialog-wrapper label {
+    text-align: left;
+    font-weight: bold;
+}
+
+.dialog-wrapper input {
+    padding: 0.5em;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+.dialog-buttons {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 1em;
+}
+
+.save-button, .cancel-button {
+    cursor: pointer;
+    border: none;
+    padding: 0.75em 1.5em;
+    border-radius: 5px;
+    transition: background 0.2s;
+}
+
+.save-button {
+    background: #4caf50;
+    color: white;
+}
+
+.save-button:hover {
+    background: #45a049;
+}
+
+.cancel-button {
+    background: #f44336;
+    color: white;
+}
+
+.cancel-button:hover {
+    background: #e53935;
+}

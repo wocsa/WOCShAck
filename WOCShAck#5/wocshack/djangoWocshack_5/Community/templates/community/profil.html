@@ -1,0 +1,86 @@
+{% extends "base/base.html" %}
+{% load static %}
+
+{% block title %}VRC — {{ user.username }}'s Profile{% endblock %}
+
+{% block module_css %}
+<link rel="stylesheet" href="{% static 'community/css/community.css' %}">
+<link rel="stylesheet" href="{% static 'community/css/follow.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="main-container">
+<nav class="vrc-breadcrumbs">
+  <a href="{% url 'community:index' %}">Community</a>
+  <span class="bc-sep">›</span>
+  <span class="bc-current">Profile: {{ user.username }}</span>
+</nav>
+<div class="follow-wrapper">
+
+  {# ── Profile Header ─────────────────────────────────────────── #}
+  <div class="follow-header">
+    <div style="display:flex; align-items:center; gap:1.25rem;">
+      <span class="follow-avatar" style="width:3.5rem;height:3.5rem;font-size:1.5rem;flex-shrink:0;">
+        {{ user.username|first|upper }}
+      </span>
+      <div>
+        <h1 class="follow-title">{{ user.username }}</h1>
+        {% if user.profile.biography %}
+        <p class="follow-subtitle">{{ user.profile.biography }}</p>
+        {% endif %}
+        {% with role=user.profile.get_user_role %}
+        {% if role %}
+        <span class="lv-header-badge-label" style="
+          display:inline-block;padding:.2rem .6rem;border-radius:.75rem;
+          background:{{ role.color }};color:#fff;font-size:.75rem;margin-top:.25rem;">
+          {{ role.name }}
+        </span>
+        {% endif %}
+        {% endwith %}
+      </div>
+    </div>
+
+    {# ── Level badge (removed — gamification) ── #}
+  </div>
+
+  {# ── Social Stats ───────────────────────────────────────────── #}
+  <div style="display:flex; gap:2rem; padding:.75rem 0; border-bottom:1px solid var(--border,#e5e7eb);">
+    <a href="{% url 'community:followers_list' user.id %}" style="text-decoration:none;color:inherit;">
+      <span style="font-weight:700;font-size:1.1rem;">{{ followers_count }}</span>
+      <span style="color:var(--text-muted,#6b7280);font-size:.875rem;margin-left:.25rem;">
+        Follower{{ followers_count|pluralize }}
+      </span>
+    </a>
+    <a href="{% url 'community:following_list' user.id %}" style="text-decoration:none;color:inherit;">
+      <span style="font-weight:700;font-size:1.1rem;">{{ following_count }}</span>
+      <span style="color:var(--text-muted,#6b7280);font-size:.875rem;margin-left:.25rem;">Following</span>
+    </a>
+  </div>
+
+  {# ── Action Buttons ─────────────────────────────────────────── #}
+  {% if is_authenticated and not is_own_profile %}
+  <div style="display:flex;gap:.75rem;padding:.75rem 0;">
+    {% if is_following %}
+    <form method="post" action="{% url 'community:unfollow_user' user.id %}">
+      {% csrf_token %}
+      <button type="submit" class="follow-btn follow-btn--secondary">Unfollow</button>
+    </form>
+    {% else %}
+    <form method="post" action="{% url 'community:follow_user' user.id %}">
+      {% csrf_token %}
+      <button type="submit" class="follow-btn follow-btn--primary">Follow</button>
+    </form>
+    {% endif %}
+    <a href="{% url 'community:start_conversation' user.id %}" class="follow-btn follow-btn--ghost">
+      Message
+    </a>
+  </div>
+  {% elif is_own_profile %}
+  <div style="padding:.75rem 0;">
+    <a href="{% url 'community:index' %}" class="follow-btn follow-btn--ghost">Community Hub</a>
+  </div>
+  {% endif %}
+
+</div>
+</div>
+{% endblock %}

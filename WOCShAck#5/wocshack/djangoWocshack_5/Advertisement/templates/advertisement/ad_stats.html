@@ -1,0 +1,107 @@
+{% extends "base/base.html" %}
+{% load static %}
+
+{% block title %}V.R.C — Stats: {{ ad.title }}{% endblock %}
+
+{% block content %}
+<div style="max-width:900px; margin:2rem auto;">
+    <div style="display:flex; align-items:center; gap:1rem; margin-bottom:1.5rem; flex-wrap:wrap;">
+        <a href="{% url 'advertisement_detail' ad.id %}" style="color:#667eea; text-decoration:none; font-size:0.9rem;">← Ad Detail</a>
+        <h1 style="margin:0; font-size:1.75rem; color:var(--vrc-gray-900);">Stats: {{ ad.title|truncatechars:40 }}</h1>
+    </div>
+
+    <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:1rem; margin-bottom:2rem;">
+        <div style="background:white; border-radius:12px; padding:1.5rem; text-align:center; box-shadow:0 2px 8px rgba(0,0,0,0.05);">
+            <div style="font-size:2.5rem; font-weight:700; color:#667eea;">{{ total_impressions }}</div>
+            <div style="color:var(--vrc-gray-500); margin-top:0.25rem;">Total Impressions</div>
+        </div>
+        <div style="background:white; border-radius:12px; padding:1.5rem; text-align:center; box-shadow:0 2px 8px rgba(0,0,0,0.05);">
+            <div style="font-size:2.5rem; font-weight:700; color:#10b981;">{{ total_clicks }}</div>
+            <div style="color:var(--vrc-gray-500); margin-top:0.25rem;">Total Clicks</div>
+        </div>
+        <div style="background:white; border-radius:12px; padding:1.5rem; text-align:center; box-shadow:0 2px 8px rgba(0,0,0,0.05);">
+            <div style="font-size:2.5rem; font-weight:700; color:#f59e0b;">{{ ctr }}%</div>
+            <div style="color:var(--vrc-gray-500); margin-top:0.25rem;">Click-Through Rate</div>
+        </div>
+    </div>
+
+    {# Per-zone breakdown — useful for "All Zones" ads #}
+    {% if zone_breakdown %}
+    <div style="background:white; border-radius:12px; padding:1.25rem; box-shadow:0 2px 8px rgba(0,0,0,0.05); margin-bottom:1.5rem;">
+        <h2 style="font-size:1rem; color:var(--vrc-gray-700); margin:0 0 0.75rem;">Impressions by Zone</h2>
+        <table style="width:100%; border-collapse:collapse; font-size:0.9rem;">
+            <thead>
+                <tr style="background:var(--vrc-gray-50);">
+                    <th style="padding:0.5rem; text-align:left; color:var(--vrc-gray-600);">Zone</th>
+                    <th style="padding:0.5rem; text-align:right; color:var(--vrc-gray-600);">Impressions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in zone_breakdown %}
+                <tr style="border-top:1px solid var(--vrc-gray-100);">
+                    <td style="padding:0.5rem; color:var(--vrc-gray-800);">{{ row.zone|default:"(unknown)" }}</td>
+                    <td style="padding:0.5rem; text-align:right; color:var(--vrc-gray-700);">{{ row.count }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem;">
+        <div>
+            <h2 style="font-size:1.1rem; color:var(--vrc-gray-700); margin-bottom:0.75rem;">Recent Impressions</h2>
+            <div style="background:white; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.05); overflow:hidden;">
+                {% if impressions %}
+                <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
+                    <thead>
+                        <tr style="background:var(--vrc-gray-50);">
+                            <th style="padding:0.6rem; text-align:left; color:var(--vrc-gray-600);">User</th>
+                            <th style="padding:0.6rem; text-align:left; color:var(--vrc-gray-600);">Zone</th>
+                            <th style="padding:0.6rem; text-align:left; color:var(--vrc-gray-600);">Time</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for imp in impressions %}
+                        <tr style="border-top:1px solid var(--vrc-gray-100);">
+                            <td style="padding:0.6rem; color:var(--vrc-gray-800);">{% if imp.user %}{{ imp.user.username }}{% else %}anonymous{% endif %}</td>
+                            <td style="padding:0.6rem; color:var(--vrc-gray-500); font-size:0.8rem;">{{ imp.zone|default:"—" }}</td>
+                            <td style="padding:0.6rem; color:var(--vrc-gray-500);">{{ imp.timestamp|date:"m-d H:i" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p style="padding:1rem; color:var(--vrc-gray-400); text-align:center; margin:0;">No impressions yet.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div>
+            <h2 style="font-size:1.1rem; color:var(--vrc-gray-700); margin-bottom:0.75rem;">Recent Clicks</h2>
+            <div style="background:white; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.05); overflow:hidden;">
+                {% if clicks %}
+                <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
+                    <thead>
+                        <tr style="background:var(--vrc-gray-50);">
+                            <th style="padding:0.6rem; text-align:left; color:var(--vrc-gray-600);">User</th>
+                            <th style="padding:0.6rem; text-align:left; color:var(--vrc-gray-600);">Time</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for click in clicks %}
+                        <tr style="border-top:1px solid var(--vrc-gray-100);">
+                            <td style="padding:0.6rem; color:var(--vrc-gray-800);">{% if click.user %}{{ click.user.username }}{% else %}anonymous{% endif %}</td>
+                            <td style="padding:0.6rem; color:var(--vrc-gray-500);">{{ click.timestamp|date:"m-d H:i" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p style="padding:1rem; color:var(--vrc-gray-400); text-align:center; margin:0;">No clicks yet.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

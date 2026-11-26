@@ -1,0 +1,52 @@
+{% extends "base/base.html" %}
+{% load static %}
+{% block module_css %}
+<link rel="stylesheet" href="{% static 'community/css/community.css' %}">
+<link rel="stylesheet" href="{% static 'community/css/add_friends.css' %}">
+{% endblock %}
+{% block title %}VRC - Community Engagement - Add a Friend{% endblock %}
+
+{% block content %}
+<nav class="vrc-breadcrumbs" style="padding: 0.75rem 1.5rem 0;">
+  <a href="{% url 'community:index' %}">Community</a>
+  <span class="bc-sep">›</span>
+  <span class="bc-current">Add Friends</span>
+</nav>
+
+<div class="add-friends-nav">
+    <a class="btn-nav return-button" href="{% url 'community:friends_list' %}">
+      Back
+    </a>
+    <a class="btn-nav" href="{% url 'community:friend_requests' %}">
+      📬 View Friend Requests
+    </a>
+  </div>
+
+<div class="add-friend-container">
+    <div class="add-friend-title-div">
+        <h2 class="add-friend-title">Add a Friend</h2>
+    </div>
+
+  <form class="add-friend-form" method="get" id="search-form" data-url="{% url 'community:add_friends' %}">
+    <input
+      class="add-friend-input"
+      type="text"
+      id="search-input"
+      name="q"
+      placeholder="Username..."
+      value="{{ query|capfirst }}"
+      autocomplete="off"
+    >
+    <button class="add-friend-submit" type="submit">Search</button>
+  </form>
+
+  <div id="search-results">
+    {% include "community/social/partials/add_friends_results.html" %}
+  </div>
+
+</div>
+
+<script src="{% static 'community/js/user_search.js' %}"></script>
+
+
+{% endblock %}

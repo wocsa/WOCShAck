@@ -1,0 +1,147 @@
+{% extends "base/base.html" %}
+{% load static %}
+{% load community_tags %}
+
+{% block title %}VRC — Blog & News{% endblock %}
+
+{% block module_css %}
+<link rel="stylesheet" href="{% static 'community/css/content.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="main-container">
+
+<nav class="vrc-breadcrumbs">
+  <a href="/">Home</a>
+  <span class="bc-sep">›</span>
+  <a href="{% url 'community:index' %}">Community</a>
+  <span class="bc-sep">›</span>
+  <span class="bc-current">Blog</span>
+</nav>
+
+<div class="content-wrapper">
+
+  <div class="content-header">
+    <div>
+      <h1 class="content-title">Blog & News</h1>
+      <p class="content-subtitle">Platform updates, tutorials and community spotlights</p>
+    </div>
+    {% check_content_creator request.user as can_create %}
+    {% if can_create %}
+    <a href="{% url 'community:blog_create' %}" class="content-btn content-btn--primary">+ New Post</a>
+    {% endif %}
+  </div>
+
+  <div class="content-layout">
+
+    {# Sidebar — categories #}
+    <aside class="content-sidebar">
+      <h3 class="sidebar-title">Categories</h3>
+      <ul class="sidebar-list">
+        <li>
+          <a href="{% url 'community:blog_list' %}"
+             class="sidebar-link {% if not active_category %}sidebar-link--active{% endif %}">
+            All Posts
+          </a>
+        </li>
+        {% for cat in categories %}
+        <li>
+          <a href="?category={{ cat.slug }}"
+             class="sidebar-link {% if active_category.slug == cat.slug %}sidebar-link--active{% endif %}">
+            {{ cat.name }}
+          </a>
+        </li>
+        {% endfor %}
+      </ul>
+    </aside>
+
+    {# Main — post grid #}
+    <main class="content-main">
+
+      {# My Drafts — only visible to the author #}
+      {% if my_drafts %}
+      <div style="margin-bottom:1.5rem;">
+        <h2 style="font-size:1rem;font-weight:600;color:var(--vrc-gray-500);margin-bottom:.75rem;display:flex;align-items:center;gap:.4rem;">
+          <span style="background:#fef3c7;color:#d97706;border:1px solid #fcd34d;border-radius:.375rem;padding:.15rem .5rem;font-size:.75rem;font-weight:700;text-transform:uppercase;">Draft</span>
+          My Unpublished Posts
+        </h2>
+        <div class="post-grid">
+          {% for post in my_drafts %}
+          <article class="post-card" style="border-left:3px solid #fcd34d;opacity:.85;">
+            <div class="post-card-body">
+              <span class="post-badge" style="background:#fef3c7;color:#d97706;">Draft</span>
+              <h2 class="post-card-title">
+                <a href="{% url 'community:blog_edit' post.slug %}">{{ post.title }}</a>
+              </h2>
+              <div class="post-card-meta">
+                <span class="post-date">Created {{ post.created_at|date:"M d, Y" }}</span>
+              </div>
+            </div>
+          </article>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      {% if page_obj.object_list %}
+      <div class="post-grid">
+        {% for post in page_obj %}
+        <article class="post-card {% if post.is_featured %}post-card--featured{% endif %}">
+          {% if post.featured_image %}
+          <div class="post-card-img">
+            <img src="{{ post.featured_image.url }}" alt="{{ post.title }}">
+          </div>
+          {% endif %}
+          <div class="post-card-body">
+            {% if post.is_pinned %}<span class="post-badge post-badge--pin">📌 Pinned</span>{% endif %}
+            {% if post.is_featured %}<span class="post-badge post-badge--featured">⭐ Featured</span>{% endif %}
+            {% if post.category %}
+            <span class="post-category">{{ post.category.name }}</span>
+            {% endif %}
+            <h2 class="post-card-title">
+              <a href="{% url 'community:blog_detail' post.slug %}">{{ post.title }}</a>
+            </h2>
+            <div class="post-card-meta">
+              <span class="post-author">{{ post.author.username }}</span>
+              <span class="post-dot">·</span>
+              <span class="post-date">{{ post.published_at|date:"M d, Y" }}</span>
+              <span class="post-dot">·</span>
+              <span class="post-views">{{ post.view_count }} views</span>
+            </div>
+            {% if post.tags %}
+            <div class="post-tags">
+              {% for tag in post.tag_list %}
+              <span class="post-tag">{{ tag }}</span>
+              {% endfor %}
+            </div>
+            {% endif %}
+          </div>
+        </article>
+        {% endfor %}
+      </div>
+
+      {# Pagination #}
+      {% if page_obj.has_other_pages %}
+      <div class="content-pagination">
+        {% if page_obj.has_previous %}
+        <a href="?{% if active_category %}category={{ active_category.slug }}&{% endif %}page={{ page_obj.previous_page_number }}" class="page-btn">← Prev</a>
+        {% endif %}
+        <span class="page-info">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+        {% if page_obj.has_next %}
+        <a href="?{% if active_category %}category={{ active_category.slug }}&{% endif %}page={{ page_obj.next_page_number }}" class="page-btn">Next →</a>
+        {% endif %}
+      </div>
+      {% endif %}
+
+      {% else %}
+      <div class="content-empty">
+        <span class="content-empty-icon">📰</span>
+        <p>No posts yet{% if active_category %} in <strong>{{ active_category.name }}</strong>{% endif %}.</p>
+      </div>
+      {% endif %}
+    </main>
+
+  </div>
+</div>
+</div>
+{% endblock %}

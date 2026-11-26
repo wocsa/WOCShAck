@@ -1,0 +1,105 @@
+{% extends "base/base.html" %}
+{% load static %}
+
+{% block title %}V.R.C — Ad: {{ ad.title }}{% endblock %}
+
+{% block content %}
+<div style="max-width:800px; margin:2rem auto;">
+    <div style="display:flex; align-items:center; gap:1rem; margin-bottom:1.5rem; flex-wrap:wrap;">
+        <a href="{% url 'advertiser_dashboard' %}" style="color:#667eea; text-decoration:none; font-size:0.9rem;">← Dashboard</a>
+        <h1 style="margin:0; font-size:1.75rem; color:var(--vrc-gray-900); flex:1;">{{ ad.title }}</h1>
+        {% if ad.status == 'pending' or ad.status == 'rejected' %}
+        <a href="{% url 'edit_advertisement' ad.id %}" class="btn btn-secondary" style="font-size:0.875rem;">Edit</a>
+        {% endif %}
+    </div>
+
+    <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:1rem; margin-bottom:1.5rem;">
+        <div style="background:white; border-radius:12px; padding:1rem; text-align:center; box-shadow:0 2px 8px rgba(0,0,0,0.05);">
+            <div style="font-size:1.75rem; font-weight:700; color:#667eea;">{{ impression_count }}</div>
+            <div style="font-size:0.8rem; color:var(--vrc-gray-500); margin-top:0.25rem;">Impressions</div>
+        </div>
+        <div style="background:white; border-radius:12px; padding:1rem; text-align:center; box-shadow:0 2px 8px rgba(0,0,0,0.05);">
+            <div style="font-size:1.75rem; font-weight:700; color:#10b981;">{{ click_count }}</div>
+            <div style="font-size:0.8rem; color:var(--vrc-gray-500); margin-top:0.25rem;">Clicks</div>
+        </div>
+        <div style="background:white; border-radius:12px; padding:1rem; text-align:center; box-shadow:0 2px 8px rgba(0,0,0,0.05);">
+            <div style="font-size:1.75rem; font-weight:700; color:#f59e0b;">{{ ctr }}%</div>
+            <div style="font-size:0.8rem; color:var(--vrc-gray-500); margin-top:0.25rem;">CTR</div>
+        </div>
+    </div>
+
+    <div style="background:white; border-radius:var(--vrc-radius-xl); padding:1.5rem; box-shadow:0 2px 10px rgba(0,0,0,0.06); margin-bottom:1rem;">
+        <dl style="display:grid; grid-template-columns:200px 1fr; gap:0.75rem 1rem; margin:0;">
+            <dt style="font-weight:600; color:var(--vrc-gray-600);">Status</dt>
+            <dd style="margin:0;">
+                {% if ad.status == 'active' %}<span style="color:#065f46; font-weight:600;">Active</span>
+                {% elif ad.status == 'pending' %}<span style="color:#92400e; font-weight:600;">Pending Review</span>
+                {% elif ad.status == 'approved' %}<span style="color:#1e40af; font-weight:600;">Approved (awaiting activation)</span>
+                {% elif ad.status == 'rejected' %}<span style="color:#991b1b; font-weight:600;">Rejected</span>
+                {% else %}<span>{{ ad.get_status_display }}</span>{% endif %}
+            </dd>
+            <dt style="font-weight:600; color:var(--vrc-gray-600);">Zone</dt>
+            <dd style="margin:0; color:var(--vrc-gray-800);">{{ ad.get_placement_zone_display }}</dd>
+            <dt style="font-weight:600; color:var(--vrc-gray-600);">Body</dt>
+            <dd style="margin:0; color:var(--vrc-gray-800);">
+                {% if ad.body_html %}
+                <div style="line-height:1.6;">{{ ad.body_html|safe }}</div>
+                {% else %}
+                <span style="white-space:pre-wrap;">{{ ad.body }}</span>
+                {% endif %}
+            </dd>
+            <dt style="font-weight:600; color:var(--vrc-gray-600);">Target URL</dt>
+            <dd style="margin:0;"><a href="{{ ad.target_url }}" target="_blank" rel="noopener noreferrer" style="color:#667eea; word-break:break-all;">{{ ad.target_url|truncatechars:80 }}</a></dd>
+            <dt style="font-weight:600; color:var(--vrc-gray-600);">Start Date</dt>
+            <dd style="margin:0; color:var(--vrc-gray-800);">{{ ad.start_date|date:"Y-m-d H:i" }}</dd>
+            <dt style="font-weight:600; color:var(--vrc-gray-600);">End Date</dt>
+            <dd style="margin:0; color:var(--vrc-gray-800);">{% if ad.end_date %}{{ ad.end_date|date:"Y-m-d H:i" }}{% else %}No expiry{% endif %}</dd>
+            {% if ad.cost_neuros %}
+            <dt style="font-weight:600; color:var(--vrc-gray-600);">Campaign Cost</dt>
+            <dd style="margin:0; color:var(--vrc-gray-800);">{{ ad.cost_neuros }} Neuros</dd>
+            {% if ad.payment_tx_ref %}
+            <dt style="font-weight:600; color:var(--vrc-gray-600);">Payment Ref</dt>
+            <dd style="margin:0; color:var(--vrc-gray-800); font-family:monospace; font-size:0.85rem;">{{ ad.payment_tx_ref }}</dd>
+            {% endif %}
+            {% elif projected_cost %}
+            <dt style="font-weight:600; color:var(--vrc-gray-600);">Projected Cost</dt>
+            <dd style="margin:0; color:#78350f;">{{ projected_cost }} Neuros ({{ projected_days }} day(s))</dd>
+            {% endif %}
+            <dt style="font-weight:600; color:var(--vrc-gray-600);">Created</dt>
+            <dd style="margin:0; color:var(--vrc-gray-800);">{{ ad.created_at|date:"Y-m-d H:i" }}</dd>
+        </dl>
+
+        {% if ad.status == 'rejected' and ad.rejection_reason %}
+        <div style="margin-top:1rem; padding:0.75rem 1rem; background:#fee2e2; border-radius:8px;">
+            <p style="color:#991b1b; font-weight:600; margin:0 0 0.25rem;">Rejection Reason:</p>
+            <p style="color:#7f1d1d; margin:0;">{{ ad.rejection_reason }}</p>
+        </div>
+        {% endif %}
+
+        {# ---- Image carousel preview (owner view) ---- #}
+        {% if ad_images %}
+        <div style="margin-top:1.25rem; border-top:1px solid var(--vrc-gray-100); padding-top:1rem;">
+            <p style="font-weight:600; color:var(--vrc-gray-600); margin:0 0 0.5rem;">Ad Images ({{ ad_images|length }})</p>
+            <div style="display:flex; flex-wrap:wrap; gap:0.5rem;">
+                {% for img in ad_images %}
+                <img src="{{ img.image.url }}"
+                     alt="{{ img.alt_text|default:ad.title }}"
+                     style="width:100px; height:70px; object-fit:cover; border-radius:6px; border:1px solid var(--vrc-gray-200);">
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <div style="display:flex; justify-content:flex-end; gap:0.75rem; flex-wrap:wrap;">
+        {% if ad.status == 'approved' %}
+        <a href="{% url 'activate_ad' ad.id %}"
+           class="btn"
+           style="font-size:0.875rem; background:linear-gradient(135deg,#667eea,#764ba2); color:white; padding:0.5rem 1.25rem; border-radius:8px; font-weight:600; text-decoration:none;">
+            Pay &amp; Activate
+        </a>
+        {% endif %}
+        <a href="{% url 'ad_stats' ad.id %}" class="btn btn-primary" style="font-size:0.875rem;">View Full Stats</a>
+    </div>
+</div>
+{% endblock %}

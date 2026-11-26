@@ -1,0 +1,13 @@
+{% load static %}
+{% if is_friend_blocked and are_you_blocked %}
+    <p style="color:red;" class="block-status-warning">You are mutually blocked. You cannot send messages to this user.</p>
+{% elif is_friend_blocked %}
+    <p style="color:red;" class="block-status-warning">This user is blocked. You cannot send them messages.</p>
+{% elif are_you_blocked %}
+    <p style="color:red;" class="block-status-warning">You are blocked by this user. You cannot send them messages.</p>
+{% endif %}
+{% if is_friend_blocked or are_you_blocked %}
+    <style>
+        @import url("{% static 'community/css/is_user_blocked.css' %}");
+    </style>
+{% endif %}

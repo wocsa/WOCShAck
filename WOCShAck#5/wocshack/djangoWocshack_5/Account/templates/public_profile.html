@@ -1,0 +1,557 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+
+{% block title %}Public Profile - {{ profile_user.username }}{% endblock %}
+
+<!-- Profile viewers are welcome; mass harvesting is not. Responsible disclosure still beats silent scraping. -->
+
+{% block content %}
+<div class="profile-page-container">
+    <div class="card animate-fade-in-up profile-card">
+        <div class="public-profile-container">
+            {% if profile_user.profile.picture_path and profile_user.profile.picture_path != 'default.png' %}
+                <img src="{% static 'uploads/' %}{{ profile_user.profile.picture_path }}"
+                     alt="Profile of {{ profile_user.username }}"
+                     class="profile-avatar">
+            {% else %}
+                <div class="profile-avatar-placeholder">
+                    <svg viewBox="0 0 24 24" width="64" height="64" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                        <circle cx="12" cy="7" r="4"/>
+                    </svg>
+                </div>
+            {% endif %}
+
+            <h1 class="profile-username">{{ profile_user.username }}</h1>
+
+            {% if profile_user.first_name or profile_user.last_name %}
+            <p class="profile-fullname">
+                {{ profile_user.first_name }} {{ profile_user.last_name }}
+            </p>
+            {% endif %}
+
+            <div class="badges-container">
+                {% for badge in profile_user.profile.get_all_badges %}
+                <span class="user-badge" style="background-color: {{ badge.color }};">
+                    {% if badge.icon == 'shield-check' %}
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+                        <path d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    {% elif badge.icon == 'shield-exclamation' %}
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+                        <path fill-rule="evenodd" d="M12 1.5c-1.921 0-3.816.111-5.68.327-1.497.174-2.57 1.46-2.57 2.93V21.75a.75.75 0 001.029.696l3.471-1.388 3.472 1.388a.75.75 0 00.556 0l3.472-1.388 3.471 1.388a.75.75 0 001.029-.696V4.757c0-1.47-1.073-2.756-2.57-2.93A49.255 49.255 0 0012 1.5zm-.97 6.53a.75.75 0 10-1.06-1.06L7.72 9.22a.75.75 0 000 1.06l2.25 2.25a.75.75 0 101.06-1.06l-.97-.97h3.065a1.875 1.875 0 010 3.75H12a.75.75 0 000 1.5h1.125a3.375 3.375 0 100-6.75h-3.064l.97-.97z" clip-rule="evenodd"/>
+                    </svg>
+                    {% elif badge.icon == 'envelope-open' %}
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+                        <path d="M19.5 22.5a3 3 0 003-3v-8.174l-6.879 4.022 3.485 1.876a.75.75 0 01-.712 1.321l-5.683-3.06a1.5 1.5 0 00-1.422 0l-5.683 3.06a.75.75 0 01-.712-1.32l3.485-1.877L1.5 11.326V19.5a3 3 0 003 3h15z"/>
+                        <path d="M1.5 9.589v-.745a3 3 0 011.578-2.641l7.5-4.039a3 3 0 012.844 0l7.5 4.039A3 3 0 0122.5 8.844v.745l-8.426 4.926-.652-.351a3 3 0 00-2.844 0l-.652.351L1.5 9.589z"/>
+                    </svg>
+                    {% elif badge.icon == 'star' %}
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                    </svg>
+                    {% elif badge.icon == 'sparkles' %}
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+                        <path d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z"/>
+                    </svg>
+                    {% elif badge.icon == 'check-badge' %}
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+                        <path fill-rule="evenodd" d="M8.603 3.799A4.49 4.49 0 0112 2.25c1.357 0 2.573.6 3.397 1.549a4.49 4.49 0 013.498 1.307 4.491 4.491 0 011.307 3.497A4.49 4.49 0 0121.75 12a4.49 4.49 0 01-1.549 3.397 4.491 4.491 0 01-1.307 3.497 4.491 4.491 0 01-3.497 1.307A4.49 4.49 0 0112 21.75a4.49 4.49 0 01-3.397-1.549 4.49 4.49 0 01-3.498-1.306 4.491 4.491 0 01-1.307-3.498A4.49 4.49 0 012.25 12c0-1.357.6-2.573 1.549-3.397a4.49 4.49 0 011.307-3.497 4.49 4.49 0 013.497-1.307zm7.007 6.387a.75.75 0 10-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 00-1.06 1.06l2.25 2.25a.75.75 0 001.14-.094l3.75-5.25z" clip-rule="evenodd"/>
+                    </svg>
+                    {% elif badge.icon == 'shopping-bag' %}
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+                        <path fill-rule="evenodd" d="M7.5 6v.75H5.513c-.96 0-1.764.724-1.865 1.679l-1.263 12A1.875 1.875 0 004.25 22.5h15.5a1.875 1.875 0 001.865-2.071l-1.263-12a1.875 1.875 0 00-1.865-1.679H16.5V6a4.5 4.5 0 10-9 0zM12 3a3 3 0 00-3 3v.75h6V6a3 3 0 00-3-3zm-3 8.25a3 3 0 106 0v-.75a.75.75 0 011.5 0v.75a4.5 4.5 0 11-9 0v-.75a.75.75 0 011.5 0v.75z" clip-rule="evenodd"/>
+                    </svg>
+                    {% elif badge.icon == 'code-bracket' %}
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+                        <path fill-rule="evenodd" d="M14.447 3.027a.75.75 0 01.527.92l-4.5 16.5a.75.75 0 01-1.448-.394l4.5-16.5a.75.75 0 01.921-.526zM16.72 6.22a.75.75 0 011.06 0l5.25 5.25a.75.75 0 010 1.06l-5.25 5.25a.75.75 0 11-1.06-1.06L21.44 12l-4.72-4.72a.75.75 0 010-1.06zm-9.44 0a.75.75 0 010 1.06L2.56 12l4.72 4.72a.75.75 0 11-1.06 1.06L.97 12.53a.75.75 0 010-1.06l5.25-5.25a.75.75 0 011.06 0z" clip-rule="evenodd"/>
+                    </svg>
+                    {% else %}
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+                        <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                    </svg>
+                    {% endif %}
+                    {{ badge.name }}
+                </span>
+                {% endfor %}
+            </div>
+
+            <div class="profile-info">
+                <h3 class="section-title">About</h3>
+                <p class="biography-text">
+                    {% autoescape off %}{{ profile_user.profile.biography|default:"This user has not written a biography yet."|linebreaksbr }}{% endautoescape %}
+                </p>
+            </div>
+
+            {% if is_developer and developer_profile %}
+            <div class="developer-profile-section">
+                <h3 class="section-title">Developer Profile</h3>
+                <div class="dev-profile-card">
+                    {% if developer_profile.display_name %}
+                    <div class="dev-profile-name">{{ developer_profile.display_name }}</div>
+                    {% endif %}
+                    {% if developer_profile.tagline %}
+                    <div class="dev-profile-tagline">{{ developer_profile.tagline }}</div>
+                    {% endif %}
+                    {% if developer_profile.specialties %}
+                    <div class="dev-profile-specialties">
+                        {% for specialty in developer_profile.specialties %}
+                        <span class="specialty-tag">{{ specialty }}</span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    <div class="dev-profile-links">
+                        {% if developer_profile.website %}
+                        <a href="{{ developer_profile.website }}" target="_blank" rel="noopener noreferrer" class="dev-link">
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/>
+                                <line x1="2" y1="12" x2="22" y2="12"/>
+                                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                            </svg>
+                            Website
+                        </a>
+                        {% endif %}
+                        {% if developer_profile.github_url %}
+                        <a href="{{ developer_profile.github_url }}" target="_blank" rel="noopener noreferrer" class="dev-link">
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                                <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                            </svg>
+                            GitHub
+                        </a>
+                        {% endif %}
+                        {% if developer_profile.twitter_url %}
+                        <a href="{{ developer_profile.twitter_url }}" target="_blank" rel="noopener noreferrer" class="dev-link">
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                                <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/>
+                            </svg>
+                            Twitter
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if is_seller %}
+            <!-- Seller Statistics Section -->
+            <div class="seller-stats-section">
+                <h3 class="section-title">Seller Statistics</h3>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                            </svg>
+                        </div>
+                        <div class="stat-value">{{ css_count }}</div>
+                        <div class="stat-label">CSS File{{ css_count|pluralize }}</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon star-icon">
+                            <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+                                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                            </svg>
+                        </div>
+                        <div class="stat-value">{% if seller_avg_rating %}{{ seller_avg_rating|floatformat:1 }}{% else %}--{% endif %}</div>
+                        <div class="stat-label">Average Rating</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                            </svg>
+                        </div>
+                        <div class="stat-value">{{ seller_total_reviews }}</div>
+                        <div class="stat-label">Review{{ seller_total_reviews|pluralize }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent CSS Files Section -->
+            {% if recent_css %}
+            <div class="recent-css-section">
+                <h3 class="section-title">Recent CSS Loaders</h3>
+                <div class="css-grid">
+                    {% for css in recent_css %}
+                    <a href="{% url 'product_detail' css.id %}" class="css-card">
+                        <div class="css-preview">
+                            {% if css.preview_gif %}
+                            <img src="{{ css.preview_gif.url }}" alt="Preview of {{ css.name }}" loading="lazy" draggable="false" oncontextmenu="return false;">
+                            {% else %}
+                            <span class="preview-placeholder">Preview loading...</span>
+                            {% endif %}
+                        </div>
+                        <div class="css-info">
+                            <h4 class="css-name">{{ css.name }}</h4>
+                            <span class="css-price">{{ css.price }} Neuros</span>
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+                {% if css_count > 6 %}
+                <div class="view-all-link">
+                    <a href="{% url 'shop' %}?author={{ profile_user.username }}">View all {{ css_count }} CSS files &rarr;</a>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .profile-page-container {
+        max-width: 800px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+    }
+
+    .profile-card {
+        text-align: center;
+    }
+
+    .profile-avatar {
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        object-fit: cover;
+        margin-bottom: 1.5rem;
+        {% if has_custom_theme and profile_theme %}
+        border: 4px solid {{ profile_theme.primary_color }};
+        box-shadow: 0 10px 25px {{ profile_theme.primary_color }}33;
+        {% else %}
+        border: 4px solid white;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        {% endif %}
+    }
+
+    .profile-avatar-placeholder {
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        {% if has_custom_theme and profile_theme %}
+        background: linear-gradient(135deg, {{ profile_theme.primary_color }} 0%, {{ profile_theme.secondary_color }} 100%);
+        box-shadow: 0 10px 25px {{ profile_theme.primary_color }}33;
+        {% else %}
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        {% endif %}
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1.5rem;
+        color: white;
+    }
+
+    .profile-username {
+        font-size: 2rem;
+        font-weight: 700;
+        margin: 0 0 0.5rem;
+        color: #333;
+    }
+
+    .profile-fullname {
+        font-size: 1.125rem;
+        color: #666;
+        margin: 0 0 1rem;
+    }
+
+    .badges-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        justify-content: center;
+        margin-bottom: 1.5rem;
+    }
+
+    .user-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.375rem;
+        color: white;
+        padding: 0.375rem 0.75rem;
+        border-radius: 16px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        transition: transform 0.2s ease;
+    }
+
+    .user-badge:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    .user-badge svg {
+        flex-shrink: 0;
+    }
+
+    /* Legacy seller badge for backwards compatibility */
+    .seller-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-size: 0.875rem;
+        font-weight: 600;
+        margin-bottom: 1.5rem;
+    }
+
+    .section-title {
+        font-size: 0.875rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #888;
+        margin: 0 0 0.75rem;
+    }
+
+    .profile-info {
+        {% if has_custom_theme and profile_theme %}
+        background: {{ profile_theme.bio_background_color }};
+        {% else %}
+        background: rgba(102, 126, 234, 0.05);
+        {% endif %}
+        padding: 1.5rem;
+        border-radius: 12px;
+        margin-top: 1.5rem;
+    }
+
+    .biography-text {
+        margin: 0;
+        color: #555;
+        line-height: 1.6;
+    }
+
+    /* Developer Profile Section */
+    .developer-profile-section {
+        margin-top: 2rem;
+        padding-top: 2rem;
+        border-top: 1px solid rgba(102, 126, 234, 0.1);
+    }
+
+    .dev-profile-card {
+        background: rgba(139, 92, 246, 0.05);
+        padding: 1.5rem;
+        border-radius: 12px;
+        border: 1px solid rgba(139, 92, 246, 0.1);
+    }
+
+    .dev-profile-name {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #333;
+        margin-bottom: 0.25rem;
+    }
+
+    .dev-profile-tagline {
+        font-size: 0.95rem;
+        color: #666;
+        margin-bottom: 1rem;
+        font-style: italic;
+    }
+
+    .dev-profile-specialties {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        justify-content: center;
+        margin-bottom: 1rem;
+    }
+
+    .specialty-tag {
+        display: inline-block;
+        background: rgba(139, 92, 246, 0.1);
+        color: #7c3aed;
+        padding: 0.25rem 0.75rem;
+        border-radius: 16px;
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+
+    .dev-profile-links {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        justify-content: center;
+        margin-top: 0.75rem;
+    }
+
+    .dev-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.375rem;
+        color: #667eea;
+        text-decoration: none;
+        font-size: 0.875rem;
+        font-weight: 500;
+        transition: color 0.2s ease;
+    }
+
+    .dev-link:hover {
+        color: #764ba2;
+        text-decoration: underline;
+    }
+
+    /* Seller Stats Section */
+    .seller-stats-section {
+        margin-top: 2rem;
+        padding-top: 2rem;
+        border-top: 1px solid rgba(102, 126, 234, 0.1);
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+
+    .stat-card {
+        background: rgba(102, 126, 234, 0.05);
+        padding: 1.25rem;
+        border-radius: 12px;
+        text-align: center;
+    }
+
+    .stat-icon {
+        color: #667eea;
+        margin-bottom: 0.5rem;
+    }
+
+    .stat-icon.star-icon {
+        color: #f1c40f;
+    }
+
+    .stat-value {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: #333;
+    }
+
+    .stat-label {
+        font-size: 0.8rem;
+        color: #888;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-top: 0.25rem;
+    }
+
+    /* Recent CSS Section */
+    .recent-css-section {
+        margin-top: 2rem;
+        padding-top: 2rem;
+        border-top: 1px solid rgba(102, 126, 234, 0.1);
+        text-align: left;
+    }
+
+    .recent-css-section .section-title {
+        text-align: center;
+    }
+
+    .css-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+
+    .css-card {
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        text-decoration: none;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        transition: all 0.2s ease;
+    }
+
+    .css-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+    }
+
+    .css-preview {
+        width: 100%;
+        aspect-ratio: 1;
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .css-preview img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border: none;
+    }
+
+    .css-preview .preview-placeholder {
+        color: var(--vrc-gray-400);
+        font-size: var(--vrc-font-size-xs);
+    }
+
+    .css-info {
+        padding: 0.75rem;
+    }
+
+    .css-name {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: #333;
+        margin: 0 0 0.25rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .css-price {
+        font-size: 0.8rem;
+        color: #667eea;
+        font-weight: 600;
+    }
+
+    .view-all-link {
+        text-align: center;
+        margin-top: 1.5rem;
+    }
+
+    .view-all-link a {
+        color: #667eea;
+        text-decoration: none;
+        font-weight: 500;
+    }
+
+    .view-all-link a:hover {
+        text-decoration: underline;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .css-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @media (max-width: 480px) {
+        .css-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .profile-username {
+            font-size: 1.5rem;
+        }
+    }
+</style>
+{% endblock %}

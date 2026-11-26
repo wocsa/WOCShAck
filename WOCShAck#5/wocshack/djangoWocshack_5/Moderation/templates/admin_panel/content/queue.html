@@ -1,0 +1,168 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Content Queue{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'base/css/admin.css' %}">
+<style>
+  .row-critical td { background: #fff5f5; }
+  .row-critical:hover td { background: #fee2e2; }
+  .row-high td { background: #fffbeb; }
+  .row-high:hover td { background: #fef3c7; }
+  .auto-flag-note { font-size: var(--vrc-font-size-xs); color: var(--vrc-gray-500); margin-top: 2px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="mod-page">
+  <div class="mod-page-header">
+    <h1 class="mod-page-title">Content Moderation Queue</h1>
+    <div style="display:flex;gap:var(--vrc-spacing-2);">
+      <a href="{% url 'admin_panel:dashboard' %}" class="mod-btn mod-btn-outline">Dashboard</a>
+      <a href="{% url 'admin_panel:content_action_history' %}" class="mod-btn mod-btn-outline">Action History</a>
+    </div>
+  </div>
+
+  <div class="filter-card">
+    <form method="get">
+      <div class="filter-row">
+        <div class="filter-group">
+          <label for="status">Status</label>
+          <select name="status" id="status" class="form-control">
+            <option value="all" {% if current_filters.status == 'all' %}selected{% endif %}>All</option>
+            {% for value, label in status_choices %}
+              <option value="{{ value }}" {% if current_filters.status == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="filter-group">
+          <label for="priority">Priority</label>
+          <select name="priority" id="priority" class="form-control">
+            <option value="all" {% if current_filters.priority == 'all' %}selected{% endif %}>All</option>
+            {% for value, label in priority_choices %}
+              <option value="{{ value }}" {% if current_filters.priority == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="filter-group">
+          <label for="module">Module</label>
+          <select name="module" id="module" class="form-control">
+            <option value="all" {% if current_filters.module == 'all' %}selected{% endif %}>All</option>
+            {% for value, label in module_choices %}
+              <option value="{{ value }}" {% if current_filters.module == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="filter-group">
+          <label for="assignment">Assignment</label>
+          <select name="assignment" id="assignment" class="form-control">
+            <option value="" {% if not current_filters.assignment %}selected{% endif %}>All</option>
+            <option value="unassigned" {% if current_filters.assignment == 'unassigned' %}selected{% endif %}>Unassigned</option>
+            <option value="mine" {% if current_filters.assignment == 'mine' %}selected{% endif %}>Mine</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label for="auto_flagged">Auto-flagged</label>
+          <select name="auto_flagged" id="auto_flagged" class="form-control">
+            <option value="" {% if not current_filters.auto_flagged %}selected{% endif %}>All</option>
+            <option value="true" {% if current_filters.auto_flagged == 'true' %}selected{% endif %}>Yes</option>
+            <option value="false" {% if current_filters.auto_flagged == 'false' %}selected{% endif %}>No</option>
+          </select>
+        </div>
+        <div class="filter-group" style="flex:0;min-width:auto;">
+          <label>&nbsp;</label>
+          <button type="submit" class="mod-btn mod-btn-primary">Filter</button>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <div class="mod-card">
+    <div class="mod-card-body">
+      {% if page_obj.object_list %}
+        <table class="mod-table">
+          <thead>
+            <tr>
+              <th>Priority</th>
+              <th>Module</th>
+              <th>Content Type</th>
+              <th>Status</th>
+              <th>Auto-flagged</th>
+              <th>Assigned To</th>
+              <th>Created</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in page_obj.object_list %}
+              <tr class="{% if item.priority == 'critical' %}row-critical{% elif item.priority == 'high' %}row-high{% endif %}">
+                <td>
+                  {% if item.priority == 'critical' %}
+                    <span class="badge badge-danger">{{ item.get_priority_display }}</span>
+                  {% elif item.priority == 'high' %}
+                    <span class="badge badge-warning">{{ item.get_priority_display }}</span>
+                  {% elif item.priority == 'medium' %}
+                    <span class="badge badge-info">{{ item.get_priority_display }}</span>
+                  {% else %}
+                    <span class="badge badge-secondary">{{ item.get_priority_display }}</span>
+                  {% endif %}
+                </td>
+                <td><span class="badge badge-primary">{{ item.get_source_module_display }}</span></td>
+                <td>{{ item.content_type.model|title }}</td>
+                <td>
+                  {% if item.status == 'pending' %}
+                    <span class="badge badge-warning">{{ item.get_status_display }}</span>
+                  {% elif item.status == 'approved' %}
+                    <span class="badge badge-success">{{ item.get_status_display }}</span>
+                  {% elif item.status == 'rejected' %}
+                    <span class="badge badge-danger">{{ item.get_status_display }}</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if item.auto_flagged %}
+                    <span class="badge badge-warning">Auto</span>
+                    {% if item.auto_flag_reason %}
+                      <div class="auto-flag-note">{{ item.auto_flag_reason|truncatechars:40|escape }}</div>
+                    {% endif %}
+                  {% else %}
+                    <span class="badge badge-secondary">Manual</span>
+                  {% endif %}
+                </td>
+                <td>{% if item.assigned_to %}{{ item.assigned_to.username }}{% else %}<span class="muted">Unassigned</span>{% endif %}</td>
+                <td class="date-cell">{{ item.created_at|date:"M j, Y" }}<br>{{ item.created_at|time:"H:i" }}</td>
+                <td><a href="{% url 'admin_panel:content_review' item.id %}" class="mod-btn mod-btn-outline mod-btn-sm">Review</a></td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+
+        {% if page_obj.has_other_pages %}
+          <div class="pagination">
+            {% if page_obj.has_previous %}
+              <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page=1">First</a>
+              <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.previous_page_number }}">Previous</a>
+            {% endif %}
+            <span class="page-link page-link-active">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+            {% if page_obj.has_next %}
+              <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.next_page_number }}">Next</a>
+              <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.paginator.num_pages }}">Last</a>
+            {% endif %}
+          </div>
+        {% endif %}
+      {% else %}
+        <div class="empty-state">
+          <h4>No content in queue</h4>
+          <p>
+            {% if current_filters.status or current_filters.priority or current_filters.module or current_filters.assignment or current_filters.auto_flagged %}
+              No content items match your current filters.
+            {% else %}
+              The moderation queue is empty.
+            {% endif %}
+          </p>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,69 @@
+{% extends "base/base.html" %}
+{% load static %}
+
+{% block title %}V.R.C — Advertise With Us{% endblock %}
+
+{% block content %}
+<div class="card animate-fade-in-up" style="max-width:860px; margin:2rem auto;">
+    <div class="text-center mb-5">
+        <h1 style="background:var(--vrc-gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-size:2.5rem;margin-bottom:1rem;">
+            Advertise on V.R.C
+        </h1>
+        <p style="font-size:1.125rem; color:var(--vrc-gray-600); max-width:600px; margin:0 auto;">
+            Reach CSS enthusiasts, developers, and community members right where they browse.
+            Place your ad in the shop sidebar, forum banner, homepage — or all three at once.
+        </p>
+    </div>
+
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px,1fr)); gap:1.25rem; margin:2rem 0;">
+        <div style="background:var(--vrc-gray-50); padding:1.5rem; border-radius:var(--vrc-radius-xl); text-align:center;">
+            <div style="font-size:2rem; margin-bottom:0.5rem;">&#128722;</div>
+            <h3 style="color:var(--vrc-gray-900); margin-bottom:0.5rem;">Shop Sidebar</h3>
+            <p style="color:var(--vrc-gray-500); font-size:0.875rem; margin-bottom:0.5rem;">Displayed in the CSS marketplace sidebar.</p>
+            <span style="background:#ede9fe; color:#5b21b6; border-radius:6px; padding:0.15rem 0.6rem; font-size:0.85rem; font-weight:600;">10 N/day</span>
+        </div>
+        <div style="background:var(--vrc-gray-50); padding:1.5rem; border-radius:var(--vrc-radius-xl); text-align:center;">
+            <div style="font-size:2rem; margin-bottom:0.5rem;">&#128172;</div>
+            <h3 style="color:var(--vrc-gray-900); margin-bottom:0.5rem;">Forum Banner</h3>
+            <p style="color:var(--vrc-gray-500); font-size:0.875rem; margin-bottom:0.5rem;">Shown on the forum index between header and categories.</p>
+            <span style="background:#ede9fe; color:#5b21b6; border-radius:6px; padding:0.15rem 0.6rem; font-size:0.85rem; font-weight:600;">15 N/day</span>
+        </div>
+        <div style="background:var(--vrc-gray-50); padding:1.5rem; border-radius:var(--vrc-radius-xl); text-align:center;">
+            <div style="font-size:2rem; margin-bottom:0.5rem;">&#127968;</div>
+            <h3 style="color:var(--vrc-gray-900); margin-bottom:0.5rem;">Homepage Banner</h3>
+            <p style="color:var(--vrc-gray-500); font-size:0.875rem; margin-bottom:0.5rem;">Prime placement below the hero section.</p>
+            <span style="background:#ede9fe; color:#5b21b6; border-radius:6px; padding:0.15rem 0.6rem; font-size:0.85rem; font-weight:600;">20 N/day</span>
+        </div>
+        <div style="background:linear-gradient(135deg,#ede9fe,#ddd6fe); padding:1.5rem; border-radius:var(--vrc-radius-xl); text-align:center; border:2px solid #a78bfa;">
+            <div style="font-size:2rem; margin-bottom:0.5rem;">&#9889;</div>
+            <h3 style="color:#5b21b6; margin-bottom:0.5rem;">All Zones</h3>
+            <p style="color:#6d28d9; font-size:0.875rem; margin-bottom:0.5rem;">Appear in every placement simultaneously.</p>
+            <span style="background:#5b21b6; color:white; border-radius:6px; padding:0.15rem 0.6rem; font-size:0.85rem; font-weight:600;">40 N/day</span>
+        </div>
+    </div>
+
+    <div style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%); color:white; border-radius:var(--vrc-radius-xl); padding:2rem; text-align:center; margin:2rem 0;">
+        <h2 style="margin:0 0 0.75rem;">How It Works</h2>
+        <ol style="text-align:left; max-width:520px; margin:0 auto; padding-left:1.5rem; line-height:1.9;">
+            <li>Create your ad with a title, markdown body, images, and target URL.</li>
+            <li>Choose a placement zone and campaign duration (start + end date).</li>
+            <li>Submit for review — staff reviews ads before activation.</li>
+            <li>On approval the campaign cost is charged from your Neuros balance.</li>
+            <li>Track impressions, clicks, and CTR from your dashboard.</li>
+        </ol>
+    </div>
+
+    <div style="background:#fef3c7; border:1px solid #fcd34d; border-radius:10px; padding:1rem 1.25rem; margin-bottom:1.5rem; font-size:0.875rem; color:#78350f;">
+        <strong>Billing note:</strong> Campaign cost = rate &times; days. Charged in Neuros from your V.R.C bank account at activation. Ensure your account has sufficient balance.
+    </div>
+
+    <div style="text-align:center; display:flex; gap:1rem; justify-content:center; flex-wrap:wrap;">
+        {% if user.is_authenticated %}
+        <a href="{% url 'create_advertisement' %}" class="btn btn-primary">Create Advertisement</a>
+        <a href="{% url 'advertiser_dashboard' %}" class="btn btn-secondary">My Dashboard</a>
+        {% else %}
+        <a href="{% url 'login' %}?next={% url 'create_advertisement' %}" class="btn btn-primary">Sign In to Advertise</a>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

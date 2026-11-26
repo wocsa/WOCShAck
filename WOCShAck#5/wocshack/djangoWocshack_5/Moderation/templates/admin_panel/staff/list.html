@@ -1,0 +1,139 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Staff Management{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'base/css/admin.css' %}">
+<style>
+  .user-search-wrapper { position: relative; display: inline-block; }
+  .user-search-dropdown {
+    position: absolute; top: 100%; left: 0; right: 0; z-index: 100;
+    background: #fff; border: 1px solid #ccc; border-top: none;
+    max-height: 220px; overflow-y: auto; display: none;
+  }
+  .user-search-dropdown .search-result-item {
+    padding: 8px 12px; cursor: pointer; font-size: 0.9rem;
+  }
+  .user-search-dropdown .search-result-item:hover { background: #f0f4ff; }
+  .staff-badge { font-weight: 600; }
+  .staff-badge.is-staff { color: #1a7f3c; }
+  .staff-badge.not-staff { color: #888; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="mod-page">
+  <h1 class="mod-page-title">Staff Management</h1>
+
+  {% if request.user.is_superuser %}
+  <div class="mod-card" style="margin-bottom: 1.5rem;">
+    <div class="mod-card-body">
+      <h2 class="mod-section-title">Promote User to Staff</h2>
+      <form method="post" action="{% url 'admin_panel:staff_promote' %}" id="promote-form">
+        {% csrf_token %}
+        <div class="user-search-wrapper">
+          <input type="text" id="promote-search" placeholder="Search username…" class="mod-input" autocomplete="off">
+          <div class="user-search-dropdown" id="promote-dropdown"></div>
+        </div>
+        <input type="hidden" name="username" id="promote-username-value">
+        <button type="submit" class="mod-btn mod-btn-primary" id="promote-submit" disabled>Promote to Staff</button>
+      </form>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="mod-card">
+    <div class="mod-card-body">
+      {% if staff_list_data %}
+        <table class="mod-table">
+          <thead>
+            <tr>
+              <th>User</th>
+              <th>Staff Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for entry in staff_list_data %}
+              <tr>
+                <td>
+                  <a href="{% url 'admin_panel:user_overview' entry.user.username %}">{{ entry.user.username|escape }}</a>
+                </td>
+                <td>
+                  {% if request.user.is_superuser and entry.user != request.user %}
+                    <form method="post" action="{% url 'admin_panel:staff_toggle' entry.user.id %}" style="display:inline;">
+                      {% csrf_token %}
+                      <button type="submit" class="mod-btn mod-btn-sm {% if entry.user.is_staff %}mod-btn-outline{% else %}mod-btn-secondary{% endif %}">
+                        {% if entry.user.is_staff %}✓ Staff{% else %}Not Staff{% endif %}
+                      </button>
+                    </form>
+                  {% else %}
+                    <span class="staff-badge {% if entry.user.is_staff %}is-staff{% else %}not-staff{% endif %}">
+                      {% if entry.user.is_staff %}✓ Staff{% else %}Not Staff{% endif %}
+                    </span>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <div class="empty-state">No users found.</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{% if request.user.is_superuser %}
+<script>
+(function () {
+  const searchInput = document.getElementById('promote-search');
+  const dropdown = document.getElementById('promote-dropdown');
+  const hiddenInput = document.getElementById('promote-username-value');
+  const submitBtn = document.getElementById('promote-submit');
+  const searchUrl = '{% url "admin_panel:staff_user_search" %}';
+  let debounceTimer;
+
+  searchInput.addEventListener('input', function () {
+    clearTimeout(debounceTimer);
+    hiddenInput.value = '';
+    submitBtn.disabled = true;
+    const q = this.value.trim();
+    if (q.length < 2) { dropdown.style.display = 'none'; dropdown.innerHTML = ''; return; }
+    debounceTimer = setTimeout(() => fetchUsers(q), 200);
+  });
+
+  function fetchUsers(q) {
+    fetch(searchUrl + '?q=' + encodeURIComponent(q))
+      .then(r => r.json())
+      .then(data => {
+        dropdown.innerHTML = '';
+        if (!data.results || !data.results.length) { dropdown.style.display = 'none'; return; }
+        data.results.forEach(u => {
+          const item = document.createElement('div');
+          item.className = 'search-result-item';
+          item.textContent = u.username;
+          item.addEventListener('mousedown', function (e) {
+            e.preventDefault();
+            searchInput.value = u.username;
+            hiddenInput.value = u.username;
+            submitBtn.disabled = false;
+            dropdown.style.display = 'none';
+          });
+          dropdown.appendChild(item);
+        });
+        dropdown.style.display = 'block';
+      })
+      .catch(() => { dropdown.style.display = 'none'; });
+  }
+
+  searchInput.addEventListener('blur', function () {
+    setTimeout(() => { dropdown.style.display = 'none'; }, 150);
+  });
+  searchInput.addEventListener('focus', function () {
+    if (dropdown.innerHTML) dropdown.style.display = 'block';
+  });
+})();
+</script>
+{% endif %}
+{% endblock %}

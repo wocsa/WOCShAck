@@ -1,0 +1,43 @@
+{% load static %}
+
+<div class="friend-card">
+
+    {% if is_friend_blocked %}
+        <form class="unblockForm" id="unblockForm" method="post" action="{% url 'community:unblock_friend' %}">
+            {% csrf_token %}
+            <input type="hidden" name="user_id" value="{{ friend.id }}">
+            
+        </form>
+        <button class="friend-action-btn" onclick="ConfirmUnblockFriend('unblockForm', '{{ friend.username }}')">
+            Unblock User
+        </button>
+    
+    {% else %}
+
+        <form class="blockForm" id="blockForm" method="post" action="{% url 'community:block_friend' %}">
+            {% csrf_token %}
+            <input type="hidden" name="user_id" value="{{ friend.id }}">
+        </form>
+        <button class="friend-action-btn" onclick="ConfirmBlockFriend('blockForm', '{{ friend.username }}')">
+            Block User
+        </button>
+
+    {% endif %}
+
+
+    <form class="unblockForm" id="deleteForm" method="post" action="{% url 'community:suppr_friend' %}">
+        {% csrf_token %}
+        <input type="hidden" name="user_id" value="{{ friend.id }}">  
+    </form>
+    <button class="friend-action-btn danger" onclick="ConfirmDeleteFriend('deleteForm', '{{ friend.username }}')" style="color:red;">
+        Remove from Friends
+    </button>
+ 
+</div>
+<script src="{% static 'community/js/friend_actions.js' %}"></script>
+
+
+
+<style>
+    @import url("{% static 'community/css/friend_actions.css' %}");
+</style>

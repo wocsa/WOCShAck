@@ -1,0 +1,205 @@
+{% extends "base/base.html" %}
+{% load static %}
+
+
+{% block title %}Flag Detail - Chatbot Moderation{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'base/css/admin.css' %}">
+<style>
+  /* page-specific: severity and status badge colour scales */
+  .severity-badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; }
+  .severity-low { background: #e0f2fe; color: #0369a1; }
+  .severity-medium { background: #fef3c7; color: #92400e; }
+  .severity-high { background: #fed7aa; color: #c2410c; }
+  .severity-critical { background: #ef4444; color: white; }
+  .status-badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: 600; }
+  .status-pending { background: #fef3c7; color: #92400e; }
+  .status-under_review { background: #e0e7ff; color: #4f46e5; }
+  .status-resolved { background: #d1fae5; color: #059669; }
+  .status-dismissed { background: #e5e7eb; color: #6b7280; }
+  /* page-specific: card header/body */
+  .card-header { padding: 15px 20px; background: #f8f9fa; border-bottom: 1px solid #eee; font-weight: 600; }
+  .card-body { padding: 20px; }
+  /* page-specific: conversation message boxes */
+  .message-display { margin-bottom: 20px; }
+  .message-label { font-weight: 600; color: #555; margin-bottom: 8px; font-size: 0.9rem; }
+  .message-box { background: #f8f9fa; border: 1px solid #eee; border-radius: 8px; padding: 15px; line-height: 1.6; }
+  .message-box.user-msg { border-left: 4px solid #6366f1; }
+  .message-box.bot-msg { border-left: 4px solid #10b981; }
+  /* page-specific: metadata key-value rows */
+  .meta-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f0f0f0; }
+  .meta-row:last-child { border-bottom: none; }
+  .meta-label { font-weight: 500; color: #555; }
+  .meta-value { color: #333; }
+  /* page-specific: action buttons group */
+  .action-buttons { display: flex; gap: 10px; margin-top: 15px; }
+  /* page-specific: resolve form */
+  .resolve-form { margin-top: 20px; }
+  .resolve-form textarea { width: 100%; min-height: 100px; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 0.9rem; resize: vertical; box-sizing: border-box; }
+  .resolve-form .form-group { margin-bottom: 15px; }
+  .resolve-form label { display: block; margin-bottom: 5px; font-weight: 500; color: #555; }
+  /* page-specific: related edits/scores lists */
+  .edit-entry, .score-entry { padding: 10px 0; border-bottom: 1px solid #f0f0f0; font-size: 0.9rem; }
+  /* page-specific: detail two-col grid */
+  .detail-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 25px; margin-bottom: 30px; }
+  @media (max-width: 768px) { .detail-grid { grid-template-columns: 1fr; } }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="mod-section-header">
+    <h1 class="mod-section-title">Flag #{{ flag.id|truncatechars:12 }}</h1>
+    <a href="{% url 'chatbot:flag_queue' %}" class="mod-btn mod-btn--secondary">&larr; Back to Queue</a>
+</div>
+
+<div class="detail-grid">
+    <div>
+        {# Message content #}
+        <div class="mod-table-card" style="margin-bottom: 25px;">
+            <div class="card-header">Flagged Conversation</div>
+            <div class="card-body">
+                <div class="message-display">
+                    <div class="message-label">User Message:</div>
+                    <div class="message-box user-msg">{{ flag.chat_message.message }}</div>
+                </div>
+                <div class="message-display">
+                    <div class="message-label">Bot Response (flagged):</div>
+                    <div class="message-box bot-msg">{{ flag.chat_message.response }}</div>
+                </div>
+                {% if flag.description %}
+                <div class="message-display">
+                    <div class="message-label">Flag Description:</div>
+                    <div class="message-box">{{ flag.description }}</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        {# Resolution form (only if still pending/under review) #}
+        {% if flag.status == 'pending' or flag.status == 'under_review' %}
+        <div class="mod-table-card">
+            <div class="card-header">Take Action</div>
+            <div class="card-body">
+                {% if flag.status == 'pending' %}
+                <form method="post" action="{% url 'chatbot:flag_assign' flag_id=flag.id %}" style="margin-bottom: 15px;">
+                    {% csrf_token %}
+                    <button type="submit" class="mod-btn mod-btn--primary">Assign to Me</button>
+                </form>
+                {% endif %}
+
+                <div class="action-buttons" style="margin-bottom: 15px;">
+                    <a href="{% url 'chatbot:edit_response' message_id=flag.chat_message.id %}" class="mod-btn mod-btn--secondary">Edit Response</a>
+                    <a href="{% url 'chatbot:score_response' message_id=flag.chat_message.id %}" class="mod-btn mod-btn--secondary">Score Quality</a>
+                </div>
+
+                <form method="post" action="{% url 'chatbot:flag_resolve' flag_id=flag.id %}" class="resolve-form">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label for="resolution_notes">Resolution Notes (required):</label>
+                        <textarea name="resolution_notes" id="resolution_notes" required minlength="5" placeholder="Describe the resolution or reason for dismissal..."></textarea>
+                    </div>
+                    <div class="action-buttons">
+                        <button type="submit" name="action" value="resolve" class="mod-btn mod-btn--success">Resolve</button>
+                        <button type="submit" name="action" value="dismiss" class="mod-btn mod-btn--danger">Dismiss</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        {% else %}
+        {# Show resolution info for already resolved flags #}
+        <div class="mod-table-card">
+            <div class="card-header">Resolution</div>
+            <div class="card-body">
+                <div class="meta-row">
+                    <span class="meta-label">Resolved by:</span>
+                    <span class="meta-value">{{ flag.resolved_by.username|default:"Unknown" }}</span>
+                </div>
+                <div class="meta-row">
+                    <span class="meta-label">Resolved at:</span>
+                    <span class="meta-value">{{ flag.resolved_at }}</span>
+                </div>
+                {% if flag.resolution_notes %}
+                <div style="margin-top: 15px;">
+                    <div class="message-label">Notes:</div>
+                    <div class="message-box">{{ flag.resolution_notes }}</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        {# Related edits #}
+        {% if related_edits %}
+        <div class="mod-table-card" style="margin-top: 25px;">
+            <div class="card-header">Related Edits</div>
+            <div class="card-body edits-list">
+                {% for edit in related_edits %}
+                <div class="edit-entry">
+                    <strong>{{ edit.edited_by.username }}</strong> edited this response
+                    ({{ edit.get_approval_status_display }}) - {{ edit.created_at|timesince }} ago
+                    <br><small>Reason: {{ edit.edit_reason|truncatewords:20 }}</small>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    {# Sidebar with flag metadata #}
+    <div>
+        <div class="mod-table-card">
+            <div class="card-header">Flag Details</div>
+            <div class="card-body">
+                <div class="meta-row">
+                    <span class="meta-label">Status:</span>
+                    <span class="meta-value"><span class="status-badge status-{{ flag.status }}">{{ flag.get_status_display }}</span></span>
+                </div>
+                <div class="meta-row">
+                    <span class="meta-label">Severity:</span>
+                    <span class="meta-value"><span class="severity-badge severity-{{ flag.severity }}">{{ flag.get_severity_display }}</span></span>
+                </div>
+                <div class="meta-row">
+                    <span class="meta-label">Reason:</span>
+                    <span class="meta-value">{{ flag.get_reason_display }}</span>
+                </div>
+                <div class="meta-row">
+                    <span class="meta-label">Flagged by:</span>
+                    <span class="meta-value">{% if flag.flagged_by %}{{ flag.flagged_by.username }}{% else %}Anonymous{% endif %}</span>
+                </div>
+                <div class="meta-row">
+                    <span class="meta-label">Assigned to:</span>
+                    <span class="meta-value">{{ flag.assigned_to.username|default:"Unassigned" }}</span>
+                </div>
+                <div class="meta-row">
+                    <span class="meta-label">Created:</span>
+                    <span class="meta-value">{{ flag.created_at }}</span>
+                </div>
+                <div class="meta-row">
+                    <span class="meta-label">Message user:</span>
+                    <span class="meta-value">{% if flag.chat_message.user %}{{ flag.chat_message.user.username }}{% else %}Anonymous{% endif %}</span>
+                </div>
+                <div class="meta-row">
+                    <span class="meta-label">Message time:</span>
+                    <span class="meta-value">{{ flag.chat_message.timestamp }}</span>
+                </div>
+            </div>
+        </div>
+
+        {# Quality scores #}
+        {% if quality_scores %}
+        <div class="mod-table-card" style="margin-top: 20px;">
+            <div class="card-header">Quality Scores</div>
+            <div class="card-body scores-list">
+                {% for score in quality_scores %}
+                <div class="score-entry">
+                    <strong>{{ score.scored_by.username }}</strong>: {{ score.overall_score }}/5
+                    <br><small>Accuracy: {{ score.accuracy_score }} | Helpful: {{ score.helpfulness_score }} | Tone: {{ score.tone_score }}</small>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

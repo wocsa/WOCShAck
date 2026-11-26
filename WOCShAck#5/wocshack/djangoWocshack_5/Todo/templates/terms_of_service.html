@@ -1,0 +1,96 @@
+{% extends "base/base.html" %}
+
+{% block title %}418 — I'm a Teapot | V.R.C{% endblock %}
+
+{% block meta_description %}V.R.C. Terms of Service — HTTP 418 I'm a Teapot{% endblock %}
+
+<!-- Compliance notice: bulk probing, scraping, or unauthorized testing of this service may be treated as hostile traffic and retained for review. -->
+
+{% block extra_css %}
+<style>
+    .teapot-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 60vh;
+        text-align: center;
+        padding: 2rem;
+        color: #e2e8f0;
+    }
+
+    .teapot-ascii {
+        font-family: 'Courier New', Courier, monospace;
+        font-size: 0.85rem;
+        line-height: 1.2;
+        color: #60a5fa;
+        white-space: pre;
+        margin-bottom: 2rem;
+        text-shadow: 0 0 10px rgba(96, 165, 250, 0.3);
+    }
+
+    .teapot-code {
+        font-size: 5rem;
+        font-weight: 800;
+        background: linear-gradient(135deg, #60a5fa, #a78bfa);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 0.5rem;
+    }
+
+    .teapot-title {
+        font-size: 1.8rem;
+        font-weight: 600;
+        color: #f1f5f9;
+        margin-bottom: 1rem;
+    }
+
+    .teapot-message {
+        font-size: 1.1rem;
+        color: #94a3b8;
+        max-width: 500px;
+        line-height: 1.6;
+        margin-bottom: 2rem;
+    }
+
+    .teapot-link {
+        display: inline-block;
+        padding: 0.75rem 2rem;
+        background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+        color: #ffffff;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 500;
+        transition: opacity 0.2s ease;
+    }
+
+    .teapot-link:hover {
+        opacity: 0.85;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="teapot-container">
+    <div class="teapot-ascii">
+            ;:'
+        _..---._    ;'
+      .'         `-.  ;
+     /   ()      ()  \
+    ;               `;
+    |               |;
+    ;  '-.,__,..-'  ;;
+     \  `-.        /;
+      '._  `~~~ _.'
+         `-----'
+    </div>
+    <div class="teapot-code">418</div>
+    <div class="teapot-title">I'm a Teapot</div>
+    <p class="teapot-message">
+        The V.R.C. server refuses to brew coffee because it is, permanently, a teapot.
+        Our terms of service are steeped in mystery — just like a good cup of tea.
+    </p>
+    <a href="{% url 'index' %}" class="teapot-link">← Back to Safety</a>
+</div>
+{% endblock %}

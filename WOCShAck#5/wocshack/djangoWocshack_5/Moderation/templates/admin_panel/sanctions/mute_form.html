@@ -1,0 +1,68 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Mute User - {{ target_user.username }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'base/css/admin.css' %}">
+<style>
+  .mod-btn-warning { background: #f59e0b; color: #fff; }
+  .mod-btn-warning:hover { background: #d97706; color: #fff; }
+  .mod-card-header h4 { font-size: var(--vrc-font-size-lg); font-weight: 700; color: var(--vrc-gray-900); margin: 0; }
+  .form-check input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; }
+  .form-check-label { font-size: var(--vrc-font-size-sm); color: var(--vrc-gray-700); cursor: pointer; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="mod-page">
+  <div class="mod-card">
+    <div class="mod-card-header">
+      <h4>Mute User: {{ target_user.username }}</h4>
+    </div>
+    <div class="mod-card-body">
+      {% if existing_mute %}
+        <div class="alert alert-warning">
+          User is already muted. Expires: {{ existing_mute.expires_at|default:"Never (Permanent)" }}
+        </div>
+      {% else %}
+        <form method="post">
+          {% csrf_token %}
+          <div class="form-group">
+            <label for="scope" class="form-label">Scope</label>
+            <select name="scope" id="scope" class="form-control" required>
+              {% for value, label in scope_choices %}
+                <option value="{{ value }}">{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="reason" class="form-label">Reason</label>
+            <textarea name="reason" id="reason" class="form-control" rows="3" required></textarea>
+          </div>
+          <div class="form-group">
+            <label for="duration" class="form-label">Duration (hours)</label>
+            <select name="duration" id="duration" class="form-control">
+              <option value="1">1 hour</option>
+              <option value="6">6 hours</option>
+              <option value="24" selected>24 hours</option>
+              <option value="72">3 days</option>
+              <option value="168">1 week</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <div class="form-check">
+              <input type="checkbox" name="is_permanent" id="is_permanent">
+              <label for="is_permanent" class="form-check-label">Permanent Mute</label>
+            </div>
+          </div>
+          <div class="form-actions">
+            <a href="{% url 'admin_panel:user_overview' target_user.username %}" class="mod-btn mod-btn-outline">Cancel</a>
+            <button type="submit" class="mod-btn mod-btn-warning">Mute User</button>
+          </div>
+        </form>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

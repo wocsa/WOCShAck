@@ -1,0 +1,47 @@
+/* ── Friend Card ── */
+.friend-card {
+  background: var(--vrc-white);
+  border: 1px solid var(--vrc-gray-200);
+  border-radius: var(--vrc-radius-lg);
+  padding: var(--vrc-spacing-sm);
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--vrc-shadow-md);
+}
+
+.friend-action-btn {
+  background: none;
+  border: none;
+  font-family: var(--vrc-font-family);
+  font-size: var(--vrc-font-size-sm);
+  font-weight: var(--vrc-font-weight-medium);
+  padding: 14px 18px;
+  border-radius: var(--vrc-radius-md);
+  cursor: pointer;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: var(--vrc-spacing-sm);
+  transition: background var(--vrc-transition-fast), color var(--vrc-transition-fast);
+  width: 100%;
+  color: var(--vrc-gray-500);
+}
+
+.friend-action-btn:hover {
+  background: var(--vrc-gray-50);
+  color: var(--vrc-gray-900);
+}
+
+.friend-action-btn.danger {
+  color: var(--vrc-error);
+}
+
+.friend-action-btn.danger:hover {
+  background: var(--vrc-error-light);
+}
+
+.friend-action-divider {
+  height: 1px;
+  background: var(--vrc-gray-300);
+  margin: var(--vrc-spacing-xs) 0;
+}

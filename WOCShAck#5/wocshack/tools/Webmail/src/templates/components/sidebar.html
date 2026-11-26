@@ -1,0 +1,16 @@
+<nav class="col-md-3 col-lg-2 d-md-block bg-light sidebar pt-5">
+    <div class="text-center mb-4">
+        <h5>{{ emails | length }} Email(s) found</h5>
+    </div>
+    <ul class="nav flex-column">
+        {% if show_client_link %}
+        <li class="nav-item">
+            <a class="nav-link text-dark" href="/client">return to client</a>
+        </li>
+        {% else %}
+        <li class="nav-item">
+            <a class="nav-link text-dark" href="/settings">Settings</a>
+        </li>
+        {% endif %}
+    </ul>
+</nav>

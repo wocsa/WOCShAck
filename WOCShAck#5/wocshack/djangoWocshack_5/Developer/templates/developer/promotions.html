@@ -1,0 +1,50 @@
+{% extends 'base/base.html' %}
+{% block title %}Promotions - V.R.C{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dev-container { max-width: 1000px; margin: 0 auto; padding: var(--vrc-spacing-xl); }
+    .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--vrc-spacing-xl); }
+    .page-header h1 { font-size: var(--vrc-font-size-2xl); font-weight: var(--vrc-font-weight-bold); }
+    .btn-primary { padding: 10px 20px; background: var(--vrc-gradient); color: white; border: none; border-radius: var(--vrc-radius-md); text-decoration: none; font-size: var(--vrc-font-size-sm); }
+    .promo-table { width: 100%; background: var(--vrc-white); border-radius: var(--vrc-radius-lg); box-shadow: var(--vrc-shadow-md); overflow: hidden; }
+    .promo-table th { background: var(--vrc-gray-50); padding: 12px 16px; text-align: left; font-size: var(--vrc-font-size-sm); color: var(--vrc-gray-500); border-bottom: 1px solid var(--vrc-gray-200); }
+    .promo-table td { padding: 12px 16px; border-bottom: 1px solid var(--vrc-gray-100); font-size: var(--vrc-font-size-sm); }
+    .promo-code { font-family: monospace; background: var(--vrc-gray-100); padding: 2px 8px; border-radius: var(--vrc-radius-sm); }
+    .badge-active { background: var(--vrc-success-light); color: var(--vrc-success); padding: 2px 8px; border-radius: var(--vrc-radius-full); font-size: var(--vrc-font-size-xs); }
+    .badge-inactive { background: var(--vrc-gray-200); color: var(--vrc-gray-600); padding: 2px 8px; border-radius: var(--vrc-radius-full); font-size: var(--vrc-font-size-xs); }
+    .back-link { display: inline-block; margin-bottom: var(--vrc-spacing-lg); color: var(--vrc-primary); text-decoration: none; font-size: var(--vrc-font-size-sm); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dev-container">
+    <a href="{% url 'developer_dashboard' %}" class="back-link">&larr; Back to Dashboard</a>
+    <div class="page-header">
+        <h1>Promotions</h1>
+        <a href="{% url 'developer_create_promotion' %}" class="btn-primary">+ New Promotion</a>
+    </div>
+
+    {% if promotions %}
+    <table class="promo-table">
+        <thead>
+            <tr><th>Code</th><th>Listing</th><th>Discount</th><th>Usage</th><th>Dates</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+            {% for promo in promotions %}
+            <tr>
+                <td><span class="promo-code">{{ promo.code }}</span></td>
+                <td>{{ promo.listing.title|default:"Global" }}</td>
+                <td>{% if promo.discount_percent %}{{ promo.discount_percent }}%{% elif promo.discount_amount %}{{ promo.discount_amount }} NE{% else %}-{% endif %}</td>
+                <td>{{ promo.usage_count }}{% if promo.usage_limit > 0 %} / {{ promo.usage_limit }}{% endif %}</td>
+                <td style="font-size: var(--vrc-font-size-xs);">{{ promo.start_date|date:"M d" }} - {{ promo.end_date|date:"M d, Y" }}</td>
+                <td>{% if promo.is_active %}<span class="badge-active">Active</span>{% else %}<span class="badge-inactive">Inactive</span>{% endif %}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div style="text-align: center; padding: var(--vrc-spacing-2xl); color: var(--vrc-gray-500);">No promotions yet.</div>
+    {% endif %}
+</div>
+{% endblock %}

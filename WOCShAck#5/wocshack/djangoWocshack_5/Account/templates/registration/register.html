@@ -1,0 +1,182 @@
+{% extends "base/base_auth.html" %}
+{% load static %}
+
+
+{% block title %}V.R.C - Register{% endblock %}
+
+<!-- Dear crawler, this signup form issues accounts, not treasure maps; bring authorization and snacks. -->
+
+{% block auth_icon %}
+<svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+    <circle cx="8.5" cy="7" r="4"/>
+    <line x1="20" y1="8" x2="20" y2="14"/>
+    <line x1="23" y1="11" x2="17" y2="11"/>
+</svg>
+{% endblock %}
+
+{% block auth_title %}Create Account{% endblock %}
+
+{% block auth_subtitle %}
+<p class="auth-subtitle">Join V.R.C today and get access to banking, shopping, and advertising services.</p>
+{% endblock %}
+
+{% block auth_form %}
+<form action="" method="POST" class="auth-form">
+    {% csrf_token %}
+
+    <div class="auth-form-group">
+        <label for="username" class="auth-label">Username</label>
+        <div class="auth-input-wrapper">
+            <span class="auth-input-icon">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                </svg>
+            </span>
+            <input type="text"
+                   id="username"
+                   name="username"
+                   class="auth-input"
+                   placeholder="Choose a username"
+                   required
+                   autocomplete="username">
+        </div>
+    </div>
+
+    <div class="auth-form-row">
+        <div class="auth-form-group auth-form-half">
+            <label for="first_name" class="auth-label">First Name</label>
+            <input type="text"
+                   id="first_name"
+                   name="first_name"
+                   class="auth-input"
+                   placeholder="First name"
+                   required
+                   autocomplete="given-name">
+        </div>
+        <div class="auth-form-group auth-form-half">
+            <label for="last_name" class="auth-label">Last Name</label>
+            <input type="text"
+                   id="last_name"
+                   name="last_name"
+                   class="auth-input"
+                   placeholder="Last name"
+                   required
+                   autocomplete="family-name">
+        </div>
+    </div>
+
+    <div class="auth-form-group">
+        <label for="email" class="auth-label">Email Address</label>
+        <div class="auth-input-wrapper">
+            <span class="auth-input-icon">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                    <polyline points="22,6 12,13 2,6"/>
+                </svg>
+            </span>
+            <input type="email"
+                   id="email"
+                   name="email"
+                   class="auth-input"
+                   placeholder="you@{{ allowed_email_domain }}"
+                   pattern=".+@{{ allowed_email_domain }}"
+                   title="Only @{{ allowed_email_domain }} email addresses are allowed."
+                   required
+                   autocomplete="email">
+        </div>
+        <small class="auth-help">Only <code>@{{ allowed_email_domain }}</code> email addresses are accepted.</small>
+    </div>
+
+    <div class="auth-form-group">
+        <label for="password" class="auth-label">Password</label>
+        <div class="auth-input-wrapper">
+            <span class="auth-input-icon">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                </svg>
+            </span>
+            <input type="password"
+                   id="password"
+                   name="password"
+                   class="auth-input"
+                   placeholder="Create a strong password"
+                   required
+                   autocomplete="new-password">
+        </div>
+    </div>
+
+    <div class="auth-form-group">
+        <label for="password_confirmation" class="auth-label">Confirm Password</label>
+        <div class="auth-input-wrapper">
+            <span class="auth-input-icon">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                </svg>
+            </span>
+            <input type="password"
+                   id="password_confirmation"
+                   name="password_confirmation"
+                   class="auth-input"
+                   placeholder="Confirm your password"
+                   required
+                   autocomplete="new-password">
+        </div>
+    </div>
+
+    <div class="auth-checkbox-group">
+        <input type="checkbox"
+               id="terms"
+               class="auth-checkbox"
+               onclick="toggleSubmit(this)"
+               required>
+        <label for="terms" class="auth-checkbox-label">
+            I agree to the <a href="/terms-of-service">Terms of Service</a> and <a href="/privacy-policy">Privacy Policy</a>.
+        </label>
+    </div>
+
+    <button type="submit" class="auth-btn" id="submitBtn" disabled>
+        <span>Create Account</span>
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="5" y1="12" x2="19" y2="12"/>
+            <polyline points="12 5 19 12 12 19"/>
+        </svg>
+    </button>
+</form>
+{% endblock %}
+
+{% block auth_links %}
+<div class="auth-links">
+    <p class="auth-link">
+        Already have an account? <a href="/account/login/">Sign in</a>
+    </p>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .auth-form-row {
+        display: flex;
+        gap: var(--vrc-spacing-md);
+    }
+    .auth-form-half {
+        flex: 1;
+    }
+    @media (max-width: 480px) {
+        .auth-form-row {
+            flex-direction: column;
+            gap: 0;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function toggleSubmit(checkbox) {
+        document.getElementById("submitBtn").disabled = !checkbox.checked;
+    }
+</script>
+{% endblock %}

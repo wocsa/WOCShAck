@@ -1,0 +1,228 @@
+{% extends "base/base_forum.html" %}
+{% load static %}
+
+
+{% block title %}Edit Post - V.R.C Forum{% endblock %}
+
+{% block extra_css %}
+{# SimpleMDE editor CSS for rich markdown editing #}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.css">
+<style>
+    .edit-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 30px;
+        border-radius: 16px;
+        margin-bottom: 20px;
+    }
+    .breadcrumb {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        margin-bottom: 10px;
+        font-size: 0.9rem;
+    }
+    .breadcrumb a {
+        color: rgba(255,255,255,0.8);
+        text-decoration: none;
+    }
+    .breadcrumb a:hover {
+        color: white;
+    }
+    .breadcrumb span {
+        opacity: 0.6;
+    }
+    .edit-header h1 {
+        font-size: 1.8rem;
+    }
+
+    .edit-form {
+        background: white;
+        border-radius: 12px;
+        padding: 30px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    .form-group {
+        margin-bottom: 20px;
+    }
+    .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: #333;
+    }
+    .form-group input,
+    .form-group textarea {
+        width: 100%;
+        padding: 12px 15px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        font-size: 1rem;
+        transition: border-color 0.2s ease;
+    }
+    .form-group input:focus,
+    .form-group textarea:focus {
+        outline: none;
+        border-color: #667eea;
+    }
+    .form-group textarea {
+        min-height: 250px;
+        resize: vertical;
+    }
+    .form-group .hint {
+        font-size: 0.85rem;
+        color: #888;
+        margin-top: 5px;
+    }
+
+    .post-info {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        font-size: 0.9rem;
+        color: #666;
+    }
+    .post-info strong {
+        color: #333;
+    }
+
+    .form-actions {
+        display: flex;
+        gap: 15px;
+        margin-top: 25px;
+    }
+    .btn-submit {
+        padding: 12px 30px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: transform 0.2s ease;
+    }
+    .btn-submit:hover {
+        transform: translateY(-2px);
+    }
+    .btn-cancel {
+        padding: 12px 30px;
+        background: #f5f5f5;
+        color: #666;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        font-size: 1rem;
+        text-decoration: none;
+        transition: all 0.2s ease;
+    }
+    .btn-cancel:hover {
+        background: #eee;
+    }
+
+    /* SimpleMDE overrides */
+    .CodeMirror {
+        border: 1px solid #ddd !important;
+        border-radius: 8px !important;
+    }
+    .editor-toolbar {
+        border: 1px solid #ddd !important;
+        border-bottom: none !important;
+        border-radius: 8px 8px 0 0 !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="edit-header">
+    <div class="breadcrumb">
+        <a href="{% url 'forum_index' %}">Forum</a>
+        <span>/</span>
+        <a href="{% url 'forum_category' slug=post.topic.category.slug %}">{{ post.topic.category.name }}</a>
+        <span>/</span>
+        <a href="{% url 'forum_topic' topic_id=post.topic.id %}">{{ post.topic.title }}</a>
+        <span>/</span>
+        <span>Edit Post</span>
+    </div>
+    <h1>Edit Post</h1>
+</div>
+
+<form method="post" class="edit-form">
+    {% csrf_token %}
+
+    <div class="post-info">
+        <strong>Original author:</strong> {{ post.author.username }} |
+        <strong>Posted:</strong> {{ post.created_at|date:"M d, Y H:i" }}
+        {% if post.is_edited %}
+        | <strong>Last edited:</strong> {{ post.edited_at|date:"M d, Y H:i" }}
+        {% endif %}
+    </div>
+
+    <div class="form-group">
+        <label for="content">Post Content</label>
+        <textarea id="content" name="content">{{ post.content }}</textarea>
+    </div>
+
+    <div class="form-group">
+        <label for="edit_reason">Edit Reason (optional)</label>
+        <input type="text" id="edit_reason" name="edit_reason"
+               placeholder="Why are you editing this post?"
+               maxlength="200">
+        <div class="hint">This will be shown below the post</div>
+    </div>
+
+    <div class="form-actions">
+        <button type="submit" class="btn-submit">Save Changes</button>
+        <a href="{% url 'forum_topic' topic_id=post.topic.id %}" class="btn-cancel">Cancel</a>
+    </div>
+</form>
+{% include "forum/includes/mention_autocomplete.html" %}
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.js"></script>
+<script>
+// Initialize SimpleMDE editor for post content editing
+var contentTextarea = document.getElementById('content');
+if (contentTextarea) {
+    var simplemde = new SimpleMDE({
+        element: contentTextarea,
+        spellChecker: false,
+        autosave: {
+            enabled: false
+        },
+        placeholder: 'Edit your post content. Markdown is supported.',
+        toolbar: [
+            'bold', 'italic', 'heading', '|',
+            'quote', 'unordered-list', 'ordered-list', '|',
+            'link', 'image', 'code', '|',
+            'preview', 'side-by-side', 'fullscreen', '|',
+            'guide'
+        ],
+        status: ['lines', 'words'],
+        renderingConfig: {
+            singleLineBreaks: false,
+            codeSyntaxHighlighting: false,
+        },
+    });
+
+    // Enable @mention autocomplete
+    if (window.setupMentionAutocomplete) {
+        setupMentionAutocomplete(simplemde);
+    }
+
+    // Sync SimpleMDE content to textarea before form submit
+    var editForm = contentTextarea.closest('form');
+    if (editForm) {
+        editForm.addEventListener('submit', function(e) {
+            simplemde.codemirror.save();
+            var content = contentTextarea.value.trim();
+            if (!content) {
+                e.preventDefault();
+                alert('Post content cannot be empty.');
+            }
+        });
+    }
+}
+</script>
+{% endblock %}
